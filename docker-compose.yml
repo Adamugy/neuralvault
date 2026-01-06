@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      target: runner
+    container_name: neuralvault
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Adicione outras variáveis de ambiente conforme necessário
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - neuralvault-network
+
+  # Adicione outros serviços conforme necessário (ex: banco de dados, cache, etc.)
+  # redis:
+  #   image: redis:alpine
+  #   restart: always
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - neuralvault-network
+
+networks:
+  neuralvault-network:
+    driver: bridge
+
+# volumes:
+#   redis-data:

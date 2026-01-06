@@ -1,0 +1,99 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Refactoring Backups
+server.ts.bak
+*.bak
+
+# Local Development
+.env*.local
+.idea/
+.vscode/
+.kiro/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Database
+prisma/migrations/
+prisma/*.db
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+
+# Build
+dist/
+dist-ssr/
+build/
+.temp/
+.cache/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+.kiro
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Teste
+coverage/
+.nyc_output/
+
+# Misc
+.DS_Store
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local development
+
+# TypeScript
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
+# Vite
+.vite/
+
+# Cache
+.cache/
+.temp/
+.turbo/
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum ResourceType {
+  link
+  file
+}
+
+enum PlanTier {
+  free
+  researcher
+  researcher_pro
+  lab
+}
+
+model User {
+  clerkUserId          String    @id
+  plan                 PlanTier  @default(free)
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  subscriptionStatus   String?
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Folder {
+  id          String     @id @default(uuid())
+  clerkUserId String
+  name        String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  resources   Resource[]
+
+  @@index([clerkUserId])
+  @@unique([clerkUserId, name])
+}
+
+model Resource {
+  id          String       @id @default(uuid())
+  clerkUserId String
+  type        ResourceType
+  title       String
+  url         String?
+  fileName    String?
+  fileType    String?
+  fileUrl     String?
+  tags        String[]
+  notes       String       @default("")
+  dateAdded   DateTime     @default(now())
+  completed   Boolean      @default(false)
+
+  folderId    String?
+  folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([clerkUserId])
+  @@index([clerkUserId, folderId])
+}
