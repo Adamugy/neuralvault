@@ -97,3 +97,13 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Cloud Build
+current_build.json
+run_desc.json
+test_output.txt
+
+# Cloud Run
+gcloudignore
+
+

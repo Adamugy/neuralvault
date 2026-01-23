@@ -1,6 +1,8 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
-export const ai = new GoogleGenAI({ apiKey: process.env.VITE_GEMINI_API_KEY || '' });
+import { env } from '../utils/env.js';
+const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || '');
+export const ai = genAI;
 export const fileToGenerativePart = (path, mimeType) => {
     return {
         inlineData: {

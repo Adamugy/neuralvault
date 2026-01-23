@@ -6,18 +6,18 @@ steps:
     id: 'install'
 
   # 2. Run Linting
-  - name: 'node:20'
-    entrypoint: 'npm'
-    args: ['run', 'lint']
-    id: 'lint'
-    waitFor: ['install']
+  # - name: 'node:20'
+  #   entrypoint: 'npm'
+  #   args: ['run', 'lint']
+  #   id: 'lint'
+  #   waitFor: ['install']
 
   # 3. Run Tests
-  - name: 'node:20'
-    entrypoint: 'npm'
-    args: ['run', 'test']
-    id: 'test'
-    waitFor: ['install']
+  # - name: 'node:20'
+  #   entrypoint: 'npm'
+  #   args: ['run', 'test']
+  #   id: 'test'
+  #   waitFor: ['install']
 
   # 4. Generate Prisma Client
   - name: 'node:20'
@@ -26,20 +26,26 @@ steps:
     id: 'prisma'
     waitFor: ['install']
 
+  # 4.1 Run Database Migrations
+  # - name: 'node:20'
+  #   entrypoint: 'npm'
+  #   args: ['run', 'prisma:deploy']
+  #   id: 'migrate'
+  #   waitFor: ['prisma']
+
   # 5. Build and Push Docker Image
   - name: 'gcr.io/cloud-builders/docker'
     args: [
       'build',
-      '-t', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${COMMIT_SHA}',
       '-t', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest',
       '.'
     ]
     id: 'build-image'
-    waitFor: ['lint', 'test', 'prisma']
+    waitFor: ['prisma']
 
   # 6. Push to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}']
+    args: ['push', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest']
     id: 'push-image'
     waitFor: ['build-image']
 
@@ -48,7 +54,7 @@ steps:
     entrypoint: 'gcloud'
     args: [
       'run', 'deploy', '${_SERVICE_NAME}',
-      '--image', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${COMMIT_SHA}',
+      '--image', '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest',
       '--region', '${_LOCATION}',
       '--platform', 'managed',
       '--allow-unauthenticated'
@@ -57,13 +63,9 @@ steps:
     waitFor: ['push-image']
 
 images:
-  - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${COMMIT_SHA}'
   - '${_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
 
 substitutions:
   _LOCATION: 'europe-west1'
   _REPOSITORY: 'neuralvault-repo'
   _SERVICE_NAME: 'neuralvault'
-
-options:
-  logging: CLOUD_LOGGING

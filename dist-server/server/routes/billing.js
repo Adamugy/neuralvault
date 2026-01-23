@@ -1,9 +1,8 @@
-import express, { Router } from 'express';
+import { Router } from 'express';
 import * as BillingController from '../controllers/billing.js';
-import { requireApiAuth } from '../middlewares/auth.js';
+import { requireApiAuth } from '../middleware/auth.js';
 const router = Router();
-// Webhook needs raw body, no auth
-router.post('/webhooks/stripe', express.raw({ type: 'application/json' }), BillingController.webhook);
+// Webhook is handled in app.ts for custom path /webhook
 router.post('/checkout', requireApiAuth, BillingController.checkout);
 router.post('/portal', requireApiAuth, BillingController.portal);
 export default router;

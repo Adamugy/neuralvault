@@ -4,13 +4,14 @@ import { ResourceBoard } from '../ResourceBoard';
 import { ViewState } from '../../types';
 import React from 'react';
 
-// Mock Clerk
-vi.mock('@clerk/clerk-react', () => ({
+// Mock AuthContext
+vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isLoaded: true,
     getToken: vi.fn().mockResolvedValue('test-token'),
   }),
 }));
+
 
 const mockResources = [
   {

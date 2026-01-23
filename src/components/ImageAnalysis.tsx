@@ -1,17 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, X, Zap, Loader2, ScanLine, Lock, Star, Sparkles, Brain, Bot, Copy, Download, ScanEye } from 'lucide-react';
-import { analyzeImageWithGemini } from '../services/geminiService';
-import { UserProfile } from '../types';
+import { Upload, Image as ImageIcon, X, Zap, Loader2, ScanLine, Lock, Star, Sparkles, Brain, Bot, Copy, Download, ScanEye, GraduationCap } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { UserProfile, Resource } from '../types';
+import { SearchBar } from './SearchBar';
+
 
 interface ImageAnalysisProps {
     userProfile?: UserProfile;
+    resources?: Resource[];
     onOpenUpgrade?: () => void;
 }
 
-export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpenUpgrade }) => {
+export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resources = [], onOpenUpgrade }) => {
+  const { getToken } = useAuth();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [result, setResult] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -63,8 +68,22 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
     setIsAnalyzing(true);
     try {
       const finalPrompt = prompt.trim() || "Analyze this image in detail. Identify any diagrams, mathematical formulas, or code related to deep learning. Explain the concepts shown.";
-      const analysisText = await analyzeImageWithGemini(selectedImage, finalPrompt);
-      setResult(analysisText);
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      formData.append('prompt', finalPrompt);
+
+      const res = await fetch('/api/ai/analyze-image', {
+          method: 'POST',
+          headers: {
+              'Authorization': `Bearer ${token}`
+          },
+          body: formData
+      });
+
+      if (!res.ok) throw new Error('Analysis failed');
+      const data = await res.json();
+      setResult(data.text);
     } catch (error) {
       setResult("Error analyzing image. Please try again.");
     } finally {
@@ -73,23 +92,41 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
   };
 
   return (
-    <div className="h-full bg-transparent flex flex-col p-6 overflow-y-auto scrollbar-hide">
-      <div className="max-w-4xl mx-auto w-full space-y-8">
-        
-        <div className="glass-panel p-8 rounded-2xl border border-white/10 relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-4 opacity-20">
-               <ImageIcon className="w-32 h-32 text-[var(--neon-primary)]" />
-           </div>
-           <div className="relative z-10">
-               <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-                   <ScanEye className="w-8 h-8 text-[var(--neon-primary)]" />
-                   Visual Learning Analysis
-               </h1>
-               <p className="text-slate-400 max-w-xl text-lg">
-                   Upload diagrams, textbook pages, or handwritten notes. Our multimodal AI will explain concepts, solve problems, or convert handwriting to text.
-               </p>
-           </div>
+    <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
+      {/* Uniform Header */}
+      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <ScanEye className="w-4 h-4 text-white" />
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="text-sm font-bold text-white tracking-tight">Image Analysis</h1>
+            <div className="flex items-center gap-2 text-[10px] text-slate-500">
+               <Sparkles className="w-3 h-3 text-amber-500" />
+               <span>Visual AI Insights</span>
+            </div>
+          </div>
         </div>
+
+        {/* Uniform Search Bar */}
+        <SearchBar 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            resources={resources}
+        />
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+            {!isPremium && (
+                <button onClick={onOpenUpgrade} className="text-[10px] bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-3 py-1 rounded-full font-bold animate-pulse shadow-lg">
+                PRO
+                </button>
+            )}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+        <div className="max-w-4xl mx-auto w-full space-y-8">
+            {/* The old big header is removed/slimmed down to content */}
 
         {/* Upload Area */}
         <div
@@ -97,7 +134,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             className={`
-                relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
+                relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300
                 ${isDragging 
                     ? 'border-[var(--neon-primary)] bg-[var(--neon-primary)]/10 shadow-[0_0_30px_-10px_var(--neon-primary)]' 
                     : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'}
@@ -120,9 +157,9 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
                     />
                     <button 
                       onClick={clearImage}
-                      className="absolute -top-3 -right-3 p-2 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                      className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
                     >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                     </button>
                     {!result && !isAnalyzing && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
@@ -162,9 +199,9 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
             <div className="flex justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
                 <button
                     onClick={handleAnalyze}
-                    className="flex items-center gap-2 px-8 py-3 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/90 text-white rounded-xl font-bold shadow-[0_0_20px_-5px_var(--neon-primary)] transition-all transform hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/90 text-white rounded-xl font-bold shadow-[0_0_15px_-5px_var(--neon-primary)] transition-all transform hover:scale-105 text-sm"
                 >
-                    <Sparkles className="w-5 h-5" />
+                    <Sparkles className="w-4 h-4" />
                     Analyze Image
                 </button>
             </div>
@@ -173,10 +210,10 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
         {/* Loading State */}
         {isAnalyzing && (
              <div className="glass-panel border border-white/10 rounded-2xl p-8 text-center animate-in fade-in">
-                 <div className="w-16 h-16 mx-auto mb-4 relative">
+                 <div className="w-12 h-12 mx-auto mb-4 relative">
                      <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
                      <div className="absolute inset-0 rounded-full border-4 border-t-[var(--neon-primary)] animate-spin"></div>
-                     <Brain className="absolute inset-0 m-auto w-6 h-6 text-white animate-pulse" />
+                     <Brain className="absolute inset-0 m-auto w-5 h-5 text-white animate-pulse" />
                  </div>
                  <h3 className="text-xl font-bold text-white mb-2">Analyzing Visual Content</h3>
                  <p className="text-slate-400">Extracting text, identifying diagrams, and generating insights...</p>
@@ -187,8 +224,8 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
         {result && (
             <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
                 <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Bot className="w-5 h-5 text-[var(--neon-primary)]" />
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <Bot className="w-4 h-4 text-[var(--neon-primary)]" />
                         Analysis Result
                     </h3>
                     <div className="flex gap-2">
@@ -216,30 +253,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, onOpe
                 </div>
             </div>
         )}
-
-        {/* Pro Feature Prompt (if needed) */}
-        {!isPremium && (
-            <div className="rounded-2xl p-1 bg-gradient-to-r from-[var(--neon-primary)] via-purple-500 to-[var(--neon-secondary)]">
-                <div className="bg-slate-950 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                     <div className="flex items-center gap-4">
-                         <div className="p-3 bg-[var(--neon-primary)]/20 rounded-lg text-[var(--neon-primary)]">
-                             <Zap className="w-6 h-6" />
-                         </div>
-                         <div>
-                             <h4 className="font-bold text-white text-lg">Upgrade to Pro</h4>
-                             <p className="text-slate-400">Get unlimited image analysis and higher resolution support.</p>
-                         </div>
-                     </div>
-                     <button 
-                        onClick={onOpenUpgrade}
-                        className="px-6 py-3 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/90 text-white rounded-xl font-bold whitespace-nowrap shadow-[0_0_15px_-5px_var(--neon-primary)] transition-all"
-                     >
-                         Unlock Pro Features
-                     </button>
-                </div>
-            </div>
-        )}
-
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,24 @@
+{
+    "mcpServers": {
+        "appwrite": {
+            "command": "npx",
+            "args": [
+                "appwrite-mcp-server"
+            ],
+            "env": {
+                "APPWRITE_PROJECT_ID": "6963cf250009194e6f1e",
+                "APPWRITE_API_KEY": "standard_01c287dddf2e401405ac7b846ccc7568e8763cc2a6a66ed70492c3a5ddfb635315c82ef0c6817d9873b59a996811eca98887fdab50a13882b5616fe4b9cf928c3a478a2f26005c7c492c21798cae4ced0ad60382d56849c5a46e8a2752a464397f682d4a57b633938ef504757af23b6f02dbadefb7c0d19fed56b93755059a55"
+            }
+        },
+        "stripe": {
+            "url": "https://mcp.stripe.com"
+        },
+        "prisma": {
+            "command": "npx",
+            "args": [
+                "prisma",
+                "mcp"
+            ]
+        }
+    }
+}

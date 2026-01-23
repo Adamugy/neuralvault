@@ -48,14 +48,16 @@ export const DL_TAGS = [
 
 // --- New Types for Settings & Management ---
 
-export type PlanTier = 'free' | 'researcher' | 'researcher_pro' | 'lab';
+export type PlanTier = 'free';
 
 export interface UserProfile {
   name: string;
+  lastName?: string;
   email: string;
   avatarUrl?: string;
   role: string;
   plan: PlanTier;
+  emailVerified?: boolean;
 }
 
 export interface AppSettings {

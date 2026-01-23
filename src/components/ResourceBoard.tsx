@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Plus, Search, Link as LinkIcon, FileText, Tag, Trash2, ExternalLink, CheckCircle2, Upload, Download, Folder, FolderPlus, X, MoreVertical, Lock } from 'lucide-react';
+import { Plus, Search, Link as LinkIcon, FileText, Tag, Trash2, ExternalLink, CheckCircle2, Upload, Download, Folder, FolderPlus, X, MoreVertical, Lock, Globe } from 'lucide-react';
+import { SearchBar } from './SearchBar';
 import { Resource, DL_TAGS, Folder as FolderType, AppSettings, UserProfile } from '../types';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../contexts/AuthContext';
+
 
 interface ResourceBoardProps {
   resources: Resource[];
@@ -19,6 +21,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const [newFolderName, setNewFolderName] = useState('');
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   
   // Folder State
   const [folders, setFolders] = useState<FolderType[]>([{ id: 'general', name: 'General' }]);
@@ -261,70 +264,75 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const renderResourceCard = (resource: Resource) => (
     <div 
       key={resource.id} 
-      className={`glass-panel border border-white/10 rounded-xl transition-all group relative backdrop-blur-md
-        ${resource.completed ? 'opacity-50 hover:opacity-100' : 'hover:border-[var(--neon-primary)]/50 hover:shadow-[0_0_20px_-10px_var(--neon-primary)]'}
-        ${layout === 'grid' ? 'p-5 flex flex-col' : 'p-4 flex items-center gap-4'}
+      className={`glass-panel border border-white/5 rounded-xl transition-all duration-300 group relative backdrop-blur-md
+        ${resource.completed ? 'opacity-40 hover:opacity-100' : 'hover:border-white/20 hover:bg-white/[0.02]'}
+        ${layout === 'grid' ? 'p-3 flex flex-col h-full' : 'p-2 flex items-center gap-3'}
       `}
     >
-      <div className={`${layout === 'grid' ? 'flex justify-between items-start mb-3 w-full' : 'flex-shrink-0'}`}>
-        <div className="flex items-center gap-3">
+      <div className={`${layout === 'grid' ? 'flex justify-between items-start mb-2.5 w-full' : 'flex-shrink-0'}`}>
+        <div className="flex items-center gap-2.5">
           <input 
             type="checkbox"
             checked={resource.completed}
             onChange={() => handleToggleComplete(resource.id)}
-            className="w-5 h-5 rounded border-white/20 bg-white/5 text-[var(--neon-primary)] focus:ring-[var(--neon-primary)] cursor-pointer accent-[var(--neon-primary)]"
+            className="w-3.5 h-3.5 rounded border-white/10 bg-white/5 text-[var(--neon-primary)] focus:ring-0 cursor-pointer accent-[var(--neon-primary)] transition-all"
           />
-          <div className={`p-2 rounded-lg ${resource.type === 'link' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'bg-purple-500/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.3)]'}`}>
-            {resource.type === 'link' ? <LinkIcon className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+          <div className={`${resource.type === 'link' ? 'text-blue-400/80' : 'text-purple-400/80'} transition-transform group-hover:scale-110 duration-300`}>
+            {resource.type === 'link' ? <LinkIcon className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
           </div>
         </div>
         {layout === 'grid' && (
-             <button onClick={() => handleDelete(resource.id)} className="text-slate-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                <Trash2 className="w-4 h-4" />
+             <button 
+                onClick={() => handleDelete(resource.id)} 
+                className="text-slate-600 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded-md"
+             >
+                <Trash2 className="w-3.5 h-3.5" />
              </button>
         )}
       </div>
       
-      <div className={`${layout === 'grid' ? 'mb-2' : 'flex-1 min-w-0'}`}>
-        <h3 className={`font-semibold text-slate-100 line-clamp-1 ${isCompact ? 'text-base' : 'text-lg'} ${resource.completed ? 'line-through text-slate-500' : 'group-hover:text-[var(--neon-primary)] transition-colors'}`}>
+      <div className={`${layout === 'grid' ? 'mb-1.5' : 'flex-1 min-w-0'}`}>
+        <h3 className={`font-medium text-slate-200 line-clamp-1 ${isCompact ? 'text-sm' : 'text-base'} ${resource.completed ? 'line-through text-slate-600' : 'group-hover:text-white transition-colors'}`}>
             {resource.title}
         </h3>
         {layout === 'list' && resource.notes && (
-             <p className="text-slate-500 text-xs truncate mt-0.5">{resource.notes}</p>
+             <p className="text-slate-500 text-[10px] truncate mt-0.5 font-light">{resource.notes}</p>
         )}
       </div>
       
       {layout === 'grid' && resource.notes && (
-        <p className={`text-slate-400 text-sm mb-4 line-clamp-3 ${isCompact ? 'min-h-[1.5rem]' : 'min-h-[3rem]'}`}>{resource.notes}</p>
+        <p className={`text-slate-500 text-[11px] mb-3 line-clamp-2 leading-relaxed font-light ${isCompact ? 'min-h-[0.8rem]' : 'min-h-[2rem]'}`}>
+            {resource.notes}
+        </p>
       )}
 
-      <div className={`flex flex-wrap gap-2 ${layout === 'grid' ? 'mb-4' : 'hidden lg:flex'}`}>
+      <div className={`flex flex-wrap gap-1.5 ${layout === 'grid' ? 'mb-4' : 'hidden lg:flex'}`}>
         {resource.tags.slice(0, layout === 'list' ? 2 : 3).map(tag => (
-          <span key={tag} className="text-[10px] px-2 py-1 bg-white/5 rounded text-slate-300 border border-white/10 group-hover:border-[var(--neon-primary)]/30 transition-colors">
+          <span key={tag} className="text-[9px] px-1.5 py-0.5 bg-white/[0.02] rounded text-slate-500 border border-white/5 font-medium tracking-tight">
             {tag}
           </span>
         ))}
         {resource.tags.length > (layout === 'list' ? 2 : 3) && (
-          <span className="text-[10px] px-2 py-1 bg-white/5 rounded text-slate-400 border border-white/10">
+          <span className="text-[9px] px-1.5 py-0.5 text-slate-600 font-medium">
             +{resource.tags.length - (layout === 'list' ? 2 : 3)}
           </span>
         )}
       </div>
 
-      <div className={`${layout === 'grid' ? 'flex items-center justify-between mt-auto pt-4 border-t border-white/10 w-full' : 'flex items-center gap-4 ml-auto'}`}>
-        <span className="text-xs text-slate-500 whitespace-nowrap">
-          {new Date(resource.dateAdded).toLocaleDateString()}
+      <div className={`${layout === 'grid' ? 'flex items-center justify-between mt-auto pt-3 w-full' : 'flex items-center gap-4 ml-auto'}`}>
+        <span className="text-[10px] text-slate-600 font-mono">
+          {new Date(resource.dateAdded).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
         </span>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0">
             {resource.type === 'link' && resource.url && (
             <a 
                 href={resource.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-xs flex items-center gap-1 text-[var(--neon-primary)] hover:text-white hover:underline whitespace-nowrap transition-colors"
+                className="text-[10px] flex items-center gap-1 text-slate-400 hover:text-[var(--neon-primary)] transition-colors font-medium"
             >
-                {layout === 'grid' && "Visit"} <ExternalLink className="w-3 h-3" />
+                Visit <ExternalLink className="w-2.5 h-2.5" />
             </a>
             )}
 
@@ -332,17 +340,18 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             <a 
                 href={resource.url}
                 download={resource.fileName || "download"}
-                className="text-xs flex items-center gap-1 text-[var(--neon-accent)] hover:text-white hover:underline transition-colors max-w-[120px]"
+                className="text-[10px] flex items-center gap-1 text-slate-400 hover:text-[var(--neon-accent)] transition-colors font-medium max-w-[100px]"
             >
-                {layout === 'grid' && (
-                    <span className="truncate">{resource.fileName || "Download"}</span>
-                )} 
-                <Download className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{resource.fileName || "Download"}</span>
+                <Download className="w-2.5 h-2.5 flex-shrink-0" />
             </a>
             )}
              {layout === 'list' && (
-                 <button onClick={() => handleDelete(resource.id)} className="text-slate-600 hover:text-red-400 transition-colors">
-                    <Trash2 className="w-4 h-4" />
+                 <button 
+                    onClick={() => handleDelete(resource.id)} 
+                    className="text-slate-600 hover:text-red-400 transition-colors p-1 hover:bg-red-500/10 rounded-md"
+                 >
+                    <Trash2 className="w-3.5 h-3.5" />
                  </button>
             )}
         </div>
@@ -352,68 +361,62 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
   return (
     <div className="h-full flex flex-col bg-transparent">
-      {/* Header */}
-      <div className={`${isCompact ? 'p-4' : 'p-6'} border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all`}>
-        <div>
-          <h1 className={`${isCompact ? 'text-xl' : 'text-2xl'} font-bold neon-gradient-text`}>Learning Resources</h1>
-          <p className="text-slate-400 text-sm">Organize your papers, datasets, and tutorials.</p>
+      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all bg-white/5 backdrop-blur-md z-30`}>
+        <div className="flex-shrink-0">
+          <h1 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold neon-gradient-text`}>Learning Resources</h1>
+          <p className="text-slate-500 text-xs hidden md:block">Organize your papers, datasets, and tutorials.</p>
         </div>
+
+        {/* Uniform Search Bar */}
+        <SearchBar 
+            searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm} 
+            resources={resources} 
+        />
+
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white px-4 py-2 rounded-lg font-medium transition-all shadow-[0_0_15px_-5px_var(--neon-primary)] hover:shadow-[0_0_20px_-5px_var(--neon-primary)]"
+          className="flex items-center justify-center gap-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white px-4 py-1.5 rounded-xl font-medium transition-all shadow-[0_0_15px_-5px_var(--neon-primary)] hover:shadow-[0_0_20px_-5px_var(--neon-primary)] text-sm flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
-          Add Resource
+          <span className="hidden sm:inline">Add Resource</span>
         </button>
       </div>
 
-      {/* Folders & Filters */}
       <div className="border-b border-white/10 bg-white/5 backdrop-blur-md">
-        <div className={`${isCompact ? 'p-3' : 'p-4'} flex flex-col gap-4`}>
-            
-            {/* Search */}
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                    type="text"
-                    placeholder="Search resources..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 text-slate-200 pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-[var(--neon-primary)] focus:bg-white/10 placeholder:text-slate-600 transition-all"
-                />
-            </div>
+        <div className={`${isCompact ? 'p-2' : 'p-3'} flex flex-col gap-3`}>
 
             <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
                 {/* Folder Tabs */}
                 <div className="flex gap-2">
                     <button
                         onClick={() => setActiveFolderId('all')}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
                         ${activeFolderId === 'all' 
-                            ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_15px_var(--neon-primary)/50]' 
+                            ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_10px_var(--neon-primary)/30]' 
                             : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}`}
                     >
-                        <Folder className="w-4 h-4" />
+                        <Folder className="w-3.5 h-3.5" />
                         All
                     </button>
                     {folders.map(folder => (
                         <button
                             key={folder.id}
                             onClick={() => setActiveFolderId(folder.id)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap
                             ${activeFolderId === folder.id 
-                                ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_15px_var(--neon-primary)/50]' 
+                                ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_10px_var(--neon-primary)/30]' 
                                 : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}`}
                         >
-                            <Folder className="w-4 h-4" />
+                            <Folder className="w-3.5 h-3.5" />
                             {folder.name}
                         </button>
                     ))}
                     <button
                         onClick={handleAddFolder}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-[var(--neon-primary)] hover:bg-white/5 border border-dashed border-white/20 hover:border-[var(--neon-primary)]/50 transition-all"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-[var(--neon-primary)] hover:bg-white/5 border border-dashed border-white/20 hover:border-[var(--neon-primary)]/50 transition-all"
                     >
-                        <FolderPlus className="w-4 h-4" />
+                        <FolderPlus className="w-3.5 h-3.5" />
                         New Folder
                     </button>
                 </div>
@@ -451,7 +454,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
           </div>
         ) : (
           <>
-            <div className={`grid gap-4 ${layout === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+            <div className={`grid gap-3 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-1'}`}>
               {activeResources.map(renderResourceCard)}
             </div>
 
@@ -465,7 +468,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                   </div>
                   <div className="h-px bg-white/10 flex-1" />
                 </div>
-                <div className={`grid gap-4 ${layout === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className={`grid gap-3 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-1'}`}>
                   {completedResources.map(renderResourceCard)}
                 </div>
               </div>
@@ -477,7 +480,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
       {/* Folder Modal */}
       {isFolderModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-md shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-sm shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col">
             <div className="p-6 border-b border-white/10 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white">Create Folder</h2>
               <button
@@ -531,7 +534,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-lg shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-md shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-white/10">
               <h2 className="text-xl font-bold text-white">Add New Resource</h2>
             </div>

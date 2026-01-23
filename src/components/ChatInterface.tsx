@@ -4,17 +4,22 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { ChatMessage, UserProfile } from '../types';
-import { sendMessageToGemini } from '../services/geminiService';
+import { ChatMessage, UserProfile, Resource } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { SearchBar } from './SearchBar';
+
 
 interface ChatInterfaceProps {
   userProfile?: UserProfile;
+  resources?: Resource[];
   onOpenUpgrade?: () => void;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, onOpenUpgrade }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resources = [], onOpenUpgrade }) => {
+  const { getToken } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingMode, setThinkingMode] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -48,7 +53,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, onOpe
     const history = messages.map(m => ({ role: m.role, content: m.content }));
 
     try {
-      const responseText = await sendMessageToGemini(userMsg.content, history, thinkingMode);
+      const token = await getToken();
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          message: userMsg.content,
+          history,
+          thinkingMode
+        })
+      });
+
+      if (!res.ok) throw new Error('Chat failed');
+      const data = await res.json();
+      const responseText = data.text;
       
       const botMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -94,39 +115,44 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, onOpe
       </div>
 
       {/* Header - Sleek & Floating */}
-      <div className="sticky top-0 z-20 px-6 py-4 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
-        <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
+        <div className="flex items-center gap-4 flex-shrink-0">
           <div className="relative">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg transform rotate-3 transition-transform hover:rotate-0">
-              <Bot className="w-6 h-6 text-white" />
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg transform rotate-3 transition-transform hover:rotate-0">
+              <Bot className="w-4 h-4 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-[#0a0a0c]" />
+            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-[#0a0a0c]" />
           </div>
-          <div>
-            <h2 className="font-semibold text-white tracking-tight flex items-center gap-2">
+          <div className="hidden sm:block">
+            <h2 className="font-semibold text-white tracking-tight flex items-center gap-2 text-sm leading-tight">
               Gemini 3 Pro
-              <span className="text-[10px] uppercase font-bold tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-indigo-400">Researcher</span>
+              <span className="text-[9px] uppercase font-bold tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-indigo-400">Researcher</span>
             </h2>
             <div className="flex items-center gap-2 text-[10px] text-slate-500">
-               <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-500" /> High Precision</span>
-               <span className="w-1 h-1 rounded-full bg-slate-700" />
-               <span>Ready to assist</span>
+               <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-500" /> Researcher</span>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
+        {/* Uniform Search Bar */}
+        <SearchBar 
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            resources={resources}
+        />
+
+        <div className="flex items-center gap-2 flex-shrink-0">
             <button
                 onClick={() => isPremium ? setThinkingMode(!thinkingMode) : onOpenUpgrade?.()}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[10px] font-medium transition-all duration-300 ${
                 thinkingMode 
-                    ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_15px_-5px_rgba(99,102,241,0.5)]' 
+                    ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_10px_-5px_rgba(99,102,241,0.5)]' 
                     : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
                 }`}
             >
-                <Brain className={`w-3.5 h-3.5 ${thinkingMode ? 'animate-pulse' : ''}`} />
+                <Brain className={`w-3 h-3 ${thinkingMode ? 'animate-pulse' : ''}`} />
                 <span>Raciocínio Profundo</span>
-                {!isPremium && <Lock className="w-3 h-3" />}
+                {!isPremium && <Lock className="w-2.5 h-2.5" />}
             </button>
         </div>
       </div>
@@ -170,9 +196,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, onOpe
             >
               <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg
+                <div className={`w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg
                   ${msg.role === 'user' ? 'bg-slate-800' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
-                  {msg.role === 'user' ? <User className="w-4 h-4 text-slate-100" /> : <Bot className="w-4 h-4 text-white" />}
+                  {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-slate-100" /> : <Bot className="w-3.5 h-3.5 text-white" />}
                 </div>
                 
                 {/* Content Area */}
@@ -277,18 +303,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, onOpe
               onKeyDown={handleKeyDown}
               placeholder={thinkingMode ? "Faça uma pergunta complexa para análise profunda..." : "Como posso ajudar seus estudos hoje?"}
               rows={1}
-              className="w-full bg-transparent text-slate-100 pl-6 pr-14 py-4 focus:outline-none resize-none min-h-[56px] max-h-48 text-sm scrollbar-hide"
+              className="w-full bg-transparent text-slate-100 pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className={`absolute right-3 bottom-2.5 p-2 rounded-2xl transition-all duration-300 group-focus-within:scale-105 active:scale-95
+              className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-2xl transition-all duration-300 group-focus-within:scale-105 active:scale-95
                 ${!input.trim() || isLoading 
                   ? 'text-slate-600 bg-white/5' 
-                  : 'text-white bg-indigo-500 hover:bg-indigo-400 shadow-[0_0_20px_-5px_rgba(99,102,241,0.8)]'}`}
+                  : 'text-white bg-indigo-500 hover:bg-indigo-400 shadow-[0_0_15px_-5px_rgba(99,102,241,0.8)]'}`}
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
           <p className="text-center text-[10px] text-slate-600 mt-4 font-medium tracking-wide">

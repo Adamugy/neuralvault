@@ -1,25 +1,22 @@
 @import "tailwindcss";
 
-:root {
-  --neon-primary: #6366f1;
-  --neon-secondary: #06b6d4;
-  --neon-accent: #d946ef;
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
+@layer theme {
+  :root {
+    --neon-primary: #6366f1;
+    --neon-secondary: #22d3ee;
+    --neon-accent: #d946ef;
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
 }
 
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 10px rgba(99, 102, 241, 0.5), 0 0 20px rgba(99, 102, 241, 0.3);
+    text-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
   }
 
   .box-glow {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-  }
-
-  .border-glow {
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.2), inset 0 0 10px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
   }
 
   .glass-panel {
@@ -29,46 +26,41 @@
   }
 
   .neon-gradient-text {
-    background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+    background: linear-gradient(to right, #6366f1, #22d3ee, #d946ef);
     -webkit-background-clip: text;
-    background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
     color: transparent;
   }
-}
 
-@keyframes float {
-  0% {
-    transform: translateY(0px);
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
-  50% {
-    transform: translateY(-10px);
-  }
-
-  100% {
-    transform: translateY(0px);
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
+/* Custom Scrollbar Global */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+::-webkit-scrollbar-track {
+  background: #020617;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 4s ease-in-out infinite;
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
 }
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Animations defined in tailwind.config.js usually suffice, 
+   but specific one-off keyframes can live here if needed 
+   to match User's direct CSS request */

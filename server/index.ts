@@ -1,18 +1,21 @@
-import dotenv from 'dotenv';
+import { env } from './utils/env.js';
 import app from './app.js';
-
-dotenv.config({ path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local' });
-dotenv.config();
-
-const isProduction = process.env.NODE_ENV === 'production';
-console.log(`[Config] NodeEnv: ${process.env.NODE_ENV}, AppURL: ${process.env.APP_URL}`);
-const port = Number(process.env.PORT || (isProduction ? 3000 : 3001));
+import { checkDatabaseConnection } from './services/prisma.js';
 
 const startServer = async () => {
+    console.log(`[Config] NodeEnv: ${env.NODE_ENV}, Port: ${env.PORT}`);
+
+    // Check DB connection before starting
+    const isDbConnected = await checkDatabaseConnection();
+    if (!isDbConnected && env.NODE_ENV === 'production') {
+        console.error('❌ Critical: Database connection failed in production. Exiting.');
+        process.exit(1);
+    }
+
     if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
-        app.listen(port, () => {
-            console.log(`Servidor rodando em http://localhost:${port}`);
-            console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+        app.listen(env.PORT, () => {
+            console.log(`🚀 Servidor rodando em http://localhost:${env.PORT}`);
+            console.log(`🌍 Ambiente: ${env.NODE_ENV}`);
         });
     }
 };

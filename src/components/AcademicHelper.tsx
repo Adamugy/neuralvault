@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
-import { BookOpen, PenTool, Sparkles, FileText, ChevronRight, Loader2, GraduationCap, Download, Library, Lock, Bot, Copy, Save, X, Search, Folder, Edit3, Wand2, TextQuote, Shrink, Maximize2, Check, RefreshCw, Trash2, Paperclip, FileCheck } from 'lucide-react';
+import { BookOpen, PenTool, Sparkles, FileText, ChevronRight, Loader2, GraduationCap, Download, Library, Lock, Bot, Copy, Save, X, Search, Folder, Edit3, Wand2, TextQuote, Shrink, Maximize2, Check, RefreshCw, Trash2, Paperclip, FileCheck, Send } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { generateAcademicAssistance, organizeResourcesWithAI } from '../services/geminiService';
 import { Resource, UserProfile, Folder as FolderType } from '../types';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../contexts/AuthContext';
+import { SearchBar } from './SearchBar';
 
-type TaskType = 'outline' | 'draft' | 'refine' | 'abstract' | 'organize';
+
+type TaskType = 'outline' | 'draft' | 'refine' | 'abstract' | 'organize' | 'custom';
+
+interface SelectedResource {
+    id: string;
+    type: 'file' | 'library';
+    name: string;
+    preview?: string;
+    libraryData?: Resource;
+    fileData?: File;
+}
+
+interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+}
 
 interface AcademicHelperProps {
   resources: Resource[];
@@ -28,8 +44,8 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Pending Files State
-  const [pendingFiles, setPendingFiles] = useState<{ file: File; preview?: string }[]>([]);
+  // Research Focus (Unified Files + Library Resources)
+  const [researchFocus, setResearchFocus] = useState<SelectedResource[]>([]);
 
   // Modal Library State
   const [folders, setFolders] = useState<FolderType[]>([{ id: 'all', name: 'All' }, { id: 'general', name: 'General' }]);
@@ -40,6 +56,12 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const [isEditing, setIsEditing] = useState(false);
   const [editedResult, setEditedResult] = useState('');
   const [isManipulating, setIsManipulating] = useState(false);
+
+  // Chat/Interaction State
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const chatEndRef = React.useRef<HTMLDivElement>(null);
 
   const isPremium = userProfile?.plan !== 'free';
 
@@ -81,13 +103,6 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     setResult(''); 
     
     try {
-      if (activeTask === 'organize') {
-        const output = await organizeResourcesWithAI(topic, resources, level);
-        setResult(output);
-        setEditedResult(output);
-        setIsEditing(false);
-      } else {
-        // Use Server-side API with FormData
         const token = await getToken();
         const formData = new FormData();
         formData.append('taskType', activeTask);
@@ -95,8 +110,43 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         formData.append('content', contentInput);
         formData.append('level', level);
         
-        pendingFiles.forEach(pf => {
-            formData.append('files', pf.file);
+        if (activeTask === 'organize') {
+            // Include resources list for organizer
+            formData.append('content', JSON.stringify(resources.map(r => ({
+                title: r.title,
+                notes: r.notes,
+                tags: r.tags
+            }))));
+        }
+
+        if (activeTask === 'organize') {
+            // Include library resources if they are in the context
+            const libResources = researchFocus
+                .filter(item => item.type === 'library' && item.libraryData)
+                .map(item => ({
+                    title: item.libraryData!.title,
+                    notes: item.libraryData!.notes,
+                    tags: item.libraryData!.tags
+                }));
+            
+            formData.append('content', JSON.stringify([
+                ...libResources,
+                { type: 'instruction', text: contentInput || topic }
+            ]));
+        } else {
+            // For other tasks, inject library context into the content field
+            const libraryContext = researchFocus
+                .filter(item => item.type === 'library' && item.libraryData)
+                .map(item => `[Reference: ${item.libraryData!.title}] Notes: ${item.libraryData!.notes}`)
+                .join('\n\n');
+            
+            formData.append('content', contentInput + (libraryContext ? '\n\n' + libraryContext : ''));
+        }
+
+        researchFocus.forEach(item => {
+            if (item.type === 'file' && item.fileData) {
+                formData.append('files', item.fileData);
+            }
         });
 
         const res = await fetch('/api/academic/generate', {
@@ -112,9 +162,14 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         setResult(data.result);
         setEditedResult(data.result);
         setIsEditing(false);
-        // Clear files after successful generation
-        setPendingFiles([]);
-      }
+        setResearchFocus([]);
+        
+        // Initialize chat with the first response
+        setMessages([{
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `I've generated the document based on your topic "${topic}". How would you like to refine it?`
+        }]);
     } catch (error) {
       setResult("An error occurred while generating content. Please try again.");
     } finally {
@@ -127,19 +182,133 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     
     setIsManipulating(true);
     try {
-        const promptMap = {
-            summarize: "Summarize this content while maintaining its academic core:",
-            expand: "Expand on the following points to provide more depth and academic rigor:",
-            simplify: "Simplify the language of this text to make it more accessible without losing technical accuracy:"
+        const promoPromptMap = {
+            summarize: "Summarize this content while maintaining its academic core for a ${level} student:",
+            expand: "Expand on the following points to provide more depth and academic rigor for a ${level} student:",
+            simplify: "Simplify the language of this text to make it more accessible without losing technical accuracy for a ${level} student:"
         };
 
-        const output = await generateAcademicAssistance('refine', promptMap[type], result, level);
-        setResult(output);
-        setEditedResult(output);
+        const token = await getToken();
+        const res = await fetch('/api/academic/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                taskType: 'refine',
+                topic: type,
+                content: result,
+                level: level
+            })
+        });
+
+        if (!res.ok) throw new Error('Manipulation failed');
+        const data = await res.json();
+        setResult(data.result);
+        setEditedResult(data.result);
     } catch (error) {
         console.error("Manipulation failed", error);
     } finally {
         setIsManipulating(false);
+    }
+};
+
+  const handleChatSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || isGenerating) return;
+
+    const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: chatInput
+    };
+
+    setMessages(prev => [...prev, userMsg]);
+    const currentInput = chatInput;
+    setChatInput('');
+    setIsGenerating(true);
+
+    try {
+        const token = await getToken();
+        const res = await fetch('/api/academic/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                taskType: 'refine',
+                topic: `Refinement based on: ${currentInput}`,
+                content: result, // Sending current document as context
+                level: level
+            })
+        });
+
+        if (!res.ok) throw new Error('Refinement failed');
+        const data = await res.json();
+        
+        // Update the document result
+        setResult(data.result);
+        setEditedResult(data.result);
+
+        setMessages(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `I've updated the document. I incorporated your request: "${currentInput}"`
+        }]);
+    } catch (error) {
+        console.error("Chat failure", error);
+        setMessages(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: "Sorry, I couldn't process that request. Please try again."
+        }]);
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!result) return;
+    if (!isPremium) {
+        onOpenUpgrade?.();
+        return;
+    }
+
+    try {
+        const token = await getToken();
+        const res = await fetch('/api/academic/export-pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title: topic.split('\n')[0] || "Academic Document",
+                content: result,
+                // We could extract formulas if we had a parsing step, 
+                // but for now we'll send the whole content.
+            })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || 'Failed to export PDF');
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${topic.split('\n')[0] || 'document'}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error: any) {
+        console.error("PDF Export failed", error);
+        alert(error.message);
     }
   };
 
@@ -180,29 +349,41 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const newFiles = Array.from(files).map(file => {
+      const newFocusItems = Array.from(files).map(file => {
           const isImage = file.type.startsWith('image/');
           return {
-              file,
-              preview: isImage ? URL.createObjectURL(file) : undefined
+              id: crypto.randomUUID(),
+              type: 'file' as const,
+              name: file.name,
+              preview: isImage ? URL.createObjectURL(file) : undefined,
+              fileData: file
           };
       });
 
-      setPendingFiles(prev => [...prev, ...newFiles]);
+      setResearchFocus(prev => [...prev, ...newFocusItems]);
       if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleRemoveFile = (index: number) => {
-      setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveFocus = (id: string) => {
+      setResearchFocus(prev => prev.filter(item => item.id !== id));
   };
 
   const handleSelectResource = (res: Resource) => {
-      const content = `[Reference: ${res.title}]\nNotes: ${res.notes}\nLink: ${res.url || 'N/A'}`;
-      if (activeTask === 'refine') {
-          setContentInput(prev => prev + "\n\n" + content);
-      } else {
-          setTopic(prev => prev + "\n\n" + content);
+      const isDuplicate = researchFocus.some(item => item.libraryData?.id === res.id);
+      if (isDuplicate) {
+          setIsLibraryOpen(false);
+          return;
       }
+
+      const newFocusItem: SelectedResource = {
+          id: crypto.randomUUID(),
+          type: 'library',
+          name: res.title,
+          libraryData: res,
+          preview: res.type === 'link' ? undefined : undefined // We could add a thumbnail here if available
+      };
+
+      setResearchFocus(prev => [...prev, newFocusItem]);
       setIsLibraryOpen(false);
   };
 
@@ -215,19 +396,31 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
   return (
     <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
-       {/* Header */}
-       <div className="p-6 border-b border-white/10 glass-panel backdrop-blur-md z-10">
-           <div className="flex items-center justify-between">
-               <div>
-                   <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                       <GraduationCap className="w-8 h-8 text-[var(--neon-primary)]" />
-                       Academic Assistant
-                   </h1>
-                   <p className="text-slate-400 text-sm">Generate summaries, outlines, and refinements.</p>
+       <div className="py-2.5 px-6 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise z-30 sticky top-0">
+           <div className="flex items-center gap-4 flex-shrink-0">
+               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                   <GraduationCap className="w-5 h-5 text-white" />
                </div>
+               <div className="hidden sm:block">
+                   <h1 className="text-sm font-bold text-white tracking-tight">Academic Assistant</h1>
+                   <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                       <Sparkles className="w-3 h-3 text-amber-500" />
+                       <span>AI Research Helper</span>
+                   </div>
+               </div>
+           </div>
+
+           {/* Uniform Search Bar */}
+           <SearchBar 
+             searchTerm={searchTerm}
+             setSearchTerm={setSearchTerm}
+             resources={resources}
+           />
+
+           <div className="flex items-center gap-3 flex-shrink-0">
                {!isPremium && (
-                 <button onClick={onOpenUpgrade} className="text-xs bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full font-bold animate-pulse shadow-lg">
-                    UPGRADE TO EXPORT
+                 <button onClick={onOpenUpgrade} className="text-[10px] bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full font-bold animate-pulse shadow-lg">
+                    UPGRADE
                  </button>
                )}
            </div>
@@ -238,107 +431,172 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            <div className="w-full lg:w-[400px] flex-col border-r border-white/10 glass-panel lg:flex shadow-xl z-10 overflow-y-auto scrollbar-hide">
                
                {/* Task Selector */}
-               <div className="p-4 grid grid-cols-2 gap-2">
-                   {tasks.map(task => (
-                       <button
-                         key={task.id}
-                         onClick={() => setActiveTask(task.id)}
-                         className={`p-3 rounded-xl border text-left transition-all duration-300 ${
-                             activeTask === task.id
-                             ? 'bg-[var(--neon-primary)]/10 border-[var(--neon-primary)] shadow-[0_0_10px_-5px_var(--neon-primary)]'
-                             : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                         }`}
-                       >
-                           <div className="flex items-center gap-2 mb-1">
-                               <task.icon className={`w-4 h-4 ${activeTask === task.id ? 'text-[var(--neon-primary)]' : 'text-slate-400'}`} />
-                               <span className={`font-bold text-sm ${activeTask === task.id ? 'text-white' : 'text-slate-300'}`}>{task.label}</span>
-                           </div>
-                           <p className="text-[10px] text-slate-500 leading-tight">{task.desc}</p>
-                       </button>
-                   ))}
-               </div>
-
-               {/* Input Area */}
-               <div className="flex-1 p-4 pt-0 space-y-4">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            {activeTask === 'refine' ? 'Content to Refine' : 'Research Context / Topic'}
-                        </label>
-                        <textarea
-                            value={activeTask === 'refine' ? contentInput : topic}
-                            onChange={(e) => activeTask === 'refine' ? setContentInput(e.target.value) : setTopic(e.target.value)}
-                            placeholder={activeTask === 'refine' ? "Paste your draft here..." : "Describe your paper topic or paste notes..."}
-                            className="w-full h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none transition-all font-mono leading-relaxed"
-                        />
-                    </div>
-
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={() => setIsLibraryOpen(true)}
-                            className="flex-1 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 text-xs font-medium hover:bg-white/10 hover:text-white transition-colors flex items-center justify-center gap-2"
+                <div className="p-3 grid grid-cols-2 gap-2">
+                    {tasks.map(task => (
+                        <button
+                          key={task.id}
+                          onClick={() => setActiveTask(task.id)}
+                          className={`p-2 rounded-xl border text-left transition-all duration-300 ${
+                              activeTask === task.id
+                              ? 'bg-[var(--neon-primary)]/10 border-[var(--neon-primary)] shadow-[0_0_10px_-5px_var(--neon-primary)]'
+                              : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                          }`}
                         >
-                            <Library className="w-4 h-4" /> Browse Library
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <task.icon className={`w-3.5 h-3.5 ${activeTask === task.id ? 'text-[var(--neon-primary)]' : 'text-slate-400'}`} />
+                                <span className={`font-bold text-xs ${activeTask === task.id ? 'text-white' : 'text-slate-300'}`}>{task.label}</span>
+                            </div>
+                            <p className="text-[9px] text-slate-500 leading-tight">{task.desc}</p>
                         </button>
-                        <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploading}
-                            className="flex-1 py-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 text-xs font-medium hover:bg-white/10 hover:text-white transition-colors flex items-center justify-center gap-2 relative overflow-hidden"
-                        >
-                            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                            {isUploading ? 'Reading...' : 'Upload PDF'}
-                        </button>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef}
-                            className="hidden" 
-                            accept=".pdf,.txt,.doc,.docx"
-                            onChange={handleFileSelect}
-                            multiple
-                        />
-                    </div>
+                    ))}
+                </div>
 
-                    {/* Pending Files Preview */}
-                    {pendingFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2">
-                            {pendingFiles.map((pf, idx) => (
-                                <div key={idx} className="relative group p-2 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2">
-                                    {pf.preview ? (
-                                        <img src={pf.preview} alt="preview" className="w-8 h-8 rounded object-cover border border-white/10" />
-                                    ) : (
-                                        <div className="w-8 h-8 rounded bg-[var(--neon-primary)]/20 flex items-center justify-center text-[var(--neon-primary)]">
-                                            {pf.file.name.endsWith('.pdf') ? <FileText className="w-4 h-4" /> : <Paperclip className="w-4 h-4" />}
+                {/* Sidebar Content: Form or Chat */}
+               <div className="flex-1 p-4 pt-0 space-y-4 overflow-y-auto">
+                    {!result ? (
+                        <>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                    {activeTask === 'refine' ? 'Content to Refine' : 'Research Context / Topic'}
+                                </label>
+                                <textarea
+                                    value={activeTask === 'refine' ? contentInput : topic}
+                                    onChange={(e) => activeTask === 'refine' ? setContentInput(e.target.value) : setTopic(e.target.value)}
+                                    placeholder={activeTask === 'refine' ? "Paste your draft here..." : "Describe your paper topic or paste notes..."}
+                                    className="w-full h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none transition-all font-mono leading-relaxed"
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => setIsLibraryOpen(true)}
+                                    className="flex-1 py-1.5 bg-white/5 border border-white/10 rounded-lg text-slate-400 text-[10px] font-medium hover:bg-white/10 hover:text-white transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    <Library className="w-3.5 h-3.5" /> Browse Library
+                                </button>
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isUploading}
+                                    className="flex-1 py-1.5 bg-white/5 border border-white/10 rounded-lg text-slate-400 text-[10px] font-medium hover:bg-white/10 hover:text-white transition-colors flex items-center justify-center gap-1.5 relative overflow-hidden"
+                                >
+                                    {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
+                                    {isUploading ? 'Reading...' : 'Upload PDF'}
+                                </button>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden" 
+                                    accept=".pdf,.txt,.doc,.docx"
+                                    onChange={handleFileSelect}
+                                    multiple
+                                />
+                            </div>
+
+                            {/* Research Focus Preview */}
+                            {researchFocus.length > 0 && (
+                                <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2">
+                                    {researchFocus.map((item) => (
+                                        <div key={item.id} className="relative group p-1.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-2">
+                                            {item.preview ? (
+                                                <img src={item.preview} alt="preview" className="w-6 h-6 rounded object-cover border border-white/10" />
+                                            ) : (
+                                                <div className={`w-6 h-6 rounded flex items-center justify-center ${item.type === 'file' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                                    {item.type === 'file' ? <FileText className="w-3.5 h-3.5" /> : <Library className="w-3.5 h-3.5" />}
+                                                </div>
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] text-white font-medium max-w-[70px] truncate">{item.name}</span>
+                                                <span className="text-[7px] text-slate-500 uppercase">
+                                                    {item.type === 'file' ? 'File' : 'Library'}
+                                                </span>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleRemoveFocus(item.id)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/40 transition-all ml-0.5"
+                                            >
+                                                <X className="w-2.5 h-2.5" />
+                                            </button>
                                         </div>
-                                    )}
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] text-white font-medium max-w-[80px] truncate">{pf.file.name}</span>
-                                        <span className="text-[8px] text-slate-500 uppercase">{(pf.file.size / 1024).toFixed(0)} KB</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => handleRemoveFile(idx)}
-                                        className="opacity-0 group-hover:opacity-100 p-1 bg-red-500/20 text-red-400 rounded-md hover:bg-red-500/40 transition-all ml-1"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
+                                    ))}
                                 </div>
-                            ))}
+                            )}
+
+                            <div className="pt-4 border-t border-white/10">
+                                <button
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                    className={`w-full py-2.5 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2
+                                        ${isGenerating
+                                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
+                                            : 'bg-[var(--neon-primary)] text-white hover:bg-[var(--neon-primary)]/90 shadow-[0_0_15px_-5px_var(--neon-primary)]'
+                                        }
+                                    `}
+                                >
+                                    {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    <span className="text-sm">{isGenerating ? 'Analyzing...' : 'Generate Content'}</span>
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="h-full flex flex-col">
+                             <div className="flex-1 space-y-4 mb-4">
+                                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                                    <p className="text-[10px] uppercase font-bold text-indigo-400 mb-1">Current Research Topic</p>
+                                    <p className="text-xs text-white line-clamp-2">{topic || "Custom Research"}</p>
+                                </div>
+                                
+                                {/* Chat Messages */}
+                                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                                    {messages.map((msg) => (
+                                        <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                            <div className={`max-w-[90%] p-3 rounded-2xl text-xs leading-relaxed ${
+                                                msg.role === 'user' 
+                                                ? 'bg-[var(--neon-primary)]/20 border border-[var(--neon-primary)]/30 text-white rounded-tr-sm' 
+                                                : 'bg-white/5 border border-white/10 text-slate-300 rounded-tl-sm'
+                                            }`}>
+                                                {msg.content}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div ref={chatEndRef} />
+                                </div>
+                             </div>
+
+                             <div className="mt-auto pt-4 border-t border-white/10">
+                                 <form onSubmit={handleChatSubmit} className="relative">
+                                    <textarea
+                                        value={chatInput}
+                                        onChange={(e) => setChatInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                e.preventDefault();
+                                                handleChatSubmit();
+                                            }
+                                        }}
+                                        placeholder="Ask to refine, add context, or summarize..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pr-12 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none min-h-[50px] max-h-32"
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={isGenerating || !chatInput.trim()}
+                                        className="absolute right-3 bottom-3 p-2 bg-[var(--neon-primary)] text-white rounded-xl disabled:opacity-50"
+                                    >
+                                        {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                    </button>
+                                 </form>
+                                 <button 
+                                    onClick={() => {
+                                        setResult('');
+                                        setMessages([]);
+                                        setResearchFocus([]);
+                                    }}
+                                    className="w-full mt-2 py-2 text-[10px] font-bold text-slate-500 hover:text-red-400 transition-colors uppercase tracking-widest text-center"
+                                 >
+                                    Start New Topic
+                                 </button>
+                             </div>
                         </div>
                     )}
-
-                    <div className="pt-4 border-t border-white/10">
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isGenerating}
-                            className={`w-full py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2
-                                ${isGenerating
-                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed shadow-none'
-                                    : 'bg-[var(--neon-primary)] text-white hover:bg-[var(--neon-primary)]/90 shadow-[0_0_20px_-5px_var(--neon-primary)]'
-                                }
-                            `}
-                        >
-                            {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                            {isGenerating ? 'Analyzing...' : 'Generate Content'}
-                        </button>
-                    </div>
                </div>
            </div>
 
@@ -376,11 +634,11 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                         <Copy className="w-5 h-5" />
                                     </button>
                                      <button 
-                                        onClick={handleExportDocx}
+                                        onClick={handleExportPdf}
                                         className="p-2 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-900 transition-colors"
-                                        title="Download .doc"
+                                        title="Download PDF (Quarto)"
                                     >
-                                        <Download className="w-5 h-5" />
+                                        <FileCheck className="w-5 h-5" />
                                     </button>
                                 </div>
                              </div>
@@ -488,7 +746,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
        {/* Library Modal - Mini ResourceBoard */}
        {isLibraryOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 sm:p-8">
-               <div className="glass-panel border border-white/10 rounded-3xl w-full max-w-4xl h-[80vh] flex flex-col shadow-[0_0_100px_-20px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300 overflow-hidden">
+               <div className="glass-panel border border-white/10 rounded-3xl w-full max-w-3xl h-[80vh] flex flex-col shadow-[0_0_100px_-20px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-300 overflow-hidden">
                    
                    {/* Modal Header */}
                    <div className="p-6 border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/5">

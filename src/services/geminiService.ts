@@ -1,194 +1,38 @@
-import { GoogleGenAI } from "@google/genai";
-import { Resource } from "../types";
+/**
+ * geminiService.ts
+ * Service to handle chat interactions for the Gemini Demo component.
+ * Mocks responses for the landing page demonstration.
+ */
 
-const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+interface HistoryItem {
+    role: 'user' | 'model';
+    content: string;
+}
 
-// Helper to convert Blob to Base64 (Standard for the SDK if not using Uri)
-export const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        const base64Data = reader.result.split(',')[1];
-        resolve({
-          inlineData: {
-            data: base64Data,
-            mimeType: file.type,
-          },
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-};
-
-export const sendMessageToGemini = async (
-  message: string,
-  history: { role: 'user' | 'model'; content: string }[],
-  useThinking: boolean = false
+export const chatWithTutor = async (
+    message: string,
+    history: HistoryItem[]
 ): Promise<string> => {
-  if (!apiKey) return "Error: API Key is missing.";
+    // Simulate network latency
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-  try {
-    const modelName = 'gemini-3-flash-preview';
+    const lowerMsg = message.toLowerCase();
 
-    const chat = ai.chats.create({
-      model: modelName,
-      config: {
-        systemInstruction: "You are an expert AI Assistant specialized in Deep Learning and Artificial Intelligence. You help students organize their knowledge, understand complex papers, and debug code. Be concise, accurate, and helpful. If the user speaks Portuguese, reply in Portuguese. If they speak English, reply in English.",
-      },
-      history: history.map(h => ({
-        role: h.role,
-        parts: [{ text: h.content }]
-      }))
-    });
-
-    const result = await chat.sendMessage({ message });
-    return result.text || "No response received.";
-
-  } catch (error) {
-    console.error("Gemini Chat Error:", error);
-    return `Error communicating with Gemini: ${error instanceof Error ? error.message : String(error)}`;
-  }
-};
-
-export const analyzeImageWithGemini = async (
-  imageFile: File,
-  prompt: string
-): Promise<string> => {
-  if (!apiKey) return "Error: API Key is missing.";
-
-  try {
-    const imagePart = await fileToGenerativePart(imageFile);
-
-    // Using gemini-3-flash-preview for fast image analysis
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { inlineData: imagePart.inlineData },
-            { text: prompt || "Analyze this image in the context of deep learning study." }
-          ]
-        }
-      ]
-    });
-
-    return response.text || "No analysis generated.";
-
-  } catch (error) {
-    console.error("Gemini Image Analysis Error:", error);
-    return `Error analyzing image: ${error instanceof Error ? error.message : String(error)}`;
-  }
-};
-
-export const generateAcademicAssistance = async (
-  taskType: 'outline' | 'draft' | 'refine' | 'abstract',
-  topic: string,
-  content: string,
-  level: string
-): Promise<string> => {
-  if (!apiKey) return "Error: API Key is missing.";
-
-  try {
-    const model = 'gemini-3-pro-preview';
-
-    let prompt = "";
-    const systemInstruction = `You are an expert academic advisor and scientific writer acting as a mentor for a ${level} student. Your tone should be formal, objective, and academically rigorous. `;
-
-    switch (taskType) {
-      case 'outline':
-        prompt = `Create a comprehensive, structured outline for a scientific paper/TCC about "${topic}". Include chapter titles, section headings, and bullet points for key arguments to cover in each section. Suggest potential methodologies if applicable.`;
-        break;
-      case 'draft':
-        prompt = `Write a first draft for a section about "${topic}". Use the following key points/context provided by the student: \n\n"${content}". \n\nEnsure the writing flows logically, uses appropriate academic vocabulary, and maintains a high standard of clarity.`;
-        break;
-      case 'refine':
-        prompt = `Review and improve the following text. Enhance the clarity, academic tone, grammar, and flow. Point out any weak arguments. Text to refine: \n\n"${content}"`;
-        break;
-      case 'abstract':
-        prompt = `Generate a structured abstract (Background, Methods, Results, Conclusion) for a paper about "${topic}". Use the following details: \n\n"${content}". \n\nKeep it under 300 words.`;
-        break;
+    if (lowerMsg.includes('p vs np')) {
+        return "The P vs NP problem asks whether every problem whose solution can be quickly verified (NP) can also be quickly solved (P). \n\n### Core Concept\n- **P (Polynomial Time):** Problems solvable reasonably fast (e.g., sorting a list).\n- **NP (Nondeterministic Polynomial Time):** Problems where checking a solution is fast, but finding it might be impossible in reasonable time (e.g., Sudoku, Traveling Salesman).\n\nIf P = NP, it would mean we could solve cancer, break all cryptography, and perfect logistics instantly. Most researchers believe **P ≠ NP**.";
     }
 
-    const response = await ai.models.generateContent({
-      model: model,
-      config: {
-        systemInstruction,
-        maxOutputTokens: 8192
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ]
-    });
+    if (lowerMsg.includes('paper') || lowerMsg.includes('outline')) {
+        return "Here is a structural outline for your ML paper:\n\n1. **Abstract**: Briefly state the problem (e.g., 'Transformer efficiency') and your proposed solution (e.g., 'Sparse Attention Mechanism').\n2. **Introduction**: Contextualize the problem. Why do current models fail? What is your contribution?\n3. **Methodology**: \n   - Architecture Diagram\n   - Mathematical Formulation of the Attention Head\n   - Training Setup (Hyperparameters)\n4. **Experiments**: Compare against benchmarks (BERT, GPT-2). Use clear tables.\n5. **Conclusion**: Summarize impact and future work.";
+    }
 
-    return response.text || "Could not generate content.";
+    if (lowerMsg.includes('python') || lowerMsg.includes('code')) {
+        return "I can analyze that. Please paste your snippet. Generally, for Python optimization:\n- Use **vectorization** (NumPy/Pandas) instead of loops.\n- Use **generators** for large datasets to save memory.\n- Profile with `cProfile` to find bottlenecks.";
+    }
 
-  } catch (error) {
-    console.error("Gemini Academic Error:", error);
-    return `Error generating content: ${error instanceof Error ? error.message : String(error)}`;
-  }
-};
+    if (lowerMsg.includes('hubble') || lowerMsg.includes('data')) {
+        return "Analyzing Hubble data requires handling FITS files. \n\n**Key Steps:**\n1. **Data Reduction**: Remove cosmic rays and background noise.\n2. **Photometry**: Measure flux of stars/galaxies using `sep` or `photutils`.\n3. **Spectroscopy**: If available, analyze redshift (z) to determine distance.\n\n*Would you like a Python script to load a FITS file?*";
+    }
 
-export const organizeResourcesWithAI = async (
-  query: string,
-  resources: Resource[],
-  level: string
-): Promise<string> => {
-  if (!apiKey) return "Error: API Key is missing.";
-
-  try {
-    const model = 'gemini-pro-latest';
-
-    const resourceList = resources.map(r => ({
-      title: r.title,
-      type: r.type,
-      tags: r.tags.join(', '),
-      notes: r.notes,
-      date: new Date(r.dateAdded).toLocaleDateString()
-    }));
-
-    const systemInstruction = `You are an expert academic librarian and research advisor for a ${level} student.`;
-
-    const prompt = `
-      User Query/Goal: "${query}"
-      
-      Below is the student's personal library of resources (JSON format):
-      ${JSON.stringify(resourceList)}
-      
-      Task:
-      1. Analyze the user's library in relation to their goal.
-      2. Select the most relevant resources from the list.
-      3. Create a "Study Plan" or "Research Roadmap" that organizes these resources logically.
-      4. For each section of the plan, explain *why* that specific resource is useful for their goal.
-      5. Identify any gaps: what key topics are missing from their library given their goal?
-      
-      Output Format: Markdown. Use bolding for resource titles so they stand out.
-    `;
-
-    const response = await ai.models.generateContent({
-      model: model,
-      config: {
-        systemInstruction,
-        maxOutputTokens: 4096
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }]
-        }
-      ]
-    });
-
-    return response.text || "Could not organize resources.";
-
-  } catch (error) {
-    console.error("Gemini Organizer Error:", error);
-    return `Error organizing resources: ${error instanceof Error ? error.message : String(error)}`;
-  }
+    return "That's a fascinating topic. As a research tutor, I can help you explore it deeper. Could you provide more specific details or data you'd like me to analyze?";
 };

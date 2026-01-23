@@ -3,13 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
-import { ClerkProvider } from '@clerk/clerk-react';
-
-// Get the publishable key from environment variables or injected from server
-const PUBLISHABLE_KEY = (window as any).VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-if (!PUBLISHABLE_KEY && import.meta.env.PROD) {
-  console.warn("Clerk Publishable Key not found in window or env.");
-}
+import { AuthProvider } from './contexts/AuthContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -17,16 +11,13 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
+
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <ClerkProvider 
-        publishableKey={PUBLISHABLE_KEY}
-        signInUrl="/sign-in"
-        signUpUrl="/sign-up"
-      >
+      <AuthProvider>
         <App />
-      </ClerkProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

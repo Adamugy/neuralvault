@@ -3,10 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../../server/app.js';
 
-// Mock Clerk
-vi.mock('@clerk/express', () => ({
-    clerkMiddleware: () => (req: any, res: any, next: any) => next(),
-    getAuth: vi.fn().mockReturnValue({ userId: 'test_user' }),
+// Mock AuthService
+vi.mock('../../server/services/authService.js', () => ({
+    AuthService: {
+        verifyToken: vi.fn().mockReturnValue({ userId: 'test_user', email: 'test@test.com' }),
+        validateSession: vi.fn().mockResolvedValue(true),
+    }
 }));
 
 // Mock Prisma
@@ -14,8 +16,7 @@ vi.mock('@prisma/client', () => {
     return {
         PrismaClient: class {
             user = {
-                upsert: vi.fn().mockResolvedValue({ clerkUserId: 'test_user', plan: 'free' }),
-                findUnique: vi.fn(),
+                findUnique: vi.fn().mockResolvedValue({ id: 'test_user', email: 'test@test.com', plan: 'free' }),
                 update: vi.fn(),
             };
             folder = {
@@ -46,17 +47,24 @@ describe('API Endpoints Integration', () => {
         expect(res.body).toEqual({ ok: true });
     });
 
-    it('GET /api/me should return user info after ensuring user exists', async () => {
-        const res = await request(app).get('/api/me');
+    it('GET /api/auth/me should return user info', async () => {
+        const res = await request(app)
+            .get('/api/auth/me')
+            .set('Authorization', 'Bearer test-token');
+
         expect(res.status).toBe(200);
-        expect(res.body.user.clerkUserId).toBe('test_user');
+        expect(res.body.user.id).toBe('test_user');
         expect(res.body.user.plan).toBe('free');
     });
 
     it('GET /api/bootstrap should return empty lists initially', async () => {
-        const res = await request(app).get('/api/bootstrap');
+        const res = await request(app)
+            .get('/api/bootstrap')
+            .set('Authorization', 'Bearer test-token');
+
         expect(res.status).toBe(200);
         expect(res.body.folders).toEqual([]);
         expect(res.body.resources).toEqual([]);
     });
 });
+

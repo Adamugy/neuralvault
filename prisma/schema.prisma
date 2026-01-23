@@ -3,9 +3,91 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl = env("DIRECT_DATABASE_URL")
+}
+
+model User {
+  plan           PlanTier        @default(free)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  avatarUrl      String?
+  email          String          @unique
+  emailVerified  Boolean         @default(false)
+  id             String          @id @default(uuid())
+  name           String?
+  lastName       String?
+  passwordHash   String?
+  role           String?
+  folders        Folder[]
+  resources      Resource[]
+  sessions       Session[]
+  authenticators Authenticator[]
+  currentChallenge String?
+  verificationToken String?
+}
+
+model Authenticator {
+  id                   String   @id @default(uuid())
+  credentialID         String   @unique
+  credentialPublicKey  Bytes
+  counter              BigInt
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String[]
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Folder {
+  id        String     @id @default(uuid())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resources Resource[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Resource {
+  id        String       @id @default(uuid())
+  type      ResourceType
+  title     String
+  url       String?
+  fileName  String?
+  fileType  String?
+  fileUrl   String?
+  tags      String[]
+  notes     String       @default("")
+  dateAdded DateTime     @default(now())
+  completed Boolean      @default(false)
+  folderId  String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  userId    String
+  folder    Folder?      @relation(fields: [folderId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, folderId])
 }
 
 enum ResourceType {
@@ -15,56 +97,4 @@ enum ResourceType {
 
 enum PlanTier {
   free
-  researcher
-  researcher_pro
-  lab
-}
-
-model User {
-  clerkUserId          String    @id
-  plan                 PlanTier  @default(free)
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  stripePriceId        String?
-  subscriptionStatus   String?
-  currentPeriodEnd     DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-}
-
-model Folder {
-  id          String     @id @default(uuid())
-  clerkUserId String
-  name        String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  resources   Resource[]
-
-  @@index([clerkUserId])
-  @@unique([clerkUserId, name])
-}
-
-model Resource {
-  id          String       @id @default(uuid())
-  clerkUserId String
-  type        ResourceType
-  title       String
-  url         String?
-  fileName    String?
-  fileType    String?
-  fileUrl     String?
-  tags        String[]
-  notes       String       @default("")
-  dateAdded   DateTime     @default(now())
-  completed   Boolean      @default(false)
-
-  folderId    String?
-  folder      Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
-
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  @@index([clerkUserId])
-  @@index([clerkUserId, folderId])
 }

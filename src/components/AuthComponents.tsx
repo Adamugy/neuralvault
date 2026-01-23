@@ -1,17 +1,24 @@
 // components/AuthComponents.tsx
-import React from 'react';
-import { SignIn, SignUp, useUser, useClerk } from '@clerk/clerk-react';
+import React, { useState } from 'react';
+import { useAuth, useUser } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, ChevronLeft } from 'lucide-react';
+import { BrainCircuit, ChevronLeft, Loader2, Mail, Lock, User as UserIcon, Fingerprint, Building, Check } from 'lucide-react';
+import { usePasskeys } from '../hooks/usePasskeys';
 
-const AuthLayout = ({ children, title }: { children: React.ReactNode, title: string }) => {
+const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowClass2 }: { 
+  children: React.ReactNode, 
+  title: string,
+  subtitle?: string,
+  accentGlowClass1?: string,
+  accentGlowClass2?: string
+}) => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
       {/* Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
-          <div className="absolute top-[20%] left-[30%] w-[500px] h-[500px] bg-[var(--neon-primary)]/15 rounded-full blur-[120px] animate-pulse-glow" />
-          <div className="absolute bottom-[20%] right-[30%] w-[400px] h-[400px] bg-[var(--neon-secondary)]/15 rounded-full blur-[100px] animate-float" />
+          <div className={`absolute top-[20%] left-[30%] w-[500px] h-[500px] rounded-full blur-[120px] animate-pulse-glow ${accentGlowClass1 || 'bg-[var(--neon-primary)]/15'}`} />
+          <div className={`absolute bottom-[20%] right-[30%] w-[400px] h-[400px] rounded-full blur-[100px] animate-float ${accentGlowClass2 || 'bg-[var(--neon-secondary)]/15'}`} />
       </div>
 
       <div className="w-full max-w-md relative z-10 p-6">
@@ -26,6 +33,7 @@ const AuthLayout = ({ children, title }: { children: React.ReactNode, title: str
         <div className="text-center mb-8">
             <BrainCircuit className="w-12 h-12 text-[var(--neon-primary)] mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-white mb-2">{title}</h1>
+            {subtitle && <p className="text-slate-400 text-sm max-w-[280px] mx-auto">{subtitle}</p>}
         </div>
 
         <div className="glass-panel p-8 rounded-3xl border border-white/10 shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]">
@@ -36,54 +44,410 @@ const AuthLayout = ({ children, title }: { children: React.ReactNode, title: str
   );
 };
 
-const appearance = {
-    elements: {
-        formButtonPrimary: 'bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold',
-        card: 'bg-transparent shadow-none w-full p-0',
-        headerTitle: 'hidden',
-        headerSubtitle: 'hidden',
-        socialButtonsBlockButton: 'bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl py-2.5',
-        socialButtonsBlockButtonText: 'text-white font-medium',
-        dividerLine: 'bg-white/10',
-        dividerText: 'text-slate-500',
-        formFieldLabel: 'text-slate-400',
-        formFieldInput: 'bg-slate-950/50 border-white/10 text-white focus:border-[var(--neon-primary)] focus:ring-[var(--neon-primary)]/20 rounded-xl',
-        footerActionLink: 'text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium',
-        formFieldInputShowPasswordButton: 'text-slate-400 hover:text-white'
-    }
-};
-
 export const SignInPage = () => {
+  const { signIn, setSession, loading } = useAuth();
+  const { loginWithPasskey } = usePasskeys();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await signIn(email, password);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in');
+    }
+  };
+
+  const handlePasskeyLogin = async () => {
+    if (!email) {
+      setError('Por favor, insira seu email primeiro para usar a Passkey.');
+      return;
+    }
+    setError('');
+    setPasskeyLoading(true);
+    try {
+      const result = await loginWithPasskey(email);
+      setSession(result.token, result.user);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
+
   return (
-    <AuthLayout title="Welcome Back">
-        <SignIn 
-            routing="path"
-            path="/sign-in"
-            signUpUrl="/sign-up"
-            afterSignInUrl="/dashboard"
-            appearance={appearance}
-        />
+    <AuthLayout 
+      title="Welcome Back" 
+      subtitle="Access your neural workspace"
+      accentGlowClass1="bg-indigo-500/15"
+      accentGlowClass2="bg-purple-500/15"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Email</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={loading || passkeyLoading}
+          className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+        </button>
+
+        <div className="relative py-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-white/5"></div>
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-[#0f172a] px-2 text-slate-500">Ou use biometria</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handlePasskeyLogin}
+          disabled={loading || passkeyLoading}
+          className="w-full bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all hover:border-[var(--neon-primary)]/50 group"
+        >
+          {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin text-[var(--neon-primary)]" /> : <Fingerprint className="w-4 h-4 text-[var(--neon-primary)] group-hover:scale-110 transition-transform" />}
+          Entrar com Passkey
+        </button>
+
+        <p className="text-center text-slate-400 text-sm mt-4">
+          Don't have an account?{' '}
+          <button 
+            type="button"
+            onClick={() => navigate('/sign-up')}
+            className="text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium"
+          >
+            Sign Up
+          </button>
+        </p>
+      </form>
     </AuthLayout>
   );
 };
 
 export const SignUpPage = () => {
+  const { signUp, loading } = useAuth();
+  const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await signUp(email, password, name, role, lastName);
+      // We don't auto-login anymore. Show success message and navigate to verify.
+      alert('Cadastro realizado! Por favor, verifique seu e-mail para ativar sua conta antes de fazer o login.');
+      navigate('/verify-email');
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign up');
+    }
+  };
+
   return (
-    <AuthLayout title="Join NeuralVault">
-        <SignUp 
-            routing="path"
-            path="/sign-up"
-            signInUrl="/sign-in"
-            afterSignUpUrl="/onboarding"
-            appearance={appearance}
-        />
+    <AuthLayout 
+      title="Join NeuralVault" 
+      subtitle="Start your augmented research journey"
+      accentGlowClass1="bg-emerald-500/15"
+      accentGlowClass2="bg-teal-500/15"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Name</label>
+          <div className="relative">
+            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="Your Name"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Sobrenome (Last Name)</label>
+          <div className="relative">
+            <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="text"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="Your Last Name"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Role / Title</label>
+          <div className="relative">
+            <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="text"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="e.g. Researcher, Student"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Email</label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-slate-400 text-sm mb-2">Password</label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="••••••••"
+              required
+              minLength={8}
+            />
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+        >
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign Up'}
+        </button>
+
+        <p className="text-center text-slate-400 text-sm mt-4">
+          Already have an account?{' '}
+          <button 
+            type="button"
+            onClick={() => navigate('/sign-in')}
+            className="text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium"
+          >
+            Sign In
+          </button>
+        </p>
+      </form>
     </AuthLayout>
   );
 };
 
+export const VerifyEmailPage = () => {
+    const navigate = useNavigate();
+    const [token, setToken] = useState('');
+    const [email, setEmail] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [message, setMessage] = useState('');
+
+    React.useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenParam = urlParams.get('token');
+        if (tokenParam) {
+            setToken(tokenParam);
+            const autoVerify = async () => {
+                setStatus('loading');
+                try {
+                    const res = await fetch('/api/auth/verify-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: tokenParam })
+                    });
+                    if (res.ok) {
+                        setStatus('success');
+                        setMessage('Email verificado com sucesso! Seu acesso foi liberado.');
+                    } else {
+                        const data = await res.json();
+                        throw new Error(data.message || 'Falha na verificação automática.');
+                    }
+                } catch (err: any) {
+                    setStatus('error');
+                    setMessage(err.message);
+                }
+            };
+            autoVerify();
+        }
+    }, []);
+
+    const handleVerify = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatus('loading');
+        try {
+            const res = await fetch('/api/auth/verify-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setStatus('success');
+                setMessage('Email verificado com sucesso! Você já pode entrar.');
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (err: any) {
+            setStatus('error');
+            setMessage(err.message);
+        }
+    };
+
+    const handleResend = async () => {
+        if (!email) {
+            alert('Por favor, informe seu e-mail primeiro.');
+            return;
+        }
+        try {
+            const res = await fetch('/api/auth/resend-verification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            if (res.ok) {
+                alert('E-mail de verificação reenviado!');
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Erro ao reenviar.');
+            }
+        } catch (err) {
+            alert('Erro de conexão ao reenviar.');
+        }
+    };
+
+    return (
+        <AuthLayout 
+            title="Verifique seu Email" 
+            subtitle="Um link de verificação foi gerado. Insira o token recebido abaixo para confirmar sua conta."
+            accentGlowClass1="bg-blue-500/15"
+            accentGlowClass2="bg-cyan-500/15"
+        >
+            {status === 'success' ? (
+                <div className="text-center space-y-6 animate-in fade-in zoom-in duration-500">
+                    <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
+                        <Check className="w-8 h-8 text-emerald-500" />
+                    </div>
+                    <p className="text-white font-medium">{message}</p>
+                    <button 
+                        onClick={() => navigate('/sign-in')} 
+                        className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white py-3 rounded-xl font-bold transition-colors"
+                    >
+                        Fazer Login
+                    </button>
+                </div>
+            ) : (
+                <form onSubmit={handleVerify} className="space-y-6">
+                    {status === 'error' && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+                            {message}
+                        </div>
+                    )}
+                    
+                    <div className="text-center p-4 bg-white/5 border border-white/10 rounded-2xl mb-4">
+                        <p className="text-slate-400 text-xs italic">
+                            Dica: Em ambiente de desenvolvimento, verifique os logs do servidor para obter o token de 32 caracteres.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-slate-400 text-sm mb-2">Seu E-mail (para reenvio)</label>
+                        <input 
+                            type="email" 
+                            value={email} 
+                            onChange={e => setEmail(e.target.value)} 
+                            placeholder="seu@email.com" 
+                            className="w-full bg-slate-950/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-all mb-4"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-slate-400 text-sm mb-2">Token de Verificação</label>
+                        <input 
+                            type="text" 
+                            value={token} 
+                            onChange={e => setToken(e.target.value)} 
+                            placeholder="Cole seu token aqui..." 
+                            className="w-full bg-slate-950/50 border border-white/10 text-white px-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-all"
+                            required
+                        />
+                    </div>
+                    
+                    <button 
+                        type="submit" 
+                        disabled={status === 'loading'} 
+                        className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 transition-colors disabled:opacity-50"
+                    >
+                        {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirmar Email'}
+                    </button>
+                    
+                    <p className="text-center text-slate-400 text-sm">
+                        Não recebeu? <button type="button" onClick={handleResend} className="text-[var(--neon-primary)] font-medium">Reenviar link</button>
+                    </p>
+                </form>
+            )}
+        </AuthLayout>
+    );
+};
+
 export const UserButton = () => {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
+  const { user, isLoaded, isSignedIn, signOut } = useAuth();
   const navigate = useNavigate();
 
   if (!isLoaded) {
@@ -100,11 +464,9 @@ export const UserButton = () => {
             if (dropdown) dropdown.classList.toggle('hidden');
           }}
         >
-          <img 
-            src={user.imageUrl} 
-            alt={user.fullName || 'User'} 
-            className="w-9 h-9 rounded-full border-2 border-[var(--neon-primary)]/50 hover:border-[var(--neon-primary)] transition-colors"
-          />
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm border-2 border-[var(--neon-primary)]/50 hover:border-[var(--neon-primary)] transition-colors">
+            {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
+          </div>
         </button>
         
         <div 
@@ -116,8 +478,8 @@ export const UserButton = () => {
           }}
         >
           <div className="px-4 py-3 border-b border-white/5 mb-2">
-            <p className="font-bold text-white truncate">{user.fullName}</p>
-            <p className="text-slate-400 text-xs truncate">{user.primaryEmailAddress?.emailAddress}</p>
+            <p className="font-bold text-white truncate">{user.name || 'User'}</p>
+            <p className="text-slate-400 text-xs truncate">{user.email}</p>
           </div>
           <button
             onClick={() => navigate('/dashboard/settings')}
@@ -126,7 +488,10 @@ export const UserButton = () => {
             Settings
           </button>
           <button
-            onClick={() => signOut(() => navigate('/'))}
+            onClick={async () => {
+              await signOut();
+              navigate('/');
+            }}
             className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
           >
             Sign out

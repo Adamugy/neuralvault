@@ -1,234 +1,548 @@
 import React, { useState, useEffect } from 'react';
-import { SignIn } from '@clerk/clerk-react';
-import { BrainCircuit, Check, ChevronRight, GraduationCap, LayoutDashboard, MessageSquareText, ScanEye, X, Zap, Shield, Globe } from 'lucide-react';
+import { 
+  BrainCircuit, 
+  ChevronRight, 
+  GraduationCap, 
+  LayoutDashboard, 
+  MessageSquareText, 
+  ScanEye, 
+  Zap, 
+  Shield, 
+  Globe, 
+  Sparkles,
+  ArrowRight,
+  Database,
+  Cpu,
+  Layers,
+  X,
+  Activity,
+  ChevronUp
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import GeminiDemo from './GeminiDemo';
 
-export const LandingPage = () => {
-  const [showLogin, setShowLogin] = useState(false);
+interface Feature {
+  icon: any;
+  title: string;
+  description: string;
+  color: string;
+  details?: string;
+}
+
+const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Feature) => void }) => (
+  <div 
+    onClick={() => onOpen(feature)}
+    className="glass-panel p-8 rounded-2xl border-indigo-500/10 hover:border-indigo-500/50 transition-all duration-500 group hover:-translate-y-2 hover:shadow-[0_20px_50px_-20px_rgba(99,102,241,0.3)] relative overflow-hidden cursor-pointer"
+  >
+    <div className={`absolute top-0 right-0 w-32 h-32 bg-${feature.color}/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-${feature.color}/10 transition-colors`} />
+    <div className={`w-14 h-14 bg-slate-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/5 group-hover:border-indigo-500/30 shadow-inner`}>
+      <feature.icon className={`w-7 h-7 text-indigo-400 group-hover:text-cyan-400 transition-colors`} />
+    </div>
+    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition-colors">{feature.title}</h3>
+    <p className="text-slate-400 leading-relaxed text-sm group-hover:text-slate-300">{feature.description}</p>
+    <div className="mt-6 flex items-center text-xs font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
+      Learn More <ArrowRight className="ml-1 w-3 h-3" />
+    </div>
+  </div>
+);
+
+const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [scrollY, setScrollY] = useState(0);
-
-  const toggleLogin = () => setShowLogin(!showLogin);
+  const [activeSection, setActiveSection] = useState('hero');
+  const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
+  const [isSystemActive, setIsSystemActive] = useState(false);
 
   useEffect(() => {
-    let rafId: number | null = null;
-    const onScroll = () => {
-      if (rafId !== null) return;
-      rafId = window.requestAnimationFrame(() => {
-        setScrollY(window.scrollY || 0);
-        rafId = null;
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Dynamic Navigation Observer
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
       });
     };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = ['hero', 'features', 'demo', 'stats'];
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
     return () => {
       window.removeEventListener('scroll', onScroll);
-      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      observer.disconnect();
     };
   }, []);
 
-  const features = [
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const offset = 80;
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const features: Feature[] = [
     {
       icon: MessageSquareText,
       title: "Gemini 3 Pro Tutor",
-      description: "Chat with an advanced AI that understands deep learning concepts, math, and code with deep reasoning capabilities."
+      description: "Chat with an advanced AI that understands deep learning concepts, math, and code with multi-step reasoning.",
+      color: "indigo-500",
+      details: "Our tutor isn't just a chatbot; it's a reasoning engine trained on vast academic datasets. It utilizes Chain-of-Thought processing to break down complex theorems."
     },
     {
       icon: ScanEye,
-      title: "Visual Analysis",
-      description: "Upload diagrams, whiteboard photos, or paper screenshots. Our AI extracts formulas and explains architectures instantly."
+      title: "Visual Intelligence",
+      description: "Upload diagrams or whiteboard photos. Our AI extracts formulas and explains complex architectures instantly.",
+      color: "cyan-400",
+      details: "Leveraging the multimodal capabilities of Gemini 3 Pro, Visual Intelligence identifies handwritten LaTeX and research charts with high accuracy."
     },
     {
       icon: LayoutDashboard,
       title: "Resource Manager",
-      description: "Organize your arXiv papers, GitHub repos, and datasets in one unified board with smart tagging and search."
+      description: "Organize arXiv papers, GitHub repos, and datasets in one board with semantic tagging and cross-linking.",
+      color: "fuchsia-500",
+      details: "Transform static PDFs into dynamic knowledge graphs. The manager automatically cross-references papers with codebases."
     },
     {
       icon: GraduationCap,
-      title: "Academic Writer",
-      description: "Generate outlines, refine drafts, and organize your thesis or research papers with context-aware AI assistance."
+      title: "Academic Drafting",
+      description: "Generate outlines, refine messy drafts, and structure your thesis with context-aware academic assistance.",
+      color: "emerald-400",
+      details: "NeuralVault maintains your unique academic voice while suggesting structural improvements based on top research papers."
     }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-[var(--neon-primary)]/30 overflow-x-hidden relative">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 overflow-x-hidden relative scroll-smooth">
       
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-[var(--neon-primary)]/20 rounded-full blur-[120px] animate-pulse-glow" />
-          <div className="absolute top-[30%] right-[10%] w-[600px] h-[600px] bg-[var(--neon-accent)]/15 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute bottom-[-10%] left-[30%] w-[400px] h-[400px] bg-[var(--neon-secondary)]/15 rounded-full blur-[100px] animate-float" style={{ animationDelay: '4s' }} />
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[5%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[140px] animate-pulse-glow" />
+          <div className="absolute top-[40%] right-[-5%] w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-[5%] left-[20%] w-[700px] h-[700px] bg-fuchsia-600/5 rounded-full blur-[160px] animate-float" style={{ animationDelay: '3s' }} />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
       </div>
 
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-40 bg-slate-950/60 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 group cursor-pointer">
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${scrollY > 20 ? 'bg-slate-950/80 backdrop-blur-xl border-b border-white/5 py-3' : 'bg-transparent py-6'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
                 <div className="relative">
-                    <BrainCircuit className="w-8 h-8 text-[var(--neon-primary)] relative z-10 group-hover:scale-110 transition-transform duration-300" />
-                    <div className="absolute inset-0 bg-[var(--neon-primary)] blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
+                    <BrainCircuit className="w-8 h-8 text-indigo-400 relative z-10 group-hover:scale-110 transition-transform duration-300" />
+                    <div className="absolute inset-0 bg-indigo-500 blur-md opacity-40 group-hover:opacity-70 transition-opacity" />
                 </div>
-                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 group-hover:to-white transition-all">NeuralVault</span>
+                <span className="font-black text-2xl tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-slate-500 group-hover:to-indigo-400 transition-all">NeuralVault</span>
             </div>
+            
+            <div className="hidden md:flex items-center gap-10 text-xs font-black uppercase tracking-widest">
+              <button 
+                onClick={() => scrollToSection('features')} 
+                className={`py-2 relative group transition-colors ${activeSection === 'features' ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+              >
+                Features
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-indigo-500 transition-all ${activeSection === 'features' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+              </button>
+              <button 
+                onClick={() => scrollToSection('demo')} 
+                className={`py-2 relative group transition-colors ${activeSection === 'demo' ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+              >
+                Interactive Demo
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-indigo-500 transition-all ${activeSection === 'demo' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+              </button>
+              <button 
+                onClick={() => scrollToSection('stats')} 
+                className={`py-2 relative group transition-colors ${activeSection === 'stats' ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+              >
+                Ecosystem
+                <span className={`absolute bottom-0 left-0 h-0.5 bg-indigo-500 transition-all ${activeSection === 'stats' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+              </button>
+            </div>
+
             <div className="flex items-center gap-4">
                 <button 
-                onClick={toggleLogin}
-                className="text-sm font-medium text-slate-300 hover:text-white hover:text-glow transition-all"
+                  onClick={() => navigate('/sign-in')}
+                  className="text-xs font-black text-slate-400 hover:text-white transition-all uppercase tracking-widest px-4"
                 >
-                Log In
+                  Log In
                 </button>
                 <button 
-                onClick={toggleLogin}
-                className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white rounded-lg text-sm font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] hover:scale-105 active:scale-95"
+                  onClick={() => navigate('/sign-up')}
+                  className="hidden sm:flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95"
                 >
-                Get Started <ChevronRight className="w-4 h-4" />
+                  Join Beta <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
         </div>
       </nav>
 
+      {/* Feature Modal */}
+      {selectedFeature && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
+            <div className="absolute inset-0" onClick={() => setSelectedFeature(null)} />
+            <div className="w-full max-w-xl glass-panel rounded-[2rem] p-8 border border-white/10 relative z-10 animate-in zoom-in-95 duration-300 shadow-[0_0_80px_-20px_rgba(99,102,241,0.4)]">
+                <button 
+                    onClick={() => setSelectedFeature(null)}
+                    className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 transition-colors"
+                >
+                    <X className="w-6 h-6 text-slate-500" />
+                </button>
+                <div className="flex items-center gap-4 mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                        <selectedFeature.icon className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <div>
+                        <h4 className="text-2xl font-black text-white">{selectedFeature.title}</h4>
+                        <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em]">Module Intelligence Alpha</div>
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <p className="text-slate-300 leading-relaxed text-lg italic border-l-2 border-indigo-500/30 pl-6">
+                        {selectedFeature.details}
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-[10px] font-black uppercase text-slate-500 mb-1">Compute Cost</div>
+                            <div className="text-white font-mono text-xs">High Frequency</div>
+                        </div>
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                            <div className="text-[10px] font-black uppercase text-slate-500 mb-1">Model Version</div>
+                            <div className="text-white font-mono text-xs">Gemini 3 Pro</div>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate('/sign-up')}
+                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg"
+                    >
+                        Activate this Module
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6 z-10">
-        <div className="max-w-5xl mx-auto text-center relative">
-          
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-panel text-xs font-semibold text-[var(--neon-secondary)] mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 hover:border-[var(--neon-secondary)]/50 transition-colors cursor-default box-glow">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--neon-secondary)] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--neon-secondary)]"></span>
+      <section id="hero" className="relative pt-40 pb-20 lg:pt-52 lg:pb-32 px-6 z-10">
+        <div className="max-w-6xl mx-auto text-center relative">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-panel text-xs font-black text-cyan-400 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 hover:border-cyan-400/50 transition-colors cursor-default group box-glow">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
             </span>
-            Next-Gen AI Research Assistant
+            <span className="tracking-[0.2em] uppercase">Reasoning Engine v3.0 Powered</span>
+            <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight leading-none animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 drop-shadow-2xl">
+          <h1 className="text-6xl md:text-[7.5rem] font-black text-white mb-8 tracking-tighter leading-[0.85] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
             Thinking <br />
-            <span className="neon-gradient-text text-glow">Beyond Sync</span>
+            <span className="neon-gradient-text text-glow">Beyond Sync.</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
-            A second brain that doesn't just store files, but <span className="text-white font-semibold">understands them</span>. 
-            Connect papers, code, and notes with semantic intelligence.
+          <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+            A second brain that doesn't just store files, it <span className="text-white font-black underline decoration-indigo-500/50 underline-offset-8">synthesizes insights</span>. 
+            Experience the next era of academic work.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
             <button 
-              onClick={toggleLogin}
-              className="w-full sm:w-auto px-8 py-4 bg-[var(--neon-primary)] text-white rounded-xl font-bold text-lg transition-all shadow-[0_0_25px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] hover:-translate-y-1 relative overflow-hidden group"
+              onClick={() => navigate('/sign-up')}
+              className="w-full sm:w-auto px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl transition-all shadow-[0_0_40px_rgba(99,102,241,0.4)] hover:shadow-[0_0_60px_rgba(99,102,241,0.6)] hover:-translate-y-1 relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-500 ease-out transform skew-x-12" />
+              <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out transform skew-x-12" />
               <span className="relative flex items-center justify-center gap-2">
-                Start Revolution <Zap className="w-5 h-5 fill-current" />
+                Deploy Brain <Zap className="w-6 h-6 fill-current" />
               </span>
             </button>
-            <a 
-              href="#features"
-              className="w-full sm:w-auto px-8 py-4 glass-panel hover:bg-white/5 text-white rounded-xl font-bold text-lg transition-all border border-white/10 hover:border-white/30 flex items-center justify-center gap-2"
+            <button 
+              onClick={() => scrollToSection('demo')}
+              className="w-full sm:w-auto px-10 py-5 glass-panel hover:bg-white/5 text-white rounded-2xl font-black text-xl transition-all border border-white/10 hover:border-white/30 flex items-center justify-center gap-2"
             >
-              Explore Logic
-            </a>
+              Test Logic
+            </button>
+          </div>
+
+          {/* Abstract Device Representation (Animated Window) */}
+          <div className="relative mt-24 max-w-5xl mx-auto animate-in fade-in zoom-in duration-1000 delay-500 group">
+            <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 via-cyan-400 to-fuchsia-500 rounded-[2.5rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
+            
+            <div className="relative glass-panel rounded-[2rem] border border-white/10 overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+               {/* Window Top Bar */}
+               <div className="flex items-center gap-3 p-5 border-b border-white/5 bg-slate-900/60 backdrop-blur-3xl">
+                 <div className="flex gap-1.5">
+                   <div className="w-3 h-3 rounded-full bg-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.3)]"></div>
+                   <div className="w-3 h-3 rounded-full bg-yellow-500/60 shadow-[0_0_10px_rgba(234,179,8,0.3)]"></div>
+                   <div className="w-3 h-3 rounded-full bg-green-500/60 shadow-[0_0_10px_rgba(34,197,94,0.3)]"></div>
+                 </div>
+                 <div className="flex-1 text-center">
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/5 text-[9px] font-mono text-slate-400 tracking-[0.2em] uppercase">
+                     NeuralVault-Intelligence-Layer_v3.0.core
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-2 text-slate-600">
+                    <Activity className="w-3 h-3 animate-pulse text-indigo-400" />
+                    <span className="text-[8px] font-black font-mono">STABLE</span>
+                 </div>
+               </div>
+
+               {/* Device Screen Content */}
+               <div className="aspect-video bg-[#020617] flex flex-col items-center justify-center relative overflow-hidden">
+                 {/* Visual Noise & Scanning */}
+                 <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none" />
+                 <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent animate-scanline pointer-events-none shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
+                 
+                 {/* Circuit Lines Connectivity (SVG) */}
+                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-40" viewBox="0 0 800 450">
+                    <path d="M250 225 L400 225" stroke="url(#gradient-line)" strokeWidth="1" fill="none" className="animate-circuit-flow" strokeDasharray="10 10" />
+                    <path d="M550 225 L400 225" stroke="url(#gradient-line)" strokeWidth="1" fill="none" className="animate-circuit-flow" strokeDasharray="10 10" />
+                    <defs>
+                      <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#6366f1" />
+                        <stop offset="100%" stopColor="#22d3ee" />
+                      </linearGradient>
+                    </defs>
+                 </svg>
+
+                 <div className="flex flex-col items-center gap-12 z-10 scale-90 sm:scale-100 w-full max-w-2xl px-12">
+                    <div className="grid grid-cols-3 gap-12 w-full relative">
+                       {/* Database Node */}
+                       <div className="flex flex-col items-center gap-6 group/node">
+                          <div className="relative">
+                            <div className="absolute -inset-4 bg-indigo-500/20 blur-xl opacity-0 group-hover/node:opacity-100 transition-opacity duration-500"></div>
+                            <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-indigo-500/50 transition-all">
+                              <Database className="w-10 h-10 text-indigo-400 group-hover/node:scale-110 transition-transform" />
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-[10px] font-black font-mono text-indigo-400 tracking-widest uppercase mb-1">Knowledge</div>
+                            <div className="text-[8px] font-mono text-slate-600">450k Indexed</div>
+                          </div>
+                       </div>
+
+                       {/* CPU Node (Active Thinking) */}
+                       <div className="flex flex-col items-center gap-6 group/node">
+                          <div className="relative">
+                            <div className="absolute -inset-6 bg-cyan-400/20 blur-2xl opacity-100 animate-pulse"></div>
+                            <div className="w-24 h-24 rounded-full bg-slate-900 border-2 border-cyan-400/40 flex items-center justify-center shadow-[0_0_50px_rgba(34,211,238,0.2)] relative z-10 animate-float">
+                              <Cpu className="w-12 h-12 text-cyan-400" />
+                              <div className="absolute inset-0 rounded-full border border-cyan-400/20 animate-ping"></div>
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-[10px] font-black font-mono text-cyan-400 tracking-widest uppercase mb-1">Reasoning Core</div>
+                            <div className="text-[8px] font-mono text-slate-600">Gemini 3 Pro Active</div>
+                          </div>
+                       </div>
+
+                       {/* Semantic Map Node */}
+                       <div className="flex flex-col items-center gap-6 group/node">
+                          <div className="relative">
+                            <div className="absolute -inset-4 bg-fuchsia-500/20 blur-xl opacity-0 group-hover/node:opacity-100 transition-opacity duration-500"></div>
+                            <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-fuchsia-500/50 transition-all">
+                              <Layers className="w-10 h-10 text-fuchsia-400 group-hover/node:scale-110 transition-transform" />
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-[10px] font-black font-mono text-fuchsia-400 tracking-widest uppercase mb-1">Synthesis</div>
+                            <div className="text-[8px] font-mono text-slate-600">Multi-Modal Sync</div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Bottom Progress Bar */}
+                    <div className="w-full max-w-md space-y-3 relative z-10">
+                      <div className="flex justify-between items-end">
+                        <div className="text-[9px] font-mono font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                           Processing Stream
+                        </div>
+                        <div className="text-[9px] font-mono font-black text-indigo-400">88% LOAD</div>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                        <div className="h-full bg-gradient-to-r from-indigo-600 via-cyan-400 to-indigo-600 w-3/4 animate-[shimmer_2s_infinite] rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]"></div>
+                      </div>
+                    </div>
+                 </div>
+               </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section id="features" className="py-24 relative z-10">
+      <section id="features" className="py-32 relative z-10 bg-slate-950/40 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="text-center mb-24">
+            <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Functional Core</div>
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter">Built for Modern Minds</h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-indigo-500 to-transparent mx-auto rounded-full"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, idx) => (
-              <div key={idx} className="glass-panel p-8 rounded-2xl hover:border-[var(--neon-primary)]/50 transition-all duration-300 group hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(99,102,241,0.2)]">
-                <div className="w-14 h-14 bg-slate-900/50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-white/5 group-hover:border-[var(--neon-primary)]/30 shadow-inner">
-                  <feature.icon className="w-7 h-7 text-[var(--neon-primary)] group-hover:text-[var(--neon-accent)] transition-colors" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-[var(--neon-primary)] transition-colors">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed text-sm group-hover:text-slate-300">{feature.description}</p>
-              </div>
+              <FeatureCard key={idx} feature={feature} onOpen={setSelectedFeature} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Section with Glass effect */}
-      <section className="py-20 relative z-10">
+      {/* Interactive Demo Section */}
+      <section id="demo" className="py-32 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col lg:flex-row gap-20 items-center">
+            <div className="flex-1 space-y-8 text-center lg:text-left">
+              <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
+                Live Interaction
+              </div>
+              <h2 className="text-4xl md:text-7xl font-black text-white leading-[0.9] tracking-tighter">
+                Ask your <br />
+                <span className="text-indigo-400 italic">Second Brain</span>
+              </h2>
+              <p className="text-slate-400 text-lg leading-relaxed max-w-lg">
+                Direct neural link to Gemini 3 Pro. Try querying your logic, debugging code, or summarizing research papers instantly.
+              </p>
+              <div className="space-y-4">
+                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                      <Activity className="w-4 h-4 text-emerald-400" />
+                      API Health: 99.8ms Latency
+                  </div>
+                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                      <Database className="w-4 h-4 text-cyan-400" />
+                      Token Density: Optimal
+                  </div>
+              </div>
+            </div>
+            <div className="flex-1 w-full relative">
+              <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full opacity-50 animate-pulse"></div>
+              <GeminiDemo />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Ecosystem / Stats Section */}
+      <section id="stats" className="py-24 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-            <div className="glass-panel rounded-3xl p-12 border border-white/10 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-primary)]/5 to-transparent pointer-events-none" />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center relative z-10">
+            <div 
+                className="glass-panel rounded-[3rem] p-16 border border-white/10 relative overflow-hidden group cursor-pointer transition-all duration-700 hover:shadow-[0_0_100px_-20px_rgba(34,211,238,0.2)]"
+                onClick={() => setIsSystemActive(!isSystemActive)}
+            >
+                <div className={`absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-cyan-500/5 transition-opacity duration-1000 ${isSystemActive ? 'opacity-100' : 'opacity-0'}`} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center relative z-10">
                     {[
-                        { label: 'Papers Analyzed', value: '10k+' },
-                        { label: 'Active Minds', value: '2.5k' },
-                        { label: 'Synapses Fired', value: '1M+' },
-                        { label: 'Uptime', value: '99.9%' }
+                        { label: 'Papers Indexed', value: '450k+', color: 'indigo-400' },
+                        { label: 'Neural Connections', value: '2.5M', color: 'cyan-400' },
+                        { label: 'Researchers', value: '18k+', color: 'fuchsia-400' },
+                        { label: 'System Uptime', value: '99.9%', color: 'emerald-400' }
                     ].map((stat, i) => (
-                        <div key={i} className="group cursor-default">
-                            <div className="text-4xl font-black text-white mb-2 group-hover:text-[var(--neon-secondary)] transition-colors duration-300 text-glow">{stat.value}</div>
-                            <div className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em]">{stat.label}</div>
+                        <div key={i} className="group/stat">
+                            <div className={`text-5xl font-black text-white mb-4 group-hover/stat:text-${stat.color} transition-colors duration-500 text-glow`}>{stat.value}</div>
+                            <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em]">{stat.label}</div>
                         </div>
                     ))}
+                </div>
+                
+                {isSystemActive && (
+                    <div className="mt-12 pt-12 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4">
+                        <div className="flex items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5">
+                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            <div className="text-xs font-mono text-slate-400">Node Cluster #7: Healthy</div>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5">
+                            <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                            <div className="text-xs font-mono text-slate-400">Memory Sync: Active</div>
+                        </div>
+                        <div className="flex items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5">
+                            <div className="w-2 h-2 rounded-full bg-cyan-400" />
+                            <div className="text-xs font-mono text-slate-400">Logic Core: Stable</div>
+                        </div>
+                    </div>
+                )}
+                
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 text-[8px] font-black uppercase tracking-[0.5em] text-slate-600">
+                    Click to toggle system dashboard
+                    <ChevronUp className={`w-3 h-3 transition-transform duration-500 ${isSystemActive ? 'rotate-180' : ''}`} />
                 </div>
             </div>
         </div>
       </section>
 
+      {/* CTA Section */}
+      <section className="py-32 relative z-10 text-center overflow-hidden">
+        <div className="max-w-4xl mx-auto px-6 relative">
+          <h2 className="text-5xl md:text-7xl font-black text-white mb-10 tracking-tighter leading-tight">Ready to evolve your <br /><span className="text-indigo-400 italic">workflow?</span></h2>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+             <button className="px-14 py-6 bg-white text-slate-950 rounded-2xl font-black text-xl hover:bg-indigo-500 hover:text-white transition-all shadow-[0_20px_60px_-15px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95">
+               Deploy Now
+             </button>
+             <button className="px-14 py-6 glass-panel text-white rounded-2xl font-black text-xl hover:bg-white/5 transition-all border border-white/10">
+               Documentation
+             </button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 bg-slate-950/80 backdrop-blur-md py-12">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
-            <BrainCircuit className="w-6 h-6 text-slate-600" />
-            <span className="font-bold text-slate-500">NeuralVault</span>
+      <footer className="relative z-10 border-t border-white/5 bg-slate-950/90 backdrop-blur-md py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-2 mb-8">
+                <BrainCircuit className="w-10 h-10 text-indigo-400" />
+                <span className="font-black text-3xl tracking-tighter text-white">NeuralVault</span>
+              </div>
+              <p className="text-slate-500 max-w-sm leading-relaxed text-lg">
+                Empowering researchers with semantic intelligence. Your academic life, logically synthesized.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-white font-black uppercase tracking-widest text-xs mb-8">Platform</h4>
+              <ul className="space-y-4 text-sm text-slate-500 font-bold uppercase tracking-wider">
+                <li><a href="#" className="hover:text-indigo-400 transition-colors">Neural Search</a></li>
+                <li><a href="#" className="hover:text-indigo-400 transition-colors">Tutor v3.0</a></li>
+                <li><a href="#" className="hover:text-indigo-400 transition-colors">Vault SDK</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-black uppercase tracking-widest text-xs mb-8">Connect</h4>
+              <div className="flex gap-6 mb-8">
+                <Shield className="w-6 h-6 text-slate-600 hover:text-indigo-400 transition-colors cursor-pointer" />
+                <Globe className="w-6 h-6 text-slate-600 hover:text-cyan-400 transition-colors cursor-pointer" />
+              </div>
+              <p className="text-xs font-mono text-slate-700">NODE_VERSION: 1.8.2-stable</p>
+            </div>
           </div>
-          <div className="text-sm text-slate-600">
-            © {new Date().getFullYear()} NeuralVault. All rights reserved.
-          </div>
-          <div className="flex gap-6">
-            <Shield className="w-5 h-5 text-slate-600 hover:text-[var(--neon-primary)] transition-colors cursor-pointer" />
-            <Globe className="w-5 h-5 text-slate-600 hover:text-[var(--neon-secondary)] transition-colors cursor-pointer" />
+          <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">
+              © {new Date().getFullYear()} NeuralVault Intelligence Systems.
+            </div>
+            <div className="flex gap-10 text-[10px] font-black uppercase tracking-[0.3em] text-slate-700">
+              <a href="#" className="hover:text-slate-400 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-slate-400 transition-colors">Security</a>
+              <a href="#" className="hover:text-slate-400 transition-colors">Status</a>
+            </div>
           </div>
         </div>
       </footer>
-
-      {/* Login Modal Overlay */}
-      {showLogin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300" onClick={toggleLogin}></div>
-          <div className="relative glass-panel bg-slate-950/80 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 w-full max-w-md border border-[var(--glass-border)] box-glow">
-             
-             {/* Modal Header Decoration */}
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--neon-secondary)] via-[var(--neon-primary)] to-[var(--neon-accent)]" />
-             
-             <button 
-                onClick={toggleLogin}
-                className="absolute top-4 right-4 z-10 p-2 text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors"
-             >
-                <X className="w-4 h-4" />
-             </button>
-             
-             <div className="p-8 pt-10">
-                <div className="text-center mb-6">
-                    <BrainCircuit className="w-10 h-10 text-[var(--neon-primary)] mx-auto mb-3" />
-                    <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
-                    <p className="text-slate-400 text-sm">Access your neural workspace</p>
-                </div>
-                <SignIn 
-                    appearance={{
-                        elements: {
-                        formButtonPrimary: 'bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold',
-                        card: 'bg-transparent shadow-none w-full p-0',
-                        headerTitle: 'hidden',
-                        headerSubtitle: 'hidden',
-                        socialButtonsBlockButton: 'bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl py-2.5',
-                        socialButtonsBlockButtonText: 'text-white font-medium',
-                        dividerLine: 'bg-white/10',
-                        dividerText: 'text-slate-500',
-                        formFieldLabel: 'text-slate-400',
-                        formFieldInput: 'bg-slate-950/50 border-white/10 text-white focus:border-[var(--neon-primary)] focus:ring-[var(--neon-primary)]/20 rounded-xl',
-                        footerActionLink: 'text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium',
-                        formFieldInputShowPasswordButton: 'text-slate-400 hover:text-white'
-                        }
-                    }}
-                    signUpUrl="/sign-up" 
-                />
-             </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+
+export default LandingPage;

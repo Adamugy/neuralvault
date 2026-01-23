@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { User, CreditCard, Shield, Layout, Bell, Check, Zap, Building, Lock } from 'lucide-react';
+import { User, CreditCard, Shield, Layout, Bell, Check, Zap, Building, Lock, Loader2, Fingerprint, Mail, RefreshCcw } from 'lucide-react';
 import { UserProfile, AppSettings, PlanTier } from '../types';
+import { usePasskeys } from '../hooks/usePasskeys';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SettingsProps {
   userProfile: UserProfile;
   setUserProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   appSettings: AppSettings;
   setAppSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
-  onOpenUpgrade?: () => void;
-  onOpenBillingPortal?: () => Promise<void> | void;
+  onSaveProfile?: (profile: UserProfile) => Promise<void>;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -16,44 +17,57 @@ export const Settings: React.FC<SettingsProps> = ({
   setUserProfile, 
   appSettings, 
   setAppSettings,
-  onOpenUpgrade,
-  onOpenBillingPortal,
+  onSaveProfile
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'appearance' | 'security'>('profile');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+  const { registerPasskey } = usePasskeys();
+  const { refreshUser } = useAuth();
+
+  const handleSave = async () => {
+    if (!onSaveProfile) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+    try {
+      await onSaveProfile(userProfile);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Failed to save profile changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRegisterPasskey = async () => {
+    setPasskeyLoading(true);
+    try {
+      await registerPasskey(userProfile.email);
+      alert('Passkey registrada com sucesso!');
+    } catch (error: any) {
+      console.error('Passkey error:', error);
+      alert(error.message);
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
-    { id: 'billing', label: 'Billing & Plans', icon: CreditCard },
     { id: 'appearance', label: 'Display & Layout', icon: Layout },
     { id: 'security', label: 'Security', icon: Shield },
-  ];
-
-  const plans: { id: PlanTier; name: string; price: string; features: string[] }[] = [
-    {
-      id: 'free',
-      name: 'Student',
-      price: '$0',
-      features: ['Unlimited Links', 'Basic AI Chat', '5 File Uploads', 'Community Support']
-    },
-    {
-      id: 'researcher',
-      name: 'Researcher',
-      price: '$9.90/mo',
-      features: ['Unlimited Files', 'Gemini 1.5 Flash', 'Image Analysis', 'Doc Export', 'Priority Support']
-    },
-    {
-      id: 'researcher_pro',
-      name: 'Researcher Pro',
-      price: '$24.90/mo',
-      features: ['Everything in Researcher', 'Gemini 1.5 Pro', 'Extended Context', 'Faster Responses', 'Premium Support']
-    }
   ];
 
   return (
     <div className="h-full bg-transparent flex flex-col md:flex-row overflow-hidden">
       {/* Settings Sidebar */}
       <div className="w-full md:w-64 glass-panel border-r border-white/10 p-6 flex-shrink-0 backdrop-blur-md">
-        <h2 className="text-xl font-bold text-white mb-6 px-2">Settings</h2>
+        <h2 className="text-lg font-bold text-white mb-4 px-2">Settings</h2>
         <nav className="space-y-2">
           {tabs.map(tab => (
             <button
@@ -73,15 +87,15 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-12 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
         <div className="max-w-4xl mx-auto space-y-8">
           
           {/* Profile Section */}
           {activeTab === 'profile' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div>
-                <h3 className="text-2xl font-bold text-white mb-1">Personal Information</h3>
-                <p className="text-slate-400">Manage your user details and role.</p>
+                <h3 className="text-xl font-bold text-white mb-1">Personal Information</h3>
+                <p className="text-slate-500 text-sm">Manage your user details and role.</p>
               </div>
 
               <div className="flex items-center gap-6 p-6 glass-panel rounded-2xl border border-white/10">
@@ -106,12 +120,23 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-2">Full Name</label>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">First Name</label>
                   <input 
                     type="text" 
                     value={userProfile.name}
                     onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition-all"
+                    placeholder="Your First Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-2">Last Name</label>
+                  <input 
+                    type="text" 
+                    value={userProfile.lastName || ''}
+                    onChange={(e) => setUserProfile({...userProfile, lastName: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition-all"
+                    placeholder="Your Last Name"
                   />
                 </div>
                 <div>
@@ -133,77 +158,82 @@ export const Settings: React.FC<SettingsProps> = ({
                   />
                 </div>
               </div>
+
+              {!userProfile.emailVerified && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${resendSuccess ? 'bg-emerald-500/20 text-emerald-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                      {resendSuccess ? <Check className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className={`${resendSuccess ? 'text-emerald-500' : 'text-amber-500'} text-sm font-medium`}>
+                        {resendSuccess ? 'E-mail enviado!' : 'E-mail não verificado'}
+                      </p>
+                      <p className="text-slate-400 text-xs">
+                        {resendSuccess ? 'Verifique sua caixa de entrada e spam.' : 'Verifique seu e-mail para garantir a segurança da sua conta.'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                        onClick={async () => {
+                            await refreshUser();
+                        }}
+                        className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                        title="Checar status de verificação"
+                    >
+                        <RefreshCcw className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={async () => {
+                        setIsResending(true);
+                        setResendSuccess(false);
+                        try {
+                            const res = await fetch('/api/auth/resend-verification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ email: userProfile.email })
+                            });
+                            if (res.ok) {
+                                setResendSuccess(true);
+                                setTimeout(() => setResendSuccess(false), 5000);
+                            } else {
+                                const data = await res.json();
+                                alert(data.message || 'Falha ao reenviar');
+                            }
+                        } catch (err) {
+                            alert('Erro ao reenviar verificação.');
+                        } finally {
+                            setIsResending(false);
+                        }
+                        }}
+                        disabled={isResending || resendSuccess}
+                        className={`text-xs px-3 py-1.5 rounded-lg transition-all font-medium flex items-center gap-2 ${
+                            resendSuccess 
+                            ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/30' 
+                            : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-500 border border-amber-500/30'
+                        }`}
+                    >
+                        {isResending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                        {resendSuccess ? 'Enviado' : 'Reenviar Link'}
+                    </button>
+                  </div>
+                </div>
+              )}
               
-              <div className="pt-6 border-t border-white/10 flex justify-end">
-                <button className="px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white rounded-lg font-medium shadow-[0_0_15px_-5px_var(--neon-primary)] transition-all">
-                    Save Changes
+              <div className="pt-6 border-t border-white/10 flex justify-end gap-3 items-center">
+                {saveSuccess && (
+                  <span className="text-emerald-500 text-sm flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                    <Check className="w-4 h-4" /> Changes saved!
+                  </span>
+                )}
+                <button 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white rounded-lg font-medium shadow-[0_0_15px_-5px_var(--neon-primary)] transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* Billing Section */}
-          {activeTab === 'billing' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div>
-                <h3 className="text-2xl font-bold text-white mb-1">Subscription Plans</h3>
-                <p className="text-slate-400">Upgrade your workspace for advanced AI features.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.map(plan => {
-                    const isCurrent = userProfile.plan === plan.id;
-                    return (
-                        <div key={plan.id} className={`relative p-6 rounded-2xl border flex flex-col transition-all duration-300 ${isCurrent ? 'bg-[var(--neon-primary)]/10 border-[var(--neon-primary)] shadow-[0_0_30px_-10px_var(--neon-primary)]' : 'glass-panel border-white/10 hover:border-white/20'}`}>
-                            {isCurrent && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--neon-primary)] text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                                    CURRENT PLAN
-                                </div>
-                            )}
-                            <h4 className="text-lg font-bold text-white">{plan.name}</h4>
-                            <div className="text-3xl font-bold text-white mt-2 mb-4">{plan.price}</div>
-                            <ul className="space-y-3 mb-8 flex-1">
-                                {plan.features.map((feat, i) => (
-                                    <li key={i} className="flex items-start gap-2 text-sm text-slate-400">
-                                        <Check className="w-4 h-4 text-[var(--neon-primary)] mt-0.5 flex-shrink-0" />
-                                        {feat}
-                                    </li>
-                                ))}
-                            </ul>
-                            <button 
-                                onClick={() => {
-                                  if (isCurrent) return;
-                                  onOpenUpgrade?.();
-                                }}
-                                disabled={isCurrent}
-                                className={`w-full py-2 rounded-lg font-medium transition-colors ${
-                                    isCurrent 
-                                    ? 'bg-white/5 text-slate-500 cursor-default border border-white/10' 
-                                    : 'bg-white text-slate-950 hover:bg-slate-200'
-                                }`}
-                            >
-                                {isCurrent ? 'Active' : 'Upgrade'}
-                            </button>
-                        </div>
-                    );
-                })}
-              </div>
-
-              <div className="p-6 glass-panel border border-white/10 rounded-2xl flex items-center justify-between">
-                 <div>
-                    <h4 className="font-bold text-white flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-slate-400" /> Billing
-                    </h4>
-                    <p className="text-sm text-slate-500 mt-1">Subscriptions are managed securely via Stripe.</p>
-                 </div>
-                 <button
-                   onClick={() => {
-                     void onOpenBillingPortal?.();
-                   }}
-                   className="text-sm text-[var(--neon-primary)] hover:text-white font-medium transition-colors"
-                 >
-                   Manage
-                 </button>
               </div>
             </div>
           )}
@@ -212,8 +242,8 @@ export const Settings: React.FC<SettingsProps> = ({
           {activeTab === 'appearance' && (
              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
-                    <h3 className="text-2xl font-bold text-white mb-1">Display & Layout</h3>
-                    <p className="text-slate-400">Customize how resources are presented.</p>
+                    <h3 className="text-xl font-bold text-white mb-1">Display & Layout</h3>
+                    <p className="text-slate-500 text-sm">Customize how resources are presented.</p>
                 </div>
 
                 <div className="glass-panel border border-white/10 rounded-2xl p-6 space-y-6">
@@ -264,11 +294,32 @@ export const Settings: React.FC<SettingsProps> = ({
           {activeTab === 'security' && (
              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div>
-                    <h3 className="text-2xl font-bold text-white mb-1">Security & Privacy</h3>
-                    <p className="text-slate-400">Manage your password and authentication methods.</p>
+                    <h3 className="text-xl font-bold text-white mb-1">Security & Privacy</h3>
+                    <p className="text-slate-500 text-sm">Manage your password and authentication methods.</p>
                 </div>
 
                 <div className="glass-panel border border-white/10 rounded-2xl p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                         <div className="flex gap-4">
+                             <div className="p-3 bg-[var(--neon-primary)]/10 rounded-lg text-[var(--neon-primary)] border border-[var(--neon-primary)]/20">
+                                 <Fingerprint className="w-6 h-6" />
+                             </div>
+                             <div>
+                                <h4 className="text-white font-medium">Passkeys (WebAuthn)</h4>
+                                <p className="text-sm text-slate-400">Ative o login sem senha usando biometria ou chaves USB.</p>
+                            </div>
+                         </div>
+                        <button 
+                            onClick={handleRegisterPasskey}
+                            disabled={passkeyLoading}
+                            className="px-4 py-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                        >
+                            {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Registrar Passkey'}
+                        </button>
+                    </div>
+
+                    <div className="h-px bg-white/10" />
+
                     <div className="flex items-center justify-between">
                          <div className="flex gap-4">
                              <div className="p-3 bg-teal-500/10 rounded-lg text-teal-500 border border-teal-500/20">
