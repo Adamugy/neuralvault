@@ -64,7 +64,7 @@ const GeminiDemo: React.FC = () => {
 
       <div 
         ref={scrollRef}
-        className="h-[400px] overflow-y-auto p-6 space-y-4 scroll-smooth"
+        className="h-[300px] md:h-[400px] overflow-y-auto p-4 md:p-6 space-y-4 scroll-smooth"
       >
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>

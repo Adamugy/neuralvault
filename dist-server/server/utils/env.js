@@ -13,6 +13,7 @@ const envSchema = z.object({
     CORS_ORIGIN: z.string().optional(),
     APP_URL: z.string().url().optional(),
     DOMAIN: z.string().optional().default('localhost'),
+    RESEND_API_KEY: z.string().optional(),
 });
 const result = envSchema.safeParse(process.env);
 if (!result.success) {

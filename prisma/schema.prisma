@@ -26,6 +26,8 @@ model User {
   authenticators Authenticator[]
   currentChallenge String?
   verificationToken String?
+  academicSessions AcademicSession[]
+  generatedDocs    GeneratedDocument[]
 }
 
 model Authenticator {
@@ -88,6 +90,41 @@ model Resource {
 
   @@index([userId])
   @@index([userId, folderId])
+}
+
+model AcademicSession {
+  id        String            @id @default(uuid())
+  userId    String
+  title     String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  AcademicMessage[]
+
+  @@index([userId])
+}
+
+model AcademicMessage {
+  id        String          @id @default(uuid())
+  sessionId String
+  role      String
+  content   String          @db.Text
+  createdAt DateTime        @default(now())
+  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model GeneratedDocument {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String   @db.Text
+  type      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 enum ResourceType {

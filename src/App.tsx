@@ -161,8 +161,9 @@ const AppContent: React.FC = () => {
     }));
   };
 
-  const renderContent = () => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const renderContent = () => {
     switch (currentView) {
       case ViewState.DASHBOARD:
         return (
@@ -195,20 +196,43 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 ${appSettings.compactMode ? 'text-sm' : ''}`}>
+    <div className={`flex h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 ${appSettings.compactMode ? 'text-sm' : ''} overflow-hidden`}>
       <Sidebar 
         currentView={currentView} 
-        onNavigate={setCurrentView} 
+        onNavigate={(view) => {
+          setCurrentView(view);
+          setIsMobileMenuOpen(false);
+        }}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
       />
       
-      <main className="flex-1 overflow-hidden relative">
+      <main className="flex-1 overflow-hidden relative flex flex-col h-full w-full">
+        {/* Mobile Header */}
+        <div className="lg:hidden h-16 border-b border-white/10 flex items-center justify-between px-4 bg-slate-900/50 backdrop-blur-md z-40 flex-shrink-0">
+            <div className="flex items-center gap-2">
+                <div className="text-[var(--neon-primary)]">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain-circuit"><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 3 2.5 2.5 0 0 0-.02 3 2.5 2.5 0 0 0 1.2 3 2.5 2.5 0 0 0 2.02 3 2.5 2.5 0 0 0 4.96.46 2.5 2.5 0 0 0 1.98-3 2.5 2.5 0 0 0 1.32-3 2.5 2.5 0 0 0 .02-3 2.5 2.5 0 0 0-1.2-3 2.5 2.5 0 0 0-2.02-3"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="M12 12h.01"/></svg>
+                </div>
+                <span className="font-bold text-lg text-white">NeuralVault</span>
+            </div>
+            <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 text-slate-400 hover:text-white"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+            </button>
+        </div>
+
         {/* Ambient Glow Effects */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
         
-        {renderContent()}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-0">
+           {renderContent()}
+        </div>
       </main>
     </div>
   );

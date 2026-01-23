@@ -21,7 +21,7 @@ const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowCla
           <div className={`absolute bottom-[20%] right-[30%] w-[400px] h-[400px] rounded-full blur-[100px] animate-float ${accentGlowClass2 || 'bg-[var(--neon-secondary)]/15'}`} />
       </div>
 
-      <div className="w-full max-w-md relative z-10 p-6">
+      <div className="w-full max-w-md relative z-10 p-4 md:p-6">
         <button 
           onClick={() => navigate('/')}
           className="mb-8 flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
@@ -36,7 +36,7 @@ const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowCla
             {subtitle && <p className="text-slate-400 text-sm max-w-[280px] mx-auto">{subtitle}</p>}
         </div>
 
-        <div className="glass-panel p-8 rounded-3xl border border-white/10 shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]">
+        <div className="glass-panel p-6 md:p-8 rounded-3xl border border-white/10 shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]">
           {children}
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, PenTool, Sparkles, FileText, ChevronRight, Loader2, GraduationCap, Download, Library, Lock, Bot, Copy, Save, X, Search, Folder, Edit3, Wand2, TextQuote, Shrink, Maximize2, Check, RefreshCw, Trash2, Paperclip, FileCheck, Send } from 'lucide-react';
+import { BookOpen, PenTool, Sparkles, FileText, ChevronRight, Loader2, GraduationCap, Download, Library, Lock, Bot, Copy, Save, X, Search, Folder, Edit3, Wand2, TextQuote, Shrink, Maximize2, Check, RefreshCw, Trash2, Paperclip, FileCheck, Send, Clock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -8,6 +8,7 @@ import { Resource, UserProfile, Folder as FolderType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { SearchBar } from './SearchBar';
 
+import { DocumentGallery } from './DocumentGallery';
 
 type TaskType = 'outline' | 'draft' | 'refine' | 'abstract' | 'organize' | 'custom';
 
@@ -39,6 +40,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const [level, setLevel] = useState('Undergraduate');
   const [contentInput, setContentInput] = useState('');
   const [result, setResult] = useState('');
+  const [sessionId, setSessionId] = useState<string | null>(null); // Track backend session
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,6 +58,13 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const [isEditing, setIsEditing] = useState(false);
   const [editedResult, setEditedResult] = useState('');
   const [isManipulating, setIsManipulating] = useState(false);
+  
+  // View State
+  const [viewMode, setViewMode] = useState<'editor' | 'gallery'>('editor');
+  const [showHistory, setShowHistory] = useState(false);
+  const [historySessions, setHistorySessions] = useState<any[]>([]);
+  
+
 
   // Chat/Interaction State
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -64,6 +73,13 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const chatEndRef = React.useRef<HTMLDivElement>(null);
 
   const isPremium = userProfile?.plan !== 'free';
+
+  // Auto-scroll to bottom of chat
+  React.useEffect(() => {
+    if (chatEndRef.current) {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, result]); // Scroll when messages change or result view toggles
 
   React.useEffect(() => {
     if (!authLoaded || !isLibraryOpen) return;
@@ -109,6 +125,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         formData.append('topic', topic);
         formData.append('content', contentInput);
         formData.append('level', level);
+        if (sessionId) formData.append('sessionId', sessionId);
         
         if (activeTask === 'organize') {
             // Include resources list for organizer
@@ -159,21 +176,26 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
         if (!res.ok) throw new Error('Generation failed');
         const data = await res.json();
+        
+        // Handle New API Response Format
         setResult(data.result);
         setEditedResult(data.result);
         setIsEditing(false);
         setResearchFocus([]);
+        if (data.sessionId) setSessionId(data.sessionId);
         
-        // Initialize chat with the first response
+        // Initialize chat with the AI's "thought" or default
         setMessages([{
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `I've generated the document based on your topic "${topic}". How would you like to refine it?`
+            content: data.thought || `I've generated the document based on your topic "${topic}". How would you like to refine it?`
         }]);
-    } catch (error) {
-      setResult("An error occurred while generating content. Please try again.");
+    } catch (error: any) {
+        console.error('Generation request failed:', error);
+        alert(`Failed to generate content: ${error.message || 'Unknown error'}`);
+        setResult("An error occurred while generating content. Please try again.");
     } finally {
-      setIsGenerating(false);
+        setIsGenerating(false);
     }
   };
 
@@ -241,21 +263,24 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                 taskType: 'refine',
                 topic: `Refinement based on: ${currentInput}`,
                 content: result, // Sending current document as context
-                level: level
+                level: level,
+                sessionId: sessionId
             })
         });
 
         if (!res.ok) throw new Error('Refinement failed');
         const data = await res.json();
         
-        // Update the document result
-        setResult(data.result);
-        setEditedResult(data.result);
+        // Update the document result only if it's a refinement/document task
+        if (data.result) {
+            setResult(data.result);
+            setEditedResult(data.result);
+        }
 
         setMessages(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `I've updated the document. I incorporated your request: "${currentInput}"`
+            content: data.thought || `I've updated the document. I incorporated your request: "${currentInput}"`
         }]);
     } catch (error) {
         console.error("Chat failure", error);
@@ -410,6 +435,26 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                </div>
            </div>
 
+            {/* View Toggles */}
+            <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 mr-4">
+                <button 
+                    onClick={() => setViewMode('editor')}
+                    className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                        viewMode === 'editor' ? 'bg-[var(--neon-primary)] text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                    Editor
+                </button>
+                <button 
+                    onClick={() => setViewMode('gallery')}
+                    className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all ${
+                        viewMode === 'gallery' ? 'bg-[var(--neon-primary)] text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                    }`}
+                >
+                    Gallery
+                </button>
+            </div>
+
            {/* Uniform Search Bar */}
            <SearchBar 
              searchTerm={searchTerm}
@@ -451,9 +496,48 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                     ))}
                 </div>
 
-                {/* Sidebar Content: Form or Chat */}
+                    {/* Sidebar Content: Form or Chat */}
                <div className="flex-1 p-4 pt-0 space-y-4 overflow-y-auto">
-                    {!result ? (
+                    
+                    <button 
+                        onClick={async () => {
+                            if (!showHistory) {
+                                // Load History
+                                const token = await getToken();
+                                const res = await fetch('/api/academic/history', { headers: { Authorization: `Bearer ${token}` } });
+                                if (res.ok) setHistorySessions(await res.json());
+                            }
+                            setShowHistory(!showHistory);
+                        }}
+                        className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all flex items-center justify-between px-4"
+                    >
+                         <span>Recent Sessions</span>
+                         <Clock className={`w-3.5 h-3.5 transition-transform ${showHistory ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showHistory ? (
+                        <div className="space-y-2 animate-in slide-in-from-left-2">
+                             {historySessions.map(session => (
+                                 <button
+                                    key={session.id}
+                                    onClick={() => {
+                                        setTopic(session.title);
+                                        setSessionId(session.id);
+                                        // We would ideally load messages here too
+                                        // For now just setting topic to allow continuation
+                                        setShowHistory(false);
+                                    }}
+                                    className="w-full p-3 bg-black/40 border border-white/5 rounded-xl text-left hover:border-[var(--neon-primary)]/50 transition-all group"
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[10px] text-slate-500">{new Date(session.updatedAt).toLocaleDateString()}</span>
+                                        <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-[var(--neon-primary)]" />
+                                    </div>
+                                    <p className="text-xs text-white font-medium line-clamp-1">{session.title}</p>
+                                </button>
+                             ))}
+                        </div>
+                    ) : !result ? (
                         <>
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -546,7 +630,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                 </div>
                                 
                                 {/* Chat Messages */}
-                                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                                <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2 scrollbar-hide">
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                                             <div className={`max-w-[90%] p-3 rounded-2xl text-xs leading-relaxed ${
@@ -602,6 +686,15 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
            {/* Right Content - Document Preview */}
            <div className="flex-1 bg-[#0f0f11] p-4 lg:p-8 overflow-y-auto flex justify-center">
+                {viewMode === 'gallery' ? (
+                     <div className="w-full max-w-6xl">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold text-white">Your Documents</h2>
+                            <p className="text-slate-400 text-sm">Manage and export your generated research.</p>
+                        </div>
+                        <DocumentGallery />
+                     </div>
+                ) : (
                 <div className={`w-full max-w-[800px] transition-all duration-500 ${result ? 'opacity-100 translate-y-0' : 'opacity-50 translate-y-4'}`}>
                     {result ? (
                         <div className="bg-white text-slate-900 min-h-[800px] shadow-2xl rounded-sm p-8 lg:p-12 relative">
@@ -739,9 +832,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                             <p className="text-sm opacity-50">Select a task on the left to get started.</p>
                         </div>
                     )}
-                </div>
+                 </div>
+                )}
+            </div>
            </div>
-       </div>
 
        {/* Library Modal - Mini ResourceBoard */}
        {isLibraryOpen && (

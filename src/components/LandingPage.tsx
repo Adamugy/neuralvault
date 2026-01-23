@@ -241,7 +241,7 @@ const LandingPage: React.FC = () => {
       )}
 
       {/* Hero Section */}
-      <section id="hero" className="relative pt-40 pb-20 lg:pt-52 lg:pb-32 px-6 z-10">
+      <section id="hero" className="relative pt-32 pb-16 lg:pt-52 lg:pb-32 px-6 z-10">
         <div className="max-w-6xl mx-auto text-center relative">
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-panel text-xs font-black text-cyan-400 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 hover:border-cyan-400/50 transition-colors cursor-default group box-glow">
             <span className="relative flex h-2.5 w-2.5">
@@ -252,17 +252,17 @@ const LandingPage: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
           </div>
           
-          <h1 className="text-6xl md:text-[7.5rem] font-black text-white mb-8 tracking-tighter leading-[0.85] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+          <h1 className="text-5xl sm:text-6xl md:text-[7.5rem] font-black text-white mb-8 tracking-tighter leading-[0.9] md:leading-[0.85] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
             Thinking <br />
             <span className="neon-gradient-text text-glow">Beyond Sync.</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+          <p className="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
             A second brain that doesn't just store files, it <span className="text-white font-black underline decoration-indigo-500/50 underline-offset-8">synthesizes insights</span>. 
             Experience the next era of academic work.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 w-full sm:w-auto">
             <button 
               onClick={() => navigate('/sign-up')}
               className="w-full sm:w-auto px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl transition-all shadow-[0_0_40px_rgba(99,102,241,0.4)] hover:shadow-[0_0_60px_rgba(99,102,241,0.6)] hover:-translate-y-1 relative overflow-hidden group"
@@ -284,22 +284,22 @@ const LandingPage: React.FC = () => {
           <div className="relative mt-24 max-w-5xl mx-auto animate-in fade-in zoom-in duration-1000 delay-500 group">
             <div className="absolute -inset-2 bg-gradient-to-r from-indigo-500 via-cyan-400 to-fuchsia-500 rounded-[2.5rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000"></div>
             
-            <div className="relative glass-panel rounded-[2rem] border border-white/10 overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+            <div className="relative glass-panel rounded-[1rem] md:rounded-[2rem] border border-white/10 overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                {/* Window Top Bar */}
-               <div className="flex items-center gap-3 p-5 border-b border-white/5 bg-slate-900/60 backdrop-blur-3xl">
+               <div className="flex items-center gap-3 p-3 md:p-5 border-b border-white/5 bg-slate-900/60 backdrop-blur-3xl">
                  <div className="flex gap-1.5">
-                   <div className="w-3 h-3 rounded-full bg-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.3)]"></div>
-                   <div className="w-3 h-3 rounded-full bg-yellow-500/60 shadow-[0_0_10px_rgba(234,179,8,0.3)]"></div>
-                   <div className="w-3 h-3 rounded-full bg-green-500/60 shadow-[0_0_10px_rgba(34,197,94,0.3)]"></div>
+                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500/60 shadow-[0_0_10px_rgba(239,68,68,0.3)]"></div>
+                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-yellow-500/60 shadow-[0_0_10px_rgba(234,179,8,0.3)]"></div>
+                   <div className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500/60 shadow-[0_0_10px_rgba(34,197,94,0.3)]"></div>
                  </div>
                  <div className="flex-1 text-center">
-                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/5 text-[9px] font-mono text-slate-400 tracking-[0.2em] uppercase">
-                     NeuralVault-Intelligence-Layer_v3.0.core
+                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/5 text-[8px] md:text-[9px] font-mono text-slate-400 tracking-[0.2em] uppercase">
+                     NeuralVault-Core_v3
                    </div>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
                     <Activity className="w-3 h-3 animate-pulse text-indigo-400" />
-                    <span className="text-[8px] font-black font-mono">STABLE</span>
+                    <span className="text-[8px] font-black font-mono hidden sm:inline">STABLE</span>
                  </div>
                </div>
 
@@ -321,48 +321,45 @@ const LandingPage: React.FC = () => {
                     </defs>
                  </svg>
 
-                 <div className="flex flex-col items-center gap-12 z-10 scale-90 sm:scale-100 w-full max-w-2xl px-12">
-                    <div className="grid grid-cols-3 gap-12 w-full relative">
+                 <div className="flex flex-col items-center gap-4 md:gap-12 z-10 scale-[0.6] sm:scale-100 w-full max-w-2xl px-4 md:px-12 transform-gpu">
+                    <div className="grid grid-cols-3 gap-6 md:gap-12 w-full relative">
                        {/* Database Node */}
-                       <div className="flex flex-col items-center gap-6 group/node">
+                       <div className="flex flex-col items-center gap-2 md:gap-6 group/node">
                           <div className="relative">
                             <div className="absolute -inset-4 bg-indigo-500/20 blur-xl opacity-0 group-hover/node:opacity-100 transition-opacity duration-500"></div>
-                            <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-indigo-500/50 transition-all">
-                              <Database className="w-10 h-10 text-indigo-400 group-hover/node:scale-110 transition-transform" />
+                            <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-indigo-500/50 transition-all">
+                              <Database className="w-6 h-6 md:w-10 md:h-10 text-indigo-400 group-hover/node:scale-110 transition-transform" />
                             </div>
                           </div>
                           <div className="text-center">
-                            <div className="text-[10px] font-black font-mono text-indigo-400 tracking-widest uppercase mb-1">Knowledge</div>
-                            <div className="text-[8px] font-mono text-slate-600">450k Indexed</div>
+                            <div className="text-[8px] md:text-[10px] font-black font-mono text-indigo-400 tracking-widest uppercase mb-1">Knowledge</div>
                           </div>
                        </div>
 
                        {/* CPU Node (Active Thinking) */}
-                       <div className="flex flex-col items-center gap-6 group/node">
+                       <div className="flex flex-col items-center gap-2 md:gap-6 group/node">
                           <div className="relative">
                             <div className="absolute -inset-6 bg-cyan-400/20 blur-2xl opacity-100 animate-pulse"></div>
-                            <div className="w-24 h-24 rounded-full bg-slate-900 border-2 border-cyan-400/40 flex items-center justify-center shadow-[0_0_50px_rgba(34,211,238,0.2)] relative z-10 animate-float">
-                              <Cpu className="w-12 h-12 text-cyan-400" />
+                            <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-slate-900 border-2 border-cyan-400/40 flex items-center justify-center shadow-[0_0_50px_rgba(34,211,238,0.2)] relative z-10 animate-float">
+                              <Cpu className="w-8 h-8 md:w-12 md:h-12 text-cyan-400" />
                               <div className="absolute inset-0 rounded-full border border-cyan-400/20 animate-ping"></div>
                             </div>
                           </div>
                           <div className="text-center">
-                            <div className="text-[10px] font-black font-mono text-cyan-400 tracking-widest uppercase mb-1">Reasoning Core</div>
-                            <div className="text-[8px] font-mono text-slate-600">Gemini 3 Pro Active</div>
+                            <div className="text-[8px] md:text-[10px] font-black font-mono text-cyan-400 tracking-widest uppercase mb-1">Reasoning</div>
                           </div>
                        </div>
 
                        {/* Semantic Map Node */}
-                       <div className="flex flex-col items-center gap-6 group/node">
+                       <div className="flex flex-col items-center gap-2 md:gap-6 group/node">
                           <div className="relative">
                             <div className="absolute -inset-4 bg-fuchsia-500/20 blur-xl opacity-0 group-hover/node:opacity-100 transition-opacity duration-500"></div>
-                            <div className="w-20 h-20 rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-fuchsia-500/50 transition-all">
-                              <Layers className="w-10 h-10 text-fuchsia-400 group-hover/node:scale-110 transition-transform" />
+                            <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-slate-900 border border-white/10 flex items-center justify-center shadow-2xl relative z-10 group-hover/node:border-fuchsia-500/50 transition-all">
+                              <Layers className="w-6 h-6 md:w-10 md:h-10 text-fuchsia-400 group-hover/node:scale-110 transition-transform" />
                             </div>
                           </div>
                           <div className="text-center">
-                            <div className="text-[10px] font-black font-mono text-fuchsia-400 tracking-widest uppercase mb-1">Synthesis</div>
-                            <div className="text-[8px] font-mono text-slate-600">Multi-Modal Sync</div>
+                            <div className="text-[8px] md:text-[10px] font-black font-mono text-fuchsia-400 tracking-widest uppercase mb-1">Synthesis</div>
                           </div>
                        </div>
                     </div>
@@ -372,7 +369,7 @@ const LandingPage: React.FC = () => {
                       <div className="flex justify-between items-end">
                         <div className="text-[9px] font-mono font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                           Processing Stream
+                           Processing
                         </div>
                         <div className="text-[9px] font-mono font-black text-indigo-400">88% LOAD</div>
                       </div>
@@ -388,14 +385,14 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Grid */}
-      <section id="features" className="py-32 relative z-10 bg-slate-950/40 border-y border-white/5">
+      <section id="features" className="py-20 md:py-32 relative z-10 bg-slate-950/40 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-24">
+          <div className="text-center mb-16 md:mb-24">
             <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Functional Core</div>
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter">Built for Modern Minds</h2>
+            <h2 className="text-3xl md:text-6xl font-black text-white mb-6 tracking-tighter">Built for Modern Minds</h2>
             <div className="w-24 h-1 bg-gradient-to-r from-indigo-500 to-transparent mx-auto rounded-full"></div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {features.map((feature, idx) => (
               <FeatureCard key={idx} feature={feature} onOpen={setSelectedFeature} />
             ))}
@@ -404,10 +401,10 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Interactive Demo Section */}
-      <section id="demo" className="py-32 relative z-10">
+      <section id="demo" className="py-20 md:py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-20 items-center">
-            <div className="flex-1 space-y-8 text-center lg:text-left">
+          <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
+            <div className="flex-1 space-y-6 md:space-y-8 text-center lg:text-left">
               <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
                 Live Interaction
               </div>
@@ -415,15 +412,15 @@ const LandingPage: React.FC = () => {
                 Ask your <br />
                 <span className="text-indigo-400 italic">Second Brain</span>
               </h2>
-              <p className="text-slate-400 text-lg leading-relaxed max-w-lg">
+              <p className="text-slate-400 text-base md:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
                 Direct neural link to Gemini 3 Pro. Try querying your logic, debugging code, or summarizing research papers instantly.
               </p>
               <div className="space-y-4">
-                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Activity className="w-4 h-4 text-emerald-400" />
                       API Health: 99.8ms Latency
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
+                  <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Database className="w-4 h-4 text-cyan-400" />
                       Token Density: Optimal
                   </div>
@@ -438,14 +435,14 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Ecosystem / Stats Section */}
-      <section id="stats" className="py-24 relative z-10">
+      <section id="stats" className="py-20 md:py-24 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
             <div 
-                className="glass-panel rounded-[3rem] p-16 border border-white/10 relative overflow-hidden group cursor-pointer transition-all duration-700 hover:shadow-[0_0_100px_-20px_rgba(34,211,238,0.2)]"
+                className="glass-panel rounded-[2rem] md:rounded-[3rem] p-8 md:p-16 border border-white/10 relative overflow-hidden group cursor-pointer transition-all duration-700 hover:shadow-[0_0_100px_-20px_rgba(34,211,238,0.2)]"
                 onClick={() => setIsSystemActive(!isSystemActive)}
             >
                 <div className={`absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-cyan-500/5 transition-opacity duration-1000 ${isSystemActive ? 'opacity-100' : 'opacity-0'}`} />
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center relative z-10">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center relative z-10">
                     {[
                         { label: 'Papers Indexed', value: '450k+', color: 'indigo-400' },
                         { label: 'Neural Connections', value: '2.5M', color: 'cyan-400' },
@@ -453,14 +450,14 @@ const LandingPage: React.FC = () => {
                         { label: 'System Uptime', value: '99.9%', color: 'emerald-400' }
                     ].map((stat, i) => (
                         <div key={i} className="group/stat">
-                            <div className={`text-5xl font-black text-white mb-4 group-hover/stat:text-${stat.color} transition-colors duration-500 text-glow`}>{stat.value}</div>
-                            <div className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em]">{stat.label}</div>
+                            <div className={`text-3xl md:text-5xl font-black text-white mb-2 md:mb-4 group-hover/stat:text-${stat.color} transition-colors duration-500 text-glow`}>{stat.value}</div>
+                            <div className="text-[8px] md:text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] md:tracking-[0.4em]">{stat.label}</div>
                         </div>
                     ))}
                 </div>
                 
                 {isSystemActive && (
-                    <div className="mt-12 pt-12 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4">
+                    <div className="mt-8 md:mt-12 pt-8 md:pt-12 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 animate-in slide-in-from-bottom-4">
                         <div className="flex items-center gap-4 bg-slate-900/40 p-4 rounded-2xl border border-white/5">
                             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                             <div className="text-xs font-mono text-slate-400">Node Cluster #7: Healthy</div>
@@ -476,8 +473,8 @@ const LandingPage: React.FC = () => {
                     </div>
                 )}
                 
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 text-[8px] font-black uppercase tracking-[0.5em] text-slate-600">
-                    Click to toggle system dashboard
+                <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-50 text-[8px] font-black uppercase tracking-[0.5em] text-slate-600">
+                    <span className="hidden md:inline">Click to toggle system dashboard</span>
                     <ChevronUp className={`w-3 h-3 transition-transform duration-500 ${isSystemActive ? 'rotate-180' : ''}`} />
                 </div>
             </div>
@@ -485,7 +482,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 relative z-10 text-center overflow-hidden">
+      <section className="py-20 md:py-32 relative z-10 text-center overflow-hidden">
         <div className="max-w-4xl mx-auto px-6 relative">
           <h2 className="text-5xl md:text-7xl font-black text-white mb-10 tracking-tighter leading-tight">Ready to evolve your <br /><span className="text-indigo-400 italic">workflow?</span></h2>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">

@@ -8,43 +8,47 @@ const execPromise = promisify(exec);
 export class DocumentGenerator {
     static tempDir = path.join(os.tmpdir(), 'neuralvault-gen');
     static async generatePDF(data) {
+        return this.renderDocument(data, 'pdf');
+    }
+    static async generateDOCX(data) {
+        return this.renderDocument(data, 'docx');
+    }
+    static async renderDocument(data, format) {
         if (!fs.existsSync(this.tempDir)) {
             fs.mkdirSync(this.tempDir, { recursive: true });
         }
         const jobId = crypto.randomUUID();
         const baseFileName = `doc-${jobId}`;
         const qmdPath = path.join(this.tempDir, `${baseFileName}.qmd`);
-        const pdfPath = path.join(this.tempDir, `${baseFileName}.pdf`);
-        const qmdContent = this.constructQmd(data);
+        const outPath = path.join(this.tempDir, `${baseFileName}.${format}`);
+        // Quarto output format mapping
+        // pdf -> typst (or pdf), docx -> docx
+        const quartoFormat = format === 'pdf' ? 'typst' : 'docx';
+        const qmdContent = this.constructQmd(data, quartoFormat);
         try {
-            // Write QMD file
             await fs.promises.writeFile(qmdPath, qmdContent, 'utf-8');
-            // Render to PDF using Quarto and Typst
-            // --to typst triggers the typst output format
-            const command = `quarto render "${qmdPath}" --to typst`;
+            const command = `quarto render "${qmdPath}" --to ${quartoFormat}`;
             await execPromise(command);
-            // Read the generated PDF
-            if (!fs.existsSync(pdfPath)) {
-                throw new Error('PDF output not found after render');
+            if (!fs.existsSync(outPath)) {
+                throw new Error(`${format.toUpperCase()} output not found after render`);
             }
-            const pdfBuffer = await fs.promises.readFile(pdfPath);
-            return pdfBuffer;
+            const buffer = await fs.promises.readFile(outPath);
+            return buffer;
         }
         catch (error) {
-            console.error('[DocumentGenerator Error]', error);
-            throw new Error(`Failed to generate document: ${error.message}`);
+            console.error(`[DocumentGenerator ${format}]`, error);
+            throw new Error(`Failed to generate ${format}: ${error.message}`);
         }
         finally {
-            // Cleanup temp files asynchronously
-            this.cleanup(qmdPath, pdfPath).catch(err => console.warn('[Cleanup Warning]', err));
+            this.cleanup(qmdPath, outPath).catch(err => console.warn('[Cleanup Warning]', err));
         }
     }
-    static constructQmd(data) {
+    static constructQmd(data, format) {
         const { title, content, latexFormula } = data;
         const yamlHeader = `---
 title: "${title}"
 format:
-  typst:
+  ${format}:
     margin:
       x: 1.5cm
       y: 1.5cm

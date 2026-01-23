@@ -5,6 +5,8 @@ const router = Router();
 // Public routes
 router.post('/signup', AuthController.signup);
 router.post('/signin', AuthController.signin);
+router.post('/verify-email', AuthController.verifyEmail);
+router.post('/resend-verification', AuthController.resendVerification);
 // Protected routes
 router.post('/signout', requireApiAuth, AuthController.signout);
 router.get('/me', requireApiAuth, AuthController.getMe);

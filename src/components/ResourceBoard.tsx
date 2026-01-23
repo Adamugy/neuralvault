@@ -535,10 +535,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
           <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-md shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-white/10">
+            <div className="p-4 md:p-6 border-b border-white/10">
               <h2 className="text-xl font-bold text-white">Add New Resource</h2>
             </div>
-            <div className="p-6 space-y-5 overflow-y-auto">
+            <div className="p-4 md:p-6 space-y-5 overflow-y-auto">
               
               {/* Title & Type */}
               <div>

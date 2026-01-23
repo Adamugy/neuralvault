@@ -23,7 +23,7 @@ Built on a foundation of performance and type safety.
 * **Backend**: Node.js, Express, Prisma ORM.
 * **Data**: PostgreSQL (Cloud SQL), Google Cloud Storage.
 * **Infrastructure**: Google Cloud Run, Cloud Build (CI/CD).
-* **AI**: Google Gemini 2.5 Pro.
+* **AI**: Google Gemini 1.5 Pro.
 
 ## 🚀 Getting Started
 

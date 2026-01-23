@@ -115,7 +115,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       </div>
 
       {/* Header - Sleek & Floating */}
-      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
+      <div className="sticky top-0 z-20 px-4 md:px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="relative">
             <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg transform rotate-3 transition-transform hover:rotate-0">
@@ -290,7 +290,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       </div>
 
       {/* Input Area - Clean & Modern */}
-      <div className="px-6 py-6 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent">
+      <div className="px-4 md:px-6 py-6 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent">
         <div className="max-w-3xl mx-auto">
           <div className={`relative rounded-3xl border transition-all duration-300 group shadow-2xl glass-panel ${
             thinkingMode 
