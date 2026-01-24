@@ -263,3 +263,36 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
 
     res.json({ message: 'Verification email resent' });
 });
+
+/**
+ * POST /api/auth/avatar
+ * Upload and set user avatar (Base64)
+ */
+export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId!;
+    const file = req.file;
+
+    if (!file) {
+        throw new BadRequestError('No file uploaded');
+    }
+
+    // Validate size (1MB)
+    if (file.size > 1024 * 1024) {
+        throw new BadRequestError('File too large. Max 1MB allowed.');
+    }
+
+    // Convert to Base64
+    const base64Image = file.buffer.toString('base64');
+    const avatarUrl = `data:${file.mimetype};base64,${base64Image}`;
+
+    const user = await prisma.user.update({
+        where: { id: userId },
+        data: { avatarUrl }
+    });
+
+    res.json({
+        message: 'Avatar updated successfully',
+        avatarUrl: user.avatarUrl
+    });
+});
+

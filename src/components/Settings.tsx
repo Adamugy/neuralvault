@@ -25,8 +25,10 @@ export const Settings: React.FC<SettingsProps> = ({
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { registerPasskey } = usePasskeys();
-  const { refreshUser } = useAuth();
+  const { refreshUser, getToken } = useAuth();
 
   const handleSave = async () => {
     if (!onSaveProfile) return;
@@ -54,6 +56,50 @@ export const Settings: React.FC<SettingsProps> = ({
       alert(error.message);
     } finally {
       setPasskeyLoading(false);
+    }
+  };
+
+  const handleAvatarSelect = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      alert('File too large. Max 1MB allowed.');
+      return;
+    }
+
+    setAvatarLoading(true);
+    try {
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const res = await fetch('/api/auth/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Upload failed');
+      }
+
+      const data = await res.json();
+      setUserProfile(prev => ({ ...prev, avatarUrl: data.avatarUrl }));
+      await refreshUser(); // Update AuthContext state
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      alert(error.message || 'Failed to update avatar');
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -111,8 +157,19 @@ export const Settings: React.FC<SettingsProps> = ({
                   )}
                 </div>
                 <div>
-                    <button className="text-sm bg-white/5 border border-white/10 text-slate-300 px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors">
-                        Change Avatar
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleAvatarChange} 
+                      className="hidden" 
+                      accept="image/*"
+                    />
+                    <button 
+                      onClick={handleAvatarSelect}
+                      disabled={avatarLoading}
+                      className="text-sm bg-white/5 border border-white/10 text-slate-300 px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/10 transition-colors flex items-center gap-2"
+                    >
+                        {avatarLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Change Avatar'}
                     </button>
                     <p className="text-xs text-slate-500 mt-2">JPG, GIF or PNG. Max 1MB.</p>
                 </div>
