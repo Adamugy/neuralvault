@@ -41,6 +41,9 @@ export const requireApiAuth = async (req: Request, res: Response, next: NextFunc
         req.userId = decoded.userId;
         req.userEmail = decoded.email;
 
+        // Reset inactivity timer
+        await AuthService.touchSession(token);
+
         console.log('[Auth] Authenticated user:', decoded.userId);
         next();
     } catch (error) {

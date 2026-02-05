@@ -14,7 +14,12 @@ steps:
 
   # 3. Push Schema to Cloud SQL
   - name: 'node:20'
-    entrypoint: 'npm'
-    args: ['run', 'prisma:push']
+    entrypoint: 'sh'
+    args: 
+      - '-c'
+      - 'DATABASE_URL=${_DATABASE_URL} npx prisma db push'
     id: 'push'
     waitFor: ['prisma']
+
+substitutions:
+  _DATABASE_URL: ''

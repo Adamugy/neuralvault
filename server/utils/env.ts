@@ -15,6 +15,7 @@ const envSchema = z.object({
     APP_URL: z.string().url().optional(),
     DOMAIN: z.string().optional().default('localhost'),
     RESEND_API_KEY: z.string().optional(),
+    SESSION_IDLE_TIMEOUT: z.string().default('30m'),
 });
 
 const result = envSchema.safeParse(process.env);

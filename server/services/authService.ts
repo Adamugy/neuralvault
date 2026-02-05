@@ -79,13 +79,32 @@ export class AuthService {
         });
 
         if (!session) return false;
+
+        // Absolute expiration check
         if (session.expiresAt < new Date()) {
-            // Clean up expired session
+            await this.deleteSession(token);
+            return false;
+        }
+
+        // Inactivity (idle) timeout check
+        const idleTimeoutMs = this.parseExpiration(env.SESSION_IDLE_TIMEOUT);
+        if (Date.now() - session.updatedAt.getTime() > idleTimeoutMs) {
+            console.log('[Auth] Session expired due to inactivity');
             await this.deleteSession(token);
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Update the last activity timestamp for a session
+     */
+    static async touchSession(token: string): Promise<void> {
+        await prisma.session.update({
+            where: { token },
+            data: { updatedAt: new Date() }
+        });
     }
 
     /**
