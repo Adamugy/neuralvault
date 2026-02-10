@@ -48,7 +48,7 @@ export const DL_TAGS = [
 
 // --- New Types for Settings & Management ---
 
-export type PlanTier = 'free';
+export type PlanTier = 'free' | 'researcher' | 'lab';
 
 export interface UserProfile {
   name: string;

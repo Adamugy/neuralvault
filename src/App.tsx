@@ -53,53 +53,30 @@ const AppContent: React.FC = () => {
   });
 
   useEffect(() => {
-    const syncPlan = async () => {
-      if (!authLoaded || !isLoaded || !user) return;
-      const token = await getToken();
-      if (!token) return;
-
-      const res = await fetch('/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) return;
-
-      const data = await res.json();
-      const plan = data?.user?.plan;
-      if (plan === 'free' || plan === 'researcher' || plan === 'lab') {
-        setUserProfile(prev => ({ ...prev, plan: plan as PlanTier }));
-      }
-    };
-
-    syncPlan();
-  }, [authLoaded, isLoaded, user, getToken]);
-
-
-
-  useEffect(() => {
     if (!isLoaded || !user) return;
 
-    const userName = user.name || '';
-    const userEmail = user.email || '';
-    const userEmailVerified = user.emailVerified || false;
-
-    // Fetch full profile from our DB to get role and avatar
+    // Fetch full profile from our DB to get role, avatar, and full details
     const fetchFullProfile = async () => {
         const token = await getToken();
         if (!token) return;
-        const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+
+        const res = await fetch('/api/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
         if (res.ok) {
             const data = await res.json();
+            const userData = data.user;
+
             setUserProfile(prev => ({
                 ...prev,
-                name: data.user.name || userName || prev.name,
-                lastName: data.user.lastName || '',
-                email: userEmail || prev.email,
-                role: data.user.role || '',
-                avatarUrl: data.user.avatarUrl || '',
-                plan: data.user.plan || prev.plan,
-                emailVerified: data.user.emailVerified ?? userEmailVerified
+                name: userData.name || user.name || prev.name,
+                lastName: userData.lastName || '',
+                email: user.email || userData.email || prev.email,
+                role: userData.role || '',
+                avatarUrl: userData.avatarUrl || '',
+                plan: (userData.plan as PlanTier) || prev.plan,
+                emailVerified: userData.emailVerified ?? user.emailVerified
             }));
         }
     };
@@ -108,10 +85,13 @@ const AppContent: React.FC = () => {
         fetchFullProfile();
         lastSyncedUserIdRef.current = user.id;
     } else {
-        // Just sync existing data if ID is the same but object changed (e.g. emailVerified)
+        // Just sync existing data from context if ID is the same but object changed (e.g. emailVerified or plan)
         setUserProfile(prev => ({
             ...prev,
-            emailVerified: user.emailVerified
+            name: user.name || prev.name,
+            email: user.email || prev.email,
+            emailVerified: user.emailVerified,
+            plan: (user.plan as PlanTier) || prev.plan
         }));
     }
   }, [isLoaded, user, getToken]);
