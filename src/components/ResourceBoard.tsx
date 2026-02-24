@@ -242,6 +242,25 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
     }
   };
 
+  const handleDownloadFile = async (resource: Resource) => {
+    if (!resource.url || resource.type !== 'file') return;
+    
+    try {
+      const res = await apiFetch(resource.url);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = resource.fileName || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed', error);
+    }
+  };
+
   // Combining Base Tags with Custom Tags for the list
   const allTags = [...DL_TAGS, ...customTags];
 
@@ -337,14 +356,13 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             )}
 
             {resource.type === 'file' && resource.url && (
-            <a 
-                href={resource.url}
-                download={resource.fileName || "download"}
+            <button 
+                onClick={() => handleDownloadFile(resource)}
                 className="text-[10px] flex items-center gap-1 text-slate-400 hover:text-[var(--neon-accent)] transition-colors font-medium max-w-[100px]"
             >
                 <span className="truncate">{resource.fileName || "Download"}</span>
                 <Download className="w-2.5 h-2.5 flex-shrink-0" />
-            </a>
+            </button>
             )}
              {layout === 'list' && (
                  <button 

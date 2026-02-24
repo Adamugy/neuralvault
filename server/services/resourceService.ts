@@ -1,6 +1,10 @@
 import { prisma } from './prisma.js';
 import { ResourceType } from '@prisma/client';
-import { NotFoundError, ConflictError } from '../utils/errors.js';
+import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors.js';
+import fs from 'fs/promises';
+import path from 'path';
+import { uploadsDir } from '../utils/upload.js';
+import { SECURITY_CONFIG } from '../utils/config.js';
 
 export class ResourceService {
     static async getFolders(userId: string) {
@@ -8,6 +12,27 @@ export class ResourceService {
             where: { userId },
             orderBy: { createdAt: 'asc' }
         });
+    }
+
+    static async getResourceById(userId: string, resourceId: string) {
+        return prisma.resource.findFirst({
+            where: { id: resourceId, userId }
+        });
+    }
+
+    static async validateUserLimits(userId: string, type: string) {
+        const existing = await this.getResources(userId);
+
+        if (existing.length >= SECURITY_CONFIG.MAX_RESOURCES_PER_USER) {
+            throw new BadRequestError(`Resource limit reached (${SECURITY_CONFIG.MAX_RESOURCES_PER_USER})`);
+        }
+
+        if (type === 'file') {
+            const fileCount = existing.filter(r => r.type === 'file').length;
+            if (fileCount >= SECURITY_CONFIG.MAX_FILES_PER_USER) {
+                throw new BadRequestError(`File limit reached (${SECURITY_CONFIG.MAX_FILES_PER_USER})`);
+            }
+        }
     }
 
     static async createFolder(userId: string, name: string) {
@@ -92,6 +117,18 @@ export class ResourceService {
 
         if (!existing) {
             throw new NotFoundError('Resource not found');
+        }
+
+        // Physical deletion if it's a file
+        if (existing.type === ResourceType.file && existing.fileUrl) {
+            try {
+                const fileName = path.basename(existing.fileUrl);
+                const filePath = path.join(uploadsDir, fileName);
+                await fs.unlink(filePath);
+            } catch (err) {
+                console.error(`[ResourceService] Failed to delete physical file: ${existing.fileUrl}`, err);
+                // We proceed with DB deletion anyway to avoid stuck records
+            }
         }
 
         return prisma.resource.delete({ where: { id: resourceId } });

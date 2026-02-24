@@ -1,5 +1,6 @@
 import multer from 'multer';
 import crypto from 'crypto';
+import { SECURITY_CONFIG } from './config.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -23,6 +24,6 @@ export const upload = multer({
         },
     }),
     limits: {
-        fileSize: 100 * 1024 * 1024, // 100MB
+        fileSize: SECURITY_CONFIG.MAX_FILE_SIZE_BYTES,
     },
 });

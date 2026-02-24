@@ -2,15 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../utils/errors.js';
 import { env } from '../utils/env.js';
 
-export const errorHandler = (
-    err: Error,
-    req: Request,
-    res: Response,
-    next: NextFunction
-) => {
-    console.error(`[Error Handler] ${req.method} ${req.originalUrl}:`, err.message);
-    if (err.stack) {
-        console.error('[Error Stack]', err.stack);
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+    const isProduction = env.NODE_ENV === 'production';
+
+    if (!isProduction || (err as any).status >= 500) {
+        console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
+        if (err.stack && !isProduction) console.error(err.stack);
     }
 
     if (err instanceof ApiError) {
@@ -21,20 +18,18 @@ export const errorHandler = (
         });
     }
 
-    // Handle Prisma errors
     if ((err as any).code?.startsWith('P')) {
         return res.status(400).json({
             error: 'DatabaseError',
-            message: env.NODE_ENV === 'production' ? 'Erro de banco de dados' : err.message,
+            message: isProduction ? 'Database error occurred' : err.message,
             code: (err as any).code,
         });
     }
 
-    // Default error
     const statusCode = (err as any).status || 500;
     res.status(statusCode).json({
-        error: 'InternalServerError',
-        message: env.NODE_ENV === 'production' ? 'Erro interno do servidor' : err.message,
-        stack: env.NODE_ENV === 'development' ? err.stack : undefined,
+        error: statusCode === 500 ? 'InternalServerError' : 'Error',
+        message: isProduction && statusCode === 500 ? 'Internal server error' : err.message,
+        stack: !isProduction ? err.stack : undefined,
     });
 };

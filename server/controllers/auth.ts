@@ -3,12 +3,9 @@ import { AuthService } from '../services/authService.js';
 import { prisma } from '../services/prisma.js';
 import { MailService } from '../services/mailService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { BadRequestError, UnauthorizedError } from '../utils/errors.js';
-
-/**
- * POST /api/auth/signup
- * Register a new user
- */
+import { BadRequestError, UnauthorizedError, ConflictError } from '../utils/errors.js';
+import { reprocessImageFromBuffer } from '../utils/security.js';
+import path from 'path';
 import crypto from 'crypto';
 
 /**
@@ -39,7 +36,10 @@ export const signup = asyncHandler(async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
-        throw new BadRequestError('Email already registered');
+        // SECURITY: Return success message even if email is registered to prevent account enumeration.
+        return res.status(201).json({
+            message: 'Usuário registrado com sucesso. Por favor, verifique seu e-mail para ativar sua conta.'
+        });
     }
 
     // Hash password
@@ -90,13 +90,10 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
         where: { email: email.toLowerCase() } as any
     });
 
-    if (!user) {
-        throw new UnauthorizedError('Invalid email or password');
-    }
+    // Verify password safely (constant-time check even if user not found)
+    const isValid = await AuthService.verifyPasswordSafe(password, user ? (user as any).passwordHash : null);
 
-    // Verify password
-    const isValid = await AuthService.verifyPassword(password, (user as any).passwordHash);
-    if (!isValid) {
+    if (!user || !isValid) {
         throw new UnauthorizedError('Invalid email or password');
     }
 
@@ -105,9 +102,15 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
         throw new UnauthorizedError('Por favor, verifique seu e-mail antes de fazer login.');
     }
 
-    // Generate token
-    const token = AuthService.generateToken((user as any).id, (user as any).email);
-    await AuthService.createSession((user as any).id, token);
+    // Generate JWT token
+    const token = AuthService.generateToken(user.id, user.email);
+
+    // Capture context fingerprint for security hardening
+    const { getContextFingerprint } = await import('../middleware/zeroTrust.js');
+    const fingerprint = getContextFingerprint(req);
+
+    // Create session in database with fingerprint
+    await AuthService.createSession(user.id, token, fingerprint);
 
     res.json({
         user: {
@@ -241,12 +244,9 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
         where: { email: email.toLowerCase() }
     });
 
-    if (!user) {
-        throw new BadRequestError('User not found');
-    }
-
-    if (user.emailVerified) {
-        throw new BadRequestError('Email is already verified');
+    if (!user || user.emailVerified) {
+        // SECURITY: Return success regardless of existence or status to prevent enumeration.
+        return res.json({ message: 'Se o e-mail for válido e não estiver verificado, você receberá um link de verificação.' });
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -261,7 +261,7 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
     // Send verification email
     await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);
 
-    res.json({ message: 'Verification email resent' });
+    res.json({ message: 'Se o e-mail for válido e não estiver verificado, você receberá um link de verificação.' });
 });
 
 /**
@@ -281,8 +281,12 @@ export const uploadAvatar = asyncHandler(async (req: Request, res: Response) => 
         throw new BadRequestError('File too large. Max 1MB allowed.');
     }
 
+    // Security: Strip metadata from avatar
+    const ext = path.extname(file.originalname || '');
+    const reprocessedBuffer = await reprocessImageFromBuffer(file.buffer, ext);
+
     // Convert to Base64
-    const base64Image = file.buffer.toString('base64');
+    const base64Image = reprocessedBuffer.toString('base64');
     const avatarUrl = `data:${file.mimetype};base64,${base64Image}`;
 
     const user = await prisma.user.update({

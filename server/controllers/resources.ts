@@ -1,9 +1,14 @@
 import { Request, Response } from 'express';
+import path from 'path';
+import fs from 'fs/promises';
 import { ResourceService } from '../services/resourceService.js';
 import { toFolderDto, toResourceDto } from '../utils/dtos.js';
 import { createFolderSchema, createResourceSchema } from '../utils/schemas.js';
-import { BadRequestError } from '../utils/errors.js';
+import { BadRequestError, NotFoundError } from '../utils/errors.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { validateFileContent, sanitizeSvg, reprocessImage, validateImageDimensions } from '../utils/security.js';
+import { SECURITY_CONFIG } from '../utils/config.js';
+import { uploadsDir } from '../utils/upload.js';
 
 export const getFolders = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId!;
@@ -14,12 +19,9 @@ export const getFolders = asyncHandler(async (req: Request, res: Response) => {
 export const createFolder = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId!;
     const result = createFolderSchema.safeParse(req.body);
-    if (!result.success) {
-        throw new BadRequestError(result.error.issues[0].message);
-    }
+    if (!result.success) throw new BadRequestError(result.error.issues[0].message);
 
-    const { name } = result.data;
-    const folder = await ResourceService.createFolder(userId, name);
+    const folder = await ResourceService.createFolder(userId, result.data.name);
     res.status(201).json({ folder: toFolderDto(folder) });
 });
 
@@ -39,34 +41,61 @@ export const getResources = asyncHandler(async (req: Request, res: Response) => 
     res.json({ resources: resources.map(toResourceDto) });
 });
 
+// Resource limit validation moved to ResourceService.validateUserLimits
+
+/**
+ * Handles security validation and processing for uploaded files.
+ */
+async function processUploadedFile(file: Express.Multer.File) {
+    const { ext, mime } = await validateFileContent(file.path);
+    await validateImageDimensions(file.path, mime);
+
+    if (mime === 'image/svg+xml') await sanitizeSvg(file.path);
+    if (['image/jpeg', 'image/png', 'image/webp'].includes(mime)) await reprocessImage(file.path, ext);
+
+    let finalPath = file.path;
+    let finalFilename = file.filename;
+
+    if (path.extname(file.filename) !== ext) {
+        finalFilename = `${file.filename}${ext}`;
+        finalPath = path.join(path.dirname(file.path), finalFilename);
+        await fs.rename(file.path, finalPath);
+    }
+
+    return {
+        fileName: file.originalname,
+        fileType: mime,
+        fileUrl: `/uploads/${finalFilename}`,
+        filePath: finalPath
+    };
+}
+
 export const createResource = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId!;
     const result = createResourceSchema.safeParse(req.body);
-    if (!result.success) {
-        throw new BadRequestError(result.error.issues[0].message);
-    }
+    if (!result.success) throw new BadRequestError(result.error.issues[0].message);
 
     const { type, title, url, tags, notes, completed, folderId: rawFolderId } = result.data;
     const folderId = rawFolderId && rawFolderId !== 'general' ? rawFolderId : null;
 
-    let fileName: string | null = null;
-    let fileType: string | null = null;
-    let fileUrl: string | null = null;
+    await ResourceService.validateUserLimits(userId, type);
+
+    let fileData = { fileName: null as string | null, fileType: null as string | null, fileUrl: null as string | null };
 
     if (type === 'file') {
         if (!req.file) throw new BadRequestError('File is required for type=file');
-        fileName = req.file.originalname || null;
-        fileType = req.file.mimetype || null;
-        fileUrl = `/uploads/${req.file.filename}`;
+
+        try {
+            const processed = await processUploadedFile(req.file);
+            fileData = { fileName: processed.fileName, fileType: processed.fileType, fileUrl: processed.fileUrl };
+        } catch (error) {
+            if (req.file.path) await fs.unlink(req.file.path).catch(() => { });
+            throw error;
+        }
     }
 
     const resource = await ResourceService.createResource(userId, {
-        type,
-        title,
-        url,
-        fileName,
-        fileType,
-        fileUrl,
+        type, title, url, ...fileData,
         tags: tags || [],
         notes: notes || '',
         completed: completed || false,
@@ -76,14 +105,22 @@ export const createResource = asyncHandler(async (req: Request, res: Response) =
     res.status(201).json({ resource: toResourceDto(resource) });
 });
 
+interface UpdateResourceData {
+    completed?: boolean;
+    folderId?: string | null;
+    notes?: string;
+    tags?: string[];
+}
+
 export const updateResource = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId!;
     const id = String(req.params.id);
 
-    const data: any = {};
+    const data: UpdateResourceData = {};
     if (typeof req.body?.completed === 'boolean') data.completed = req.body.completed;
-    if (typeof req.body?.folderId === 'string') data.folderId = req.body.folderId;
-    if (req.body?.folderId === null) data.folderId = null;
+    if (typeof req.body?.folderId === 'string' || req.body?.folderId === null) {
+        data.folderId = req.body.folderId;
+    }
     if (typeof req.body?.notes === 'string') data.notes = req.body.notes;
     if (Array.isArray(req.body?.tags)) data.tags = req.body.tags.map(String);
 
@@ -97,6 +134,25 @@ export const deleteResource = asyncHandler(async (req: Request, res: Response) =
 
     await ResourceService.deleteResource(userId, id);
     res.json({ ok: true });
+});
+
+export const downloadResource = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId!;
+    const id = String(req.params.id);
+
+    const resource = await ResourceService.getResourceById(userId, id);
+
+    if (!resource || !resource.fileUrl) {
+        throw new NotFoundError('Resource not found or has no file');
+    }
+
+    const fileName = path.basename(resource.fileUrl);
+    const filePath = path.resolve(uploadsDir, fileName);
+
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(resource.fileName || fileName)}"`);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+
+    res.sendFile(filePath);
 });
 
 export const bootstrap = asyncHandler(async (req: Request, res: Response) => {

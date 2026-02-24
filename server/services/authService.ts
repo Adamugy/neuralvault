@@ -12,31 +12,29 @@ export interface JWTPayload {
 }
 
 export class AuthService {
-    /**
-     * Hash a password using bcrypt
-     */
     static async hashPassword(password: string): Promise<string> {
         return bcrypt.hash(password, SALT_ROUNDS);
     }
 
-    /**
-     * Verify a password against a hash
-     */
     static async verifyPassword(password: string, hash: string): Promise<boolean> {
         return bcrypt.compare(password, hash);
     }
 
     /**
-     * Generate a JWT token for a user
+     * Constant-time password verification to prevent timing attacks.
      */
+    static async verifyPasswordSafe(password: string, hash: string | null): Promise<boolean> {
+        const DUMMY_HASH = '$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgNI9Xf92T46A.gXh9YhWWh2i2qy';
+        const targetHash = hash || DUMMY_HASH;
+        const isValid = await bcrypt.compare(password, targetHash);
+        return hash ? isValid : false;
+    }
+
     static generateToken(userId: string, email: string): string {
         const payload: JWTPayload = { userId, email };
         return jwt.sign(payload, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
     }
 
-    /**
-     * Verify and decode a JWT token
-     */
     static verifyToken(token: string): JWTPayload {
         try {
             return jwt.verify(token, env.JWT_SECRET) as JWTPayload;
@@ -45,25 +43,15 @@ export class AuthService {
         }
     }
 
-    /**
-     * Create a session in the database
-     */
-    static async createSession(userId: string, token: string): Promise<void> {
-        const decoded = this.verifyToken(token);
+    static async createSession(userId: string, token: string, contextFingerprint?: string): Promise<void> {
+        this.verifyToken(token);
         const expiresAt = new Date(Date.now() + this.parseExpiration(JWT_EXPIRES_IN));
 
         await prisma.session.create({
-            data: {
-                userId,
-                token,
-                expiresAt
-            }
+            data: { userId, token, expiresAt, contextFingerprint }
         });
     }
 
-    /**
-     * Delete a session from the database
-     */
     static async deleteSession(token: string): Promise<void> {
         await prisma.session.deleteMany({
             where: { token }
@@ -71,25 +59,19 @@ export class AuthService {
     }
 
     /**
-     * Validate that a session exists and is not expired
+     * Assesses session validity (expiry, idle timeout, fingerprint).
      */
-    static async validateSession(token: string): Promise<boolean> {
-        const session = await prisma.session.findUnique({
-            where: { token }
-        });
-
+    static async validateSession(token: string, contextFingerprint?: string): Promise<boolean> {
+        const session = await prisma.session.findUnique({ where: { token } });
         if (!session) return false;
 
-        // Absolute expiration check
-        if (session.expiresAt < new Date()) {
+        if (this.isFingerprintMismatched(session.contextFingerprint, contextFingerprint)) {
+            console.warn(`[Security] Session fingerprint mismatch for token ending in ...${token.slice(-8)}`);
             await this.deleteSession(token);
             return false;
         }
 
-        // Inactivity (idle) timeout check
-        const idleTimeoutMs = this.parseExpiration(env.SESSION_IDLE_TIMEOUT);
-        if (Date.now() - session.updatedAt.getTime() > idleTimeoutMs) {
-            console.log('[Auth] Session expired due to inactivity');
+        if (this.isSessionExpired(session.expiresAt) || this.isSessionIdleTimedOut(session.updatedAt)) {
             await this.deleteSession(token);
             return false;
         }
@@ -97,9 +79,21 @@ export class AuthService {
         return true;
     }
 
-    /**
-     * Update the last activity timestamp for a session
-     */
+    private static isFingerprintMismatched(stored?: string | null, provided?: string): boolean {
+        return !!(stored && provided && stored !== provided);
+    }
+
+    private static isSessionExpired(expiresAt: Date): boolean {
+        return expiresAt < new Date();
+    }
+
+    private static isSessionIdleTimedOut(updatedAt: Date): boolean {
+        const idleTimeoutMs = this.parseExpiration(env.SESSION_IDLE_TIMEOUT);
+        const isIdle = (Date.now() - updatedAt.getTime()) > idleTimeoutMs;
+        if (isIdle) console.log('[Auth] Session expired due to inactivity');
+        return isIdle;
+    }
+
     static async touchSession(token: string): Promise<void> {
         await prisma.session.update({
             where: { token },
@@ -107,9 +101,6 @@ export class AuthService {
         });
     }
 
-    /**
-     * Clean up expired sessions
-     */
     static async cleanupExpiredSessions(): Promise<void> {
         await prisma.session.deleteMany({
             where: {
@@ -118,22 +109,18 @@ export class AuthService {
         });
     }
 
-    /**
-     * Parse expiration string to milliseconds
-     */
     private static parseExpiration(expiration: string): number {
+        const UNITS: Record<string, number> = {
+            s: 1000,
+            m: 60 * 1000,
+            h: 60 * 60 * 1000,
+            d: 24 * 60 * 60 * 1000
+        };
+
         const match = expiration.match(/^(\d+)([smhd])$/);
-        if (!match) return 7 * 24 * 60 * 60 * 1000; // default 7 days
+        if (!match) return 7 * UNITS.d;
 
-        const value = parseInt(match[1]);
-        const unit = match[2];
-
-        switch (unit) {
-            case 's': return value * 1000;
-            case 'm': return value * 60 * 1000;
-            case 'h': return value * 60 * 60 * 1000;
-            case 'd': return value * 24 * 60 * 60 * 1000;
-            default: return 7 * 24 * 60 * 60 * 1000;
-        }
+        const [_, value, unit] = match;
+        return parseInt(value) * (UNITS[unit] || UNITS.d);
     }
 }

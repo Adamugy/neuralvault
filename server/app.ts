@@ -3,6 +3,8 @@ import path from 'path';
 import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { SECURITY_CONFIG } from './utils/config.js';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
@@ -24,86 +26,97 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const isProduction = env.NODE_ENV === 'production';
 
-// Helmet security headers
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "img-src": ["'self'", "data:", "https://*.google.com", "https://*.nvaulty.online", "https://images.unsplash.com", "https://www.transparenttextures.com"],
-            "script-src": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
-            "script-src-elem": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
-            "connect-src": ["'self'", "https://*.googleapis.com", "https://esm.sh", "https://*.nvaulty.online"],
-            "worker-src": ["'self'", "blob:"],
-            "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://*.nvaulty.online"],
+setupSecurity(app);
+setupRoutes(app);
+if (isProduction) setupStaticServing(app);
+app.use(errorHandler);
+
+export default app;
+
+function setupSecurity(app: express.Express) {
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                "img-src": ["'self'", "data:", "https://*.google.com", "https://*.nvaulty.online", "https://images.unsplash.com", "https://www.transparenttextures.com"],
+                "script-src": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
+                "script-src-elem": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
+                "connect-src": ["'self'", "https://*.googleapis.com", "https://esm.sh", "https://*.nvaulty.online"],
+                "worker-src": ["'self'", "blob:"],
+                "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://*.nvaulty.online"],
+            },
         },
-    },
-}));
+    }));
 
-app.use(compression());
-app.use(cors({
-    origin: env.CORS_ORIGIN || (isProduction ? undefined : 'http://localhost:3000'),
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-}));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(validateSessionContext);
-
-// Request logging
-if (!isProduction) {
-    app.use((req: Request, res: Response, next: NextFunction) => {
-        console.log(`[Express] ${req.method} ${req.path}`);
+    app.use((req, res, next) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
         next();
     });
+
+    app.use(compression());
+    app.use(cors({
+        origin: env.CORS_ORIGIN || (isProduction ? undefined : 'http://localhost:3000'),
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    }));
+
+    const apiLimiter = rateLimit({
+        windowMs: SECURITY_CONFIG.API_WINDOW_MS,
+        max: SECURITY_CONFIG.API_MAX_REQUESTS,
+        message: { error: 'Too many requests from this IP' },
+        standardHeaders: true,
+        legacyHeaders: false,
+    });
+    app.use('/api/', apiLimiter);
 }
 
-// Authentication routes configured
-app.use('/api/auth', authRoutes);
+function setupRoutes(app: express.Express) {
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use(validateSessionContext);
 
-// Static files
-app.use('/uploads', express.static(uploadsDir));
+    if (!isProduction) {
+        app.use((req, res, next) => {
+            console.log(`[Express] ${req.method} ${req.path}`);
+            next();
+        });
+    }
 
+    const uploadLimiter = rateLimit({
+        windowMs: SECURITY_CONFIG.UPLOAD_WINDOW_MS,
+        max: SECURITY_CONFIG.UPLOAD_MAX_REQUESTS,
+        message: { error: 'Upload limit exceeded' },
+        standardHeaders: true,
+        legacyHeaders: false,
+    });
 
+    app.use(['/api/resources', '/api/ai/analyze-image', '/api/academic/generate'], uploadLimiter);
 
-// API Routes
-app.use('/api/ai', aiRoutes);
-app.use('/api', resourcesRoutes);
-app.use('/api/academic', academicRoutes);
-app.use('/api', configRoutes);
-app.use('/api/auth', passkeyRoutes);
+    app.use('/api/auth', authRoutes);
+    app.use('/api/auth', passkeyRoutes);
+    app.use('/api/ai', aiRoutes);
+    app.use('/api/academic', academicRoutes);
+    app.use('/api', resourcesRoutes);
+    app.use('/api', configRoutes);
+}
 
-// Production Static Serving & SPA fallback
-if (isProduction) {
+function setupStaticServing(app: express.Express) {
     const distPath = path.join(process.cwd(), 'dist');
+
     app.use(express.static(distPath, {
         index: false,
         maxAge: '1y',
         etag: true,
         lastModified: true,
         setHeaders: (res, filePath) => {
-            if (filePath.endsWith('.js')) {
-                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            } else if (filePath.match(/\.(png|jpg|jpeg|gif|ico|webp|svg|woff|woff2|eot|ttf|otf)$/)) {
-                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-            } else {
-                res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
-            }
+            const isImmutable = filePath.endsWith('.js') || filePath.match(/\.(png|jpg|jpeg|gif|ico|webp|svg|woff|woff2|eot|ttf|otf)$/);
+            res.setHeader('Cache-Control', isImmutable ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate');
         },
     }));
 
     app.get('*', (req: Request, res: Response) => {
         const indexPath = path.join(distPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-            res.sendFile(indexPath);
-        } else {
-            res.status(404).send('Not Found');
-        }
+        fs.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send('Not Found');
     });
 }
-
-// Error Handler
-app.use(errorHandler);
-
-export default app;
