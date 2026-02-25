@@ -3,6 +3,7 @@ import { User, CreditCard, Shield, Layout, Bell, Check, Zap, Building, Lock, Loa
 import { UserProfile, AppSettings, PlanTier } from '../types';
 import { usePasskeys } from '../hooks/usePasskeys';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 
 interface SettingsProps {
   userProfile: UserProfile;
@@ -38,6 +39,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { registerPasskey } = usePasskeys();
   const { refreshUser, getToken } = useAuth();
+  const { showToast, confirm, prompt } = useNotification();
 
   const handleSave = async () => {
     if (!onSaveProfile) return;
@@ -49,7 +51,7 @@ export const Settings: React.FC<SettingsProps> = ({
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('Save error:', error);
-      alert('Failed to save profile changes');
+      showToast('Failed to save profile changes', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -60,10 +62,10 @@ export const Settings: React.FC<SettingsProps> = ({
     try {
       await registerPasskey(userProfile.email);
       setUserProfile(prev => ({ ...prev, hasPasskey: true }));
-      alert('Passkey registrada com sucesso!');
+      showToast('Passkey registered successfully!', 'success');
     } catch (error: any) {
       console.error('Passkey error:', error);
-      alert(error.message);
+      showToast(error.message, 'error');
     } finally {
       setPasskeyLoading(false);
     }
@@ -78,7 +80,7 @@ export const Settings: React.FC<SettingsProps> = ({
     if (!file) return;
 
     if (file.size > 1024 * 1024) {
-      alert('File too large. Max 1MB allowed.');
+      showToast('File too large. Max 1MB allowed.', 'warning');
       return;
     }
 
@@ -104,9 +106,10 @@ export const Settings: React.FC<SettingsProps> = ({
       const data = await res.json();
       setUserProfile(prev => ({ ...prev, avatarUrl: data.avatarUrl }));
       await refreshUser(); // Update AuthContext state
+      showToast('Avatar updated successfully!', 'success');
     } catch (error: any) {
       console.error('Avatar upload error:', error);
-      alert(error.message || 'Failed to update avatar');
+      showToast(error.message || 'Failed to update avatar', 'error');
     } finally {
       setAvatarLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -127,7 +130,7 @@ export const Settings: React.FC<SettingsProps> = ({
       setTwoFactorSecret(data.secret);
       setIsSettingUp2FA(true);
     } catch (err: any) {
-      alert(err.message || 'Erro ao gerar 2FA');
+      showToast(err.message || 'Error generating 2FA', 'error');
     } finally {
       setIsVerifying2FA(false);
     }
@@ -152,18 +155,19 @@ export const Settings: React.FC<SettingsProps> = ({
       setAppSettings(prev => ({ ...prev, twoFactorEnabled: true }));
       setIsSettingUp2FA(false);
       setTwoFactorVerifyCode('');
-      alert('2FA ativada com sucesso!');
+      showToast('2FA enabled successfully!', 'success');
     } catch (err: any) {
-      alert(err.message || 'Erro ao ativar 2FA');
+      showToast(err.message || 'Error enabling 2FA', 'error');
     } finally {
       setIsVerifying2FA(false);
     }
   };
 
   const handleDisable2FA = async () => {
-    if (!confirm('Deseja realmente desativar a autenticação de dois fatores? Sua conta ficará menos segura.')) return;
+    const confirmed = await confirm('Are you sure you want to disable two-factor authentication? Your account will be less secure.', 'Disable 2FA');
+    if (!confirmed) return;
     
-    const code = prompt('Insira seu código de 6 dígitos para desativar:');
+    const code = await prompt('Enter your 6-digit code to disable:', '000000', 'Verify 2FA Code');
     if (!code) return;
 
     setIsVerifying2FA(true);
@@ -182,9 +186,9 @@ export const Settings: React.FC<SettingsProps> = ({
       
       setUserProfile(prev => ({ ...prev, twoFactorEnabled: false }));
       setAppSettings(prev => ({ ...prev, twoFactorEnabled: false }));
-      alert('2FA desativada.');
+      showToast('2FA disabled.', 'info');
     } catch (err: any) {
-      alert(err.message || 'Erro ao desativar 2FA');
+      showToast(err.message || 'Error disabling 2FA', 'error');
     } finally {
       setIsVerifying2FA(false);
     }
@@ -198,18 +202,18 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="h-full bg-transparent flex flex-col md:flex-row overflow-hidden">
-      {/* Settings Sidebar */}
-      <div className="w-full md:w-64 glass-panel border-r border-white/10 p-6 flex-shrink-0 backdrop-blur-md">
-        <h2 className="text-lg font-bold text-white mb-4 px-2">Settings</h2>
-        <nav className="space-y-2">
+      {/* Settings Sidebar / Mobile Tabs */}
+      <div className="w-full md:w-64 glass-panel border-b md:border-b-0 md:border-r border-white/10 p-4 md:p-6 flex-shrink-0 backdrop-blur-md z-10">
+        <h2 className="text-lg font-bold text-white mb-4 px-2 hidden md:block">Settings</h2>
+        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible no-scrollbar pb-2 md:pb-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-3 px-4 py-2.5 md:py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'bg-[var(--neon-primary)]/10 text-[var(--neon-primary)] border border-[var(--neon-primary)]/20 shadow-[0_0_10px_-5px_var(--neon-primary)]'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent'
               }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -311,10 +315,10 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                     <div>
                       <p className={`${resendSuccess ? 'text-emerald-500' : 'text-amber-500'} text-sm font-medium`}>
-                        {resendSuccess ? 'E-mail enviado!' : 'E-mail não verificado'}
+                        {resendSuccess ? 'Email sent!' : 'Email not verified'}
                       </p>
                       <p className="text-slate-400 text-xs">
-                        {resendSuccess ? 'Verifique sua caixa de entrada e spam.' : 'Verifique seu e-mail para garantir a segurança da sua conta.'}
+                        {resendSuccess ? 'Check your inbox and spam folder.' : 'Verify your email to ensure your account security.'}
                       </p>
                     </div>
                   </div>
@@ -324,7 +328,7 @@ export const Settings: React.FC<SettingsProps> = ({
                             await refreshUser();
                         }}
                         className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        title="Checar status de verificação"
+                        title="Check verification status"
                     >
                         <RefreshCcw className="w-4 h-4" />
                     </button>
@@ -343,10 +347,10 @@ export const Settings: React.FC<SettingsProps> = ({
                                 setTimeout(() => setResendSuccess(false), 5000);
                             } else {
                                 const data = await res.json();
-                                alert(data.message || 'Falha ao reenviar');
+                                alert(data.message || 'Failed to resend');
                             }
                         } catch (err) {
-                            alert('Erro ao reenviar verificação.');
+                            alert('Error resending verification.');
                         } finally {
                             setIsResending(false);
                         }
@@ -359,7 +363,7 @@ export const Settings: React.FC<SettingsProps> = ({
                         }`}
                     >
                         {isResending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                        {resendSuccess ? 'Enviado' : 'Reenviar Link'}
+                        {resendSuccess ? 'Sent' : 'Resend Link'}
                     </button>
                   </div>
                 </div>
@@ -443,15 +447,15 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
 
                 <div className="glass-panel border border-white/10 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                          <div className="flex gap-4">
-                             <div className="p-3 bg-[var(--neon-primary)]/10 rounded-lg text-[var(--neon-primary)] border border-[var(--neon-primary)]/20">
+                             <div className="p-3 bg-[var(--neon-primary)]/10 rounded-lg text-[var(--neon-primary)] border border-[var(--neon-primary)]/20 flex-shrink-0">
                                  <Fingerprint className="w-6 h-6" />
                              </div>
                              <div>
                                 <h4 className="text-white font-medium">Passkeys (WebAuthn)</h4>
-                                <p className="text-sm text-slate-400">Ative o login sem senha usando biometria ou chaves USB.</p>
-                                <div className="flex gap-3 mt-2 text-slate-500">
+                                <p className="text-sm text-slate-400">Enable passwordless login using biometrics or USB keys.</p>
+                                <div className="flex flex-wrap gap-3 mt-2 text-slate-500">
                                     <div className="flex items-center gap-1.5 transition-colors hover:text-[#0078d4]" title="Windows Hello">
                                         <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M0 0v11.408h11.408V0zm12.592 0v11.408H24V0zM0 12.592V24h11.408V12.592zm12.592 0V24H24V12.592z"/></svg>
                                         <span className="text-[10px] font-bold uppercase tracking-tighter">Windows</span>
@@ -470,43 +474,43 @@ export const Settings: React.FC<SettingsProps> = ({
                         <button 
                             onClick={handleRegisterPasskey}
                             disabled={passkeyLoading || userProfile.hasPasskey}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                            className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                                 userProfile.hasPasskey 
                                 ? 'bg-emerald-500/20 text-emerald-500 cursor-not-allowed border border-emerald-500/30' 
                                 : 'bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white shadow-[0_0_15px_-5px_var(--neon-primary)]'
                             }`}
                         >
                             {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : userProfile.hasPasskey ? <Check className="w-4 h-4" /> : null}
-                            {userProfile.hasPasskey ? 'Registrado' : 'Registrar Passkey'}
+                            {userProfile.hasPasskey ? 'Registered' : 'Register Passkey'}
                         </button>
                     </div>
 
                     <div className="h-px bg-white/10" />
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                          <div className="flex gap-4">
-                             <div className="p-3 bg-teal-500/10 rounded-lg text-teal-500 border border-teal-500/20">
+                             <div className="p-3 bg-teal-500/10 rounded-lg text-teal-500 border border-teal-500/20 flex-shrink-0">
                                  <Lock className="w-6 h-6" />
                              </div>
                              <div>
                                 <h4 className="text-white font-medium">Two-Factor Authentication (TOTP)</h4>
-                                <p className="text-sm text-slate-400">Adicione uma camada extra de segurança usando Google Authenticator ou similar.</p>
+                                <p className="text-sm text-slate-400">Add an extra layer of security using Google Authenticator or similar.</p>
                                 {userProfile.twoFactorEnabled && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded mt-1 inline-block">Ativado</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded mt-1 inline-block">Enabled</span>
                                 )}
                             </div>
                          </div>
                         <button 
                             onClick={userProfile.twoFactorEnabled ? handleDisable2FA : handleGenerate2FA}
                             disabled={isVerifying2FA}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                            className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                                 userProfile.twoFactorEnabled 
                                 ? 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20' 
                                 : 'bg-teal-600 hover:bg-teal-500 text-white shadow-[0_0_15px_-5px_#0d9488]'
                             }`}
                         >
                             {isVerifying2FA ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            {userProfile.twoFactorEnabled ? 'Desativar 2FA' : 'Configurar 2FA'}
+                            {userProfile.twoFactorEnabled ? 'Disable 2FA' : 'Set up 2FA'}
                         </button>
                     </div>
 
@@ -524,15 +528,15 @@ export const Settings: React.FC<SettingsProps> = ({
                                 </div>
                                 <div className="flex-1 space-y-4">
                                     <div>
-                                        <h5 className="text-white font-bold mb-1">Escaneie o código QR</h5>
-                                        <p className="text-slate-400 text-sm">Escaneie esta imagem com seu app autenticador (Google Authenticator, Authy, etc).</p>
+                                        <h5 className="text-white font-bold mb-1">Scan the QR code</h5>
+                                        <p className="text-slate-400 text-sm">Scan this image with your authenticator app (Google Authenticator, Authy, etc).</p>
                                     </div>
                                     <div className="bg-black/40 p-3 rounded-lg border border-white/5">
-                                        <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Ou insira manualmente:</p>
+                                        <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Or enter manually:</p>
                                         <code className="text-teal-400 text-sm font-mono break-all">{twoFactorSecret}</code>
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="block text-slate-400 text-xs font-medium uppercase">Código de Verificação</label>
+                                        <label className="block text-slate-400 text-xs font-medium uppercase">Verification Code</label>
                                         <div className="flex gap-2">
                                             <input 
                                                 type="text" 
@@ -547,13 +551,13 @@ export const Settings: React.FC<SettingsProps> = ({
                                                 disabled={isVerifying2FA || twoFactorVerifyCode.length < 6}
                                                 className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
                                             >
-                                                Confirmar
+                                                Confirm
                                             </button>
                                             <button 
                                                 onClick={() => setIsSettingUp2FA(false)}
                                                 className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
                                             >
-                                                Cancelar
+                                                Cancel
                                             </button>
                                         </div>
                                     </div>

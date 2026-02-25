@@ -84,7 +84,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'model',
-        content: "Desculpe, encontrei um erro ao processar sua solicitação. Verifique sua conexão ou tente novamente mais tarde.",
+        content: "Sorry, I encountered an error while processing your request. Please check your connection or try again later.",
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -151,7 +151,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                 }`}
             >
                 <Brain className={`w-3 h-3 ${thinkingMode ? 'animate-pulse' : ''}`} />
-                <span>Raciocínio Profundo</span>
+                <span>Deep Reasoning</span>
                 {!isPremium && <Lock className="w-2.5 h-2.5" />}
             </button>
         </div>
@@ -168,13 +168,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
                   <Bot className="w-10 h-10 text-indigo-500" />
                </div>
-               <h1 className="text-3xl font-bold text-white tracking-tight">O que vamos explorar hoje?</h1>
+               <h1 className="text-3xl font-bold text-white tracking-tight">What shall we explore today?</h1>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg">
                   {[
-                    "Explique Transformers simples",
-                    "Resuma o conceito de Backpropagation",
-                    "Ajude-me a organizar meus papers",
-                    "Qual a última novidade em LLMs?"
+                    "Explain Transformers simply",
+                    "Summarize the concept of Backpropagation",
+                    "Help me organize my papers",
+                    "What's the latest in LLMs?"
                   ].map((tip, i) => (
                     <button 
                         key={i}
@@ -205,7 +205,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold text-slate-200 uppercase tracking-tighter">
-                      {msg.role === 'user' ? 'Você' : 'Gemini'}
+                      {msg.role === 'user' ? 'You' : 'Gemini'}
                     </span>
                     <span className="text-[10px] text-slate-600">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -216,7 +216,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                     {msg.role === 'model' && msg.isThinking && (
                       <div className="flex items-center gap-2 text-[10px] text-indigo-400 mb-4 font-bold border-b border-indigo-500/10 pb-2">
                         <Brain className="w-3 h-3 animate-pulse" />
-                        PROCESSO DE PENSAMENTO ATIVADO
+                        THINKING PROCESS ACTIVATED
                       </div>
                     )}
                     
@@ -238,7 +238,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                                     className="hover:text-white transition-colors flex items-center gap-1"
                                   >
                                     {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                                    {copiedId === msg.id ? 'Copiado' : 'Copiar'}
+                                    {copiedId === msg.id ? 'Copied' : 'Copy'}
                                   </button>
                                 </div>
                                 <SyntaxHighlighter
@@ -301,7 +301,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={thinkingMode ? "Faça uma pergunta complexa para análise profunda..." : "Como posso ajudar seus estudos hoje?"}
+              placeholder={thinkingMode ? "Ask a complex question for deep analysis..." : "How can I help with your studies today?"}
               rows={1}
               className="w-full bg-transparent text-slate-100 pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
@@ -318,7 +318,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             </button>
           </div>
           <p className="text-center text-[10px] text-slate-600 mt-4 font-medium tracking-wide">
-            {thinkingMode ? "MODO DE RACIOCÍNIO PROFUNDO ATIVADO • RESPOSTAS MAIS DETALHADAS" : "GEMINI PRO PREVIEW • INTELIGÊNCIA ARTIFICIAL PARA PESQUISA"}
+            {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "GEMINI PRO PREVIEW • AI RESEARCH ASSISTANT"}
           </p>
         </div>
       </div>

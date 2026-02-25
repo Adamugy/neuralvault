@@ -50,7 +50,8 @@ const AppContent: React.FC = () => {
     email: '',
     role: '',
     plan: 'free',
-    avatarUrl: ''
+    avatarUrl: '',
+    hasPasskey: false
   });
 
   useEffect(() => {
@@ -100,7 +101,9 @@ const AppContent: React.FC = () => {
                 role: data.user.role || '',
                 avatarUrl: data.user.avatarUrl || '',
                 plan: data.user.plan || prev.plan,
-                emailVerified: data.user.emailVerified ?? userEmailVerified
+                emailVerified: data.user.emailVerified ?? userEmailVerified,
+                hasPasskey: data.user.hasPasskey ?? prev.hasPasskey,
+                twoFactorEnabled: data.user.twoFactorEnabled ?? prev.twoFactorEnabled
             }));
         }
     };
@@ -246,7 +249,7 @@ const AppContent: React.FC = () => {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
         
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-0">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8">
            {renderContent()}
         </div>
       </main>
@@ -261,7 +264,7 @@ function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Rota da Landing Page - Página inicial não autenticada */}
+        {/* Landing Page Route - Unauthenticated initial page */}
         <Route
           path="/"
           element={
@@ -281,7 +284,7 @@ function App() {
             </div>
           }
         />
-        {/* Rotas de autenticação */}
+        {/* Authentication routes */}
         <Route
           path="/sign-in"
           element={
@@ -332,7 +335,7 @@ function App() {
             </div>
           }
         />
-        {/* Rotas protegidas */}
+        {/* Protected routes */}
         <Route
           path="/dashboard/*"
           element={
@@ -341,7 +344,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* Redirecionamento para a página inicial */}
+        {/* Redirect to initial page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>

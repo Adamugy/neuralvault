@@ -197,7 +197,8 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
                 avatarUrl: user.avatarUrl,
                 plan: user.plan,
                 emailVerified: user.emailVerified,
-                hasPasskey: user.authenticators.length > 0
+                hasPasskey: user.authenticators.length > 0,
+                twoFactorEnabled: (user as any).twoFactorEnabled
             }
         });
     } catch (error: any) {

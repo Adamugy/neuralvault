@@ -46,7 +46,7 @@ const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Featur
     <h3 className="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition-colors">{feature.title}</h3>
     <p className="text-slate-400 leading-relaxed text-sm group-hover:text-slate-300">{feature.description}</p>
     <div className="mt-6 flex items-center text-xs font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
-      Saiba Mais <ArrowRight className="ml-1 w-3 h-3" />
+      Learn More <ArrowRight className="ml-1 w-3 h-3" />
     </div>
   </motion.div>
 );
@@ -188,13 +188,13 @@ const LandingPage: React.FC = () => {
                   onClick={() => navigate('/sign-in')}
                   className="text-xs font-black text-slate-400 hover:text-white transition-all uppercase tracking-widest px-4"
                 >
-                  Entrar
+                  Sign In
                 </button>
                 <button 
                   onClick={() => navigate('/sign-up')}
                   className="hidden sm:flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95"
                 >
-                  Cadastrar <ChevronRight className="w-4 h-4" />
+                  Sign Up <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
         </div>
@@ -298,14 +298,14 @@ const LandingPage: React.FC = () => {
             >
               <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out transform skew-x-12" />
               <span className="relative flex items-center justify-center gap-2">
-                Começar Agora <Zap className="w-6 h-6 fill-current" />
+                Start Now <Zap className="w-6 h-6 fill-current" />
               </span>
             </button>
             <button 
               onClick={() => scrollToSection('demo')}
               className="w-full sm:w-auto px-10 py-5 glass-panel hover:bg-white/5 text-white rounded-2xl font-black text-xl transition-all border border-white/10 hover:border-white/30 flex items-center justify-center gap-2"
             >
-              Ver Demo
+              Watch Demo
             </button>
           </motion.div>
 
@@ -423,8 +423,8 @@ const LandingPage: React.FC = () => {
             transition={{ duration: 0.8 }}
             className="text-center mb-16 md:mb-24"
           >
-            <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Core Funcional</div>
-            <h2 className="text-3xl md:text-6xl font-black text-white mb-6 tracking-tighter">Criado para Mentes Modernas</h2>
+            <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Core Ecosystem</div>
+            <h2 className="text-3xl md:text-6xl font-black text-white mb-6 tracking-tighter">Architected for Modern Minds</h2>
             <div className="w-24 h-1 bg-gradient-to-r from-indigo-500 to-transparent mx-auto rounded-full"></div>
           </motion.div>
           
@@ -460,19 +460,19 @@ const LandingPage: React.FC = () => {
           >
             <div className="flex-1 space-y-6 md:space-y-8 text-center lg:text-left">
               <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
-                Interação em Tempo Real
+                Real-Time Interaction
               </div>
               <h2 className="text-4xl md:text-7xl font-black text-white leading-[0.9] tracking-tighter">
-                Consulte o seu <br />
-                <span className="text-indigo-400 italic">Cérebro Digital</span>
+                Query your <br />
+                <span className="text-indigo-400 italic">Digital Brain</span>
               </h2>
               <p className="text-slate-400 text-base md:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Link neural direto para o Gemini Pro. Experimente consultar sua lógica, depurar código ou resumir artigos de pesquisa instantaneamente.
+                Direct neural link to Gemini Pro. Experience querying logic, debugging code, or summarizing research articles instantly.
               </p>
               <div className="space-y-4">
                   <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Activity className="w-4 h-4 text-emerald-400" />
-                      Status API: 99.8ms Latência
+                      Status API: 99.8ms Latency
                   </div>
                   <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Database className="w-4 h-4 text-cyan-400" />
@@ -505,7 +505,7 @@ const LandingPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center relative z-10">
                     {[
                         { label: 'Papers Indexed', value: 'Global', color: 'indigo-400' },
-                        { label: 'Neural Connections', value: 'Ilimitado', color: 'cyan-400' },
+                        { label: 'Neural Connections', value: 'Unlimited', color: 'cyan-400' },
                         { label: 'Researchers', value: 'Explore', color: 'fuchsia-400' },
                         { label: 'System Uptime', value: '99.9%', color: 'emerald-400' }
                     ].map((stat, i) => (

@@ -131,6 +131,13 @@ model GeneratedDocument {
   @@index([userId])
 }
 
+model PasskeyChallenge {
+  id        String   @id @default(uuid())
+  challenge String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
 enum ResourceType {
   link
   file

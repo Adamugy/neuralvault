@@ -41,6 +41,14 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .glass-panel {
+      backdrop-filter: blur(8px);
+      /* Less blur on mobile for performance */
+    }
+  }
 }
 
 /* Custom Scrollbar Global */

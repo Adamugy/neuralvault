@@ -6,6 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Resource, UserProfile, Folder as FolderType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { SearchBar } from './SearchBar';
 
 import { DocumentGallery } from './DocumentGallery';
@@ -35,6 +36,7 @@ interface AcademicHelperProps {
 
 export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userProfile, onOpenUpgrade }) => {
   const { getToken, isLoaded: authLoaded } = useAuth();
+  const { showToast } = useNotification();
   const [activeTask, setActiveTask] = useState<TaskType>('outline');
   const [topic, setTopic] = useState('');
   const [level, setLevel] = useState('Undergraduate');
@@ -192,7 +194,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         }]);
     } catch (error: any) {
         console.error('Generation request failed:', error);
-        alert(`Failed to generate content: ${error.message || 'Unknown error'}`);
+        showToast(`Failed to generate content: ${error.message || 'Unknown error'}`, 'error');
         setResult("An error occurred while generating content. Please try again.");
     } finally {
         setIsGenerating(false);
@@ -333,7 +335,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         document.body.removeChild(a);
     } catch (error: any) {
         console.error("PDF Export failed", error);
-        alert(error.message);
+        showToast(error.message, 'error');
     }
   };
 
@@ -777,7 +779,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                         value={editedResult}
                                         onChange={(e) => setEditedResult(e.target.value)}
                                         className="w-full min-h-[600px] bg-slate-50 border-none focus:ring-0 p-4 rounded-lg font-serif text-slate-900 leading-loose resize-none"
-                                        placeholder="Comece a digitar seu refinamento..."
+                                        placeholder="Start typing your refinement..."
                                     />
                                 ) : (
                                     <div className="markdown-content-doc">
@@ -798,7 +800,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                                                     className="hover:text-white transition-colors flex items-center gap-1"
                                                                 >
                                                                     <Copy className="w-3 h-3" />
-                                                                    Copiar
+                                                                    Copy
                                                                 </button>
                                                             </div>
                                                             <SyntaxHighlighter

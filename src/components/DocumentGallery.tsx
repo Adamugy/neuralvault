@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { FileText, Download, Clock } from 'lucide-react';
 
 interface GeneratedDocument {
@@ -12,6 +13,7 @@ interface GeneratedDocument {
 
 export const DocumentGallery: React.FC = () => {
     const { getToken } = useAuth();
+    const { showToast } = useNotification();
     const [docs, setDocs] = useState<GeneratedDocument[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -63,7 +65,7 @@ export const DocumentGallery: React.FC = () => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            alert(`Failed to export ${format.toUpperCase()}`);
+            showToast(`Failed to export ${format.toUpperCase()}`, 'error');
         }
     };
 

@@ -379,10 +379,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
   return (
     <div className="h-full flex flex-col bg-transparent">
-      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all bg-white/5 backdrop-blur-md z-30`}>
+      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all bg-white/5 backdrop-blur-md z-30`}>
         <div className="flex-shrink-0">
-          <h1 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold neon-gradient-text`}>Learning Resources</h1>
-          <p className="text-slate-500 text-xs hidden md:block">Organize your papers, datasets, and tutorials.</p>
+          <h1 className={`${isCompact ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'} font-bold neon-gradient-text`}>Learning Resources</h1>
+          <p className="text-slate-500 text-xs hidden sm:block">Organize your papers, datasets, and tutorials.</p>
         </div>
 
         {/* Uniform Search Bar */}
@@ -394,10 +394,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white px-4 py-1.5 rounded-xl font-medium transition-all shadow-[0_0_15px_-5px_var(--neon-primary)] hover:shadow-[0_0_20px_-5px_var(--neon-primary)] text-sm flex-shrink-0"
+          className="flex items-center justify-center gap-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white px-4 py-2 rounded-xl font-medium transition-all shadow-[0_0_15px_-5px_var(--neon-primary)] hover:shadow-[0_0_20px_-5px_var(--neon-primary)] text-sm flex-shrink-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add Resource</span>
+          <span>Add Resource</span>
         </button>
       </div>
 

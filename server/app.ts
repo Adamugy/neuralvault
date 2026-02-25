@@ -28,6 +28,7 @@ const isProduction = env.NODE_ENV === 'production';
 
 if (isProduction) {
     app.set('trust proxy', 1);
+    console.log('🛡️ Trust Proxy enabled for production (1 hop)');
 }
 
 setupSecurity(app);
@@ -72,6 +73,7 @@ function setupSecurity(app: express.Express) {
         message: { error: 'Too many requests from this IP' },
         standardHeaders: true,
         legacyHeaders: false,
+        validate: false,
     });
     app.use('/api/', apiLimiter);
 }
@@ -94,6 +96,7 @@ function setupRoutes(app: express.Express) {
         message: { error: 'Upload limit exceeded' },
         standardHeaders: true,
         legacyHeaders: false,
+        validate: false,
     });
 
     app.use(['/api/resources', '/api/ai/analyze-image', '/api/academic/generate'], uploadLimiter);

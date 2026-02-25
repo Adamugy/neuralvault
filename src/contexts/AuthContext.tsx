@@ -9,6 +9,7 @@ interface User {
   avatarUrl: string | null;
   plan: string;
   emailVerified: boolean;
+  hasPasskey?: boolean;
   twoFactorEnabled?: boolean;
 }
 

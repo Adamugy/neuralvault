@@ -36,13 +36,13 @@ export const usePasskeys = () => {
         } catch (error: any) {
             console.error('Passkey Registration Error:', error);
             if (error.name === 'NotAllowedError') {
-                throw new Error('Cadastro cancelado ou tempo expirado.');
+                throw new Error('Registration canceled or timed out.');
             }
             throw error;
         }
     };
 
-    const loginWithPasskey = async (email: string) => {
+    const loginWithPasskey = async (email?: string) => {
         try {
             // 1. Get options from server
             const optionsRes = await fetch('/api/auth/passkey/login-options', {
@@ -56,7 +56,7 @@ export const usePasskeys = () => {
                 throw new Error(err.error || 'Failed to get login options');
             }
 
-            const options = await optionsRes.json();
+            const { options, challengeId } = await optionsRes.json();
 
             // 2. Browser interacts with hardware
             const assertionResponse = await startAuthentication({ optionsJSON: options });
@@ -64,7 +64,7 @@ export const usePasskeys = () => {
             // 3. Send response back to server
             const verifyRes = await fetch('/api/auth/passkey/login-verify', {
                 method: 'POST',
-                body: JSON.stringify({ email, body: assertionResponse }),
+                body: JSON.stringify({ email, body: assertionResponse, challengeId }),
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -77,10 +77,10 @@ export const usePasskeys = () => {
         } catch (error: any) {
             console.error('Passkey Login Error:', error);
             if (error.name === 'NotAllowedError') {
-                throw new Error('Login cancelado ou não autorizado pelo dispositivo.');
+                throw new Error('Login canceled or not authorized by device.');
             }
             if (error.name === 'NotSupportedError') {
-                throw new Error('Seu navegador ou dispositivo não suporta Passkeys.');
+                throw new Error('Your browser or device does not support Passkeys.');
             }
             throw error;
         }
