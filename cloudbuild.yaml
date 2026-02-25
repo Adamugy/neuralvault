@@ -27,11 +27,11 @@ steps:
     waitFor: ['install']
 
   # 4.1 Run Database Migrations
-  # - name: 'node:20'
-  #   entrypoint: 'npm'
-  #   args: ['run', 'prisma:deploy']
-  #   id: 'migrate'
-  #   waitFor: ['prisma']
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['run', 'prisma:deploy']
+    id: 'migrate'
+    waitFor: ['prisma']
 
   # 5. Build and Push Docker Image
   - name: 'gcr.io/cloud-builders/docker'
