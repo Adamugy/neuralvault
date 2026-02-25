@@ -204,18 +204,36 @@ export const getAuthOptions = async (email?: string) => {
  * Authentication: Step 2 - Verify Response
  */
 export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
-    console.log(`[Passkey Debug] Verifying login. CredentialId: ${body.id}, challengeId: ${challengeId || 'session-tied'}`);
+    const credentialIdFromBrowser = body.id; // base64url string from browser
+    console.log(`[Passkey Debug] Verifying login. Browser credentialId: "${credentialIdFromBrowser}", challengeId: ${challengeId || 'session-tied'}`);
 
     // 1. Find the authenticator by credential ID
-    const dbAuthenticator = await prisma.authenticator.findUnique({
-        where: { credentialID: body.id },
+    // Try the raw base64url ID first (correct format after fix)
+    let dbAuthenticator = await prisma.authenticator.findUnique({
+        where: { credentialID: credentialIdFromBrowser },
         include: { user: true }
     });
 
+    // Fallback: try re-encoded variant (handles records saved with old double-encoding bug)
     if (!dbAuthenticator) {
-        console.error(`[Passkey Debug] Authenticator ${body.id} not found in DB`);
+        const reEncoded = Buffer.from(credentialIdFromBrowser, 'base64url').toString('base64url');
+        if (reEncoded !== credentialIdFromBrowser) {
+            console.log(`[Passkey Debug] Not found by raw ID, trying re-encoded: "${reEncoded}"`);
+            dbAuthenticator = await prisma.authenticator.findUnique({
+                where: { credentialID: reEncoded },
+                include: { user: true }
+            });
+        }
+    }
+
+    if (!dbAuthenticator) {
+        // Log all stored IDs for diagnosis
+        const allIds = await prisma.authenticator.findMany({ select: { credentialID: true } });
+        console.error(`[Passkey Debug] Authenticator "${credentialIdFromBrowser}" not found. DB has ${allIds.length} record(s): ${allIds.map(a => `"${a.credentialID}"`).join(', ')}`);
         throw new Error('Authenticator not recognized. If you have an account, please sign in with password first to link this device.');
     }
+
+    console.log(`[Passkey Debug] Found authenticator in DB with credentialID: "${dbAuthenticator.credentialID}"`);
 
     const user = dbAuthenticator.user;
 
