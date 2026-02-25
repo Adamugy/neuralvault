@@ -26,6 +26,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const isProduction = env.NODE_ENV === 'production';
 
+if (isProduction) {
+    app.set('trust proxy', 1);
+}
+
 setupSecurity(app);
 setupRoutes(app);
 if (isProduction) setupStaticServing(app);
