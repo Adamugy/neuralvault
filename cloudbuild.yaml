@@ -1,5 +1,5 @@
 options:
-  cloudSqlInstances: ["gen-lang-client-0344381286:europe-west1:neuralvault-db"]
+  cloud_sql_instances: ["gen-lang-client-0344381286:europe-west1:neuralvault-db"]
 
 steps:
   # 1. Install dependencies
