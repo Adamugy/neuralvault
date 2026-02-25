@@ -108,7 +108,7 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
     const imageParts = files ? files.map(file => fileToGenerativePart(file.path, file.mimetype)) : [];
 
     const model = ai.getGenerativeModel({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-2.5-flash',
         generationConfig: {
             maxOutputTokens: 16384,
             responseMimeType: "application/json"
