@@ -116,20 +116,21 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
         systemInstruction,
     });
 
-    console.log(`[Academic] Generating for user ${userId}, session: ${currentSessionId}`);
-
-    // Save User Message
-    await prisma.academicMessage.create({
-        data: {
-            sessionId: currentSessionId,
-            role: 'user',
-            content: `Task: ${taskType}, Topic: ${topic}, Content: ${content?.substring(0, 100)}...`
-        }
-    });
+    console.log(`[Academic] Generating for user ${userId}, session: ${currentSessionId}, taskType: ${taskType}`);
 
     try {
+        // Save User Message (inside try-catch to catch FK/DB errors on invalid sessionId)
+        await prisma.academicMessage.create({
+            data: {
+                sessionId: currentSessionId,
+                role: 'user',
+                content: `Task: ${taskType}, Topic: ${topic}, Content: ${content?.substring(0, 100) ?? '(none)'}...`
+            }
+        });
+
         const result = await model.generateContent([prompt, ...imageParts]);
         const responseText = result.response.text();
+        console.log(`[Academic] Gemini response received, length: ${responseText.length}`);
         const parsedResponse = JSON.parse(responseText);
 
         // Save Assistant Message (The thought)
@@ -167,9 +168,11 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
             sessionId: currentSessionId,
             documentId
         });
-    } catch (e) {
-        console.error("AI Generation Error", e);
-        // Fallback for non-JSON responses (robustness)
+    } catch (e: any) {
+        const errMsg = e?.message || String(e);
+        console.error(`[Academic] CRASH for user ${userId} session ${currentSessionId}: ${errMsg}`);
+        if (e?.code) console.error(`[Academic] Error code: ${e.code}`, JSON.stringify(e?.meta || {}));
+        // Fallback response (avoid hard 500)
         res.json({
             result: "Error parsing AI response. Please try again.",
             thought: "I encountered an error processing your request.",

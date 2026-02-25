@@ -118,19 +118,26 @@ export const verifyPasskeyRegistration = async (userId: string, body: any) => {
         const { credential } = registrationInfo;
         const { id, publicKey, counter } = credential;
 
-        console.log(`[Passkey Debug] Registration verified for user ${userId}. Saving authenticator...`);
-        // NOTE: `id` from simplewebauthn is already a base64url string — store it directly.
-        await prisma.authenticator.create({
-            data: {
-                userId,
-                credentialID: id,
-                credentialPublicKey: Buffer.from(publicKey),
-                counter: BigInt(counter),
-                credentialDeviceType: 'single_device',
-                credentialBackedUp: true,
-                transports: (body.response as any).transports || [],
-            },
-        });
+        console.log(`[Passkey Debug] Registration verified for user ${userId}. Saving authenticator with credentialID: "${id}"...`);
+        try {
+            // NOTE: `id` from simplewebauthn is already a base64url string — store it directly.
+            await prisma.authenticator.create({
+                data: {
+                    userId,
+                    credentialID: id,
+                    credentialPublicKey: Buffer.from(publicKey),
+                    counter: BigInt(counter),
+                    credentialDeviceType: 'single_device',
+                    credentialBackedUp: true,
+                    transports: (body.response as any).transports || [],
+                },
+            });
+            console.log(`[Passkey Debug] ✅ Authenticator saved successfully for user ${userId}, credentialID: "${id}"`);
+        } catch (saveError: any) {
+            console.error(`[Passkey Debug] ❌ FAILED to save authenticator for user ${userId}:`, saveError?.message || saveError);
+            console.error(`[Passkey Debug] Save error details:`, JSON.stringify({ code: saveError?.code, meta: saveError?.meta }));
+            throw saveError;
+        }
 
         // Clear challenge
         await prisma.user.update({
