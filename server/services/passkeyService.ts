@@ -67,16 +67,18 @@ export const getRegistrationOptions = async (userId: string, email: string) => {
         rpID,
         userID: isoUint8Array.fromUTF8String(userId),
         userName: email,
-        attestationType: 'none',
+        timeout: 60000,
+        attestationType: 'direct',
         excludeCredentials: userAuthenticators.map(cred => ({
             id: cred.credentialID,
             type: 'public-key',
             transports: cred.transports as any,
         })),
         authenticatorSelection: {
-            residentKey: 'required',
+            residentKey: 'preferred',
             userVerification: 'required',
         },
+        supportedAlgorithmIDs: [-7, -257],
     });
 
     // Store challenge in user record
@@ -157,14 +159,10 @@ export const getAuthOptions = async (email: string) => {
     }
 
     const options = await generateAuthenticationOptions({
-        rpID,
-        allowCredentials: (user as any).authenticators.map((cred: any) => ({
-            id: cred.credentialID,
-            type: 'public-key',
-            // We omit transports during login to allow better discovery 
-            // across different device types/methods.
-        })),
+        timeout: 60000,
+        allowCredentials: [], // Empty list allows discoverable credentials (passkeys)
         userVerification: 'required',
+        rpID,
     });
 
     // Store challenge
@@ -179,31 +177,37 @@ export const getAuthOptions = async (email: string) => {
 /**
  * Authentication: Step 2 - Verify Response
  */
-export const verifyPasskeyLogin = async (email: string, body: any) => {
-    console.log(`[Passkey Debug] Verifying login for: ${email}, credentialId: ${body.id}`);
-    const user = await prisma.user.findUnique({
-        where: { email } as any,
-        include: { authenticators: true } as any,
+export const verifyPasskeyLogin = async (email: string | undefined, body: any) => {
+    console.log(`[Passkey Debug] Verifying login. CredentialId: ${body.id}, Email provided: ${email || 'none'}`);
+
+    // Find the authenticator by credential ID first
+    const dbAuthenticator = await prisma.authenticator.findUnique({
+        where: { credentialID: body.id },
+        include: { user: true }
     });
 
-    if (!user || !(user as any).currentChallenge) {
-        console.error(`[Passkey Debug] Auth challenge not found for: ${email}`);
-        throw new Error('Authentication challenge not found');
+    if (!dbAuthenticator) {
+        console.error(`[Passkey Debug] Authenticator ${body.id} not found in DB`);
+        throw new Error('Authenticator not found. Please register first.');
     }
 
-    const dbAuthenticator = (user as any).authenticators.find(
-        (auth: any) => auth.credentialID === body.id
-    );
+    const user = dbAuthenticator.user;
 
-    if (!dbAuthenticator) {
-        console.error(`[Passkey Debug] Authenticator ${body.id} not found in DB for user ${email}`);
-        throw new Error('Authenticator not found for this user');
+    // Optional: Verify email if provided
+    if (email && user.email !== email) {
+        console.error(`[Passkey Debug] Email mismatch. Provided: ${email}, Found in DB: ${user.email}`);
+        throw new Error('Authenticator does not belong to the provided email');
+    }
+
+    if (!user.currentChallenge) {
+        console.error(`[Passkey Debug] Auth challenge not found for user: ${user.email}`);
+        throw new Error('Authentication challenge not found');
     }
 
     try {
         const verification: VerifiedAuthenticationResponse = await verifyAuthenticationResponse({
             response: body,
-            expectedChallenge: (user as any).currentChallenge,
+            expectedChallenge: user.currentChallenge,
             expectedOrigin: origin,
             expectedRPID: rpID,
             requireUserVerification: true,

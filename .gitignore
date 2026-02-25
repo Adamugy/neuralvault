@@ -105,7 +105,7 @@ run_desc.json
 test_output.txt
 
 # Cloud Run
-.gcloudignore
+gcloudignore
 
 #agent
 .agent

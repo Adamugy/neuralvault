@@ -87,17 +87,21 @@ export const SignInPage = () => {
 
   const handlePasskeyLogin = async () => {
     if (!email) {
-      setError('Por favor, insira seu email primeiro para usar a Passkey.');
+      setError('Por favor, insira seu email para que possamos localizar sua Passkey.');
+      const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+      if (emailInput) emailInput.focus();
       return;
     }
     setError('');
     setPasskeyLoading(true);
     try {
+      console.log(`[Passkey] Starting login for: ${email}`);
       const result = await loginWithPasskey(email);
       setSession(result.token, result.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message);
+      console.error('[Passkey Content Error]', err);
+      setError(err.message || 'Erro inesperado na Passkey');
     } finally {
       setPasskeyLoading(false);
     }
@@ -209,10 +213,16 @@ export const SignInPage = () => {
             type="button"
             onClick={handlePasskeyLogin}
             disabled={loading || passkeyLoading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all hover:border-[var(--neon-primary)]/50 group"
+            className="w-full bg-slate-900/50 hover:bg-slate-800/80 text-white border border-white/10 rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all hover:border-[var(--neon-primary)]/50 group relative overflow-hidden active:scale-[0.98]"
           >
-            {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin text-[var(--neon-primary)]" /> : <Fingerprint className="w-4 h-4 text-[var(--neon-primary)] group-hover:scale-110 transition-transform" />}
-            Entrar com Passkey
+            <div className="absolute inset-0 bg-gradient-to-r from-[var(--neon-primary)]/0 via-[var(--neon-primary)]/5 to-[var(--neon-primary)]/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+            
+            {passkeyLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[var(--neon-primary)]" />
+            ) : (
+              <Fingerprint className="w-4 h-4 text-[var(--neon-primary)] group-hover:scale-110 group-hover:rotate-12 transition-all" />
+            )}
+            <span className="relative z-10">Entrar com Biometria</span>
           </button>
 
           <p className="text-center text-slate-400 text-sm mt-4">

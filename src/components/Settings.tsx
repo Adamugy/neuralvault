@@ -118,6 +118,7 @@ export const Settings: React.FC<SettingsProps> = ({
     try {
       const token = await getToken();
       const res = await fetch('/api/auth/2fa/generate', {
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();

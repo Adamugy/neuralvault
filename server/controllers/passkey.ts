@@ -50,7 +50,7 @@ export const loginOptions = asyncHandler(async (req: Request, res: Response) => 
 
 export const loginVerify = asyncHandler(async (req: Request, res: Response) => {
     const { email, body } = req.body;
-    if (!email || !body) return res.status(400).json({ error: 'Email and body are required' });
+    if (!body) return res.status(400).json({ error: 'Credential body is required' });
 
     try {
         const { verification, user } = await passkeyService.verifyPasskeyLogin(email, body);

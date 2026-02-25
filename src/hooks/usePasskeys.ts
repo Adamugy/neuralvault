@@ -77,7 +77,10 @@ export const usePasskeys = () => {
         } catch (error: any) {
             console.error('Passkey Login Error:', error);
             if (error.name === 'NotAllowedError') {
-                throw new Error('Login cancelado.');
+                throw new Error('Login cancelado ou não autorizado pelo dispositivo.');
+            }
+            if (error.name === 'NotSupportedError') {
+                throw new Error('Seu navegador ou dispositivo não suporta Passkeys.');
             }
             throw error;
         }
