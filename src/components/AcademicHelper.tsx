@@ -125,21 +125,12 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         const formData = new FormData();
         formData.append('taskType', activeTask);
         formData.append('topic', topic);
-        formData.append('content', contentInput);
         formData.append('level', level);
         if (sessionId) formData.append('sessionId', sessionId);
-        
-        if (activeTask === 'organize') {
-            // Include resources list for organizer
-            formData.append('content', JSON.stringify(resources.map(r => ({
-                title: r.title,
-                notes: r.notes,
-                tags: r.tags
-            }))));
-        }
 
+        // Build content string once (never append content multiple times - causes array on server)
+        let finalContent: string;
         if (activeTask === 'organize') {
-            // Include library resources if they are in the context
             const libResources = researchFocus
                 .filter(item => item.type === 'library' && item.libraryData)
                 .map(item => ({
@@ -147,20 +138,20 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                     notes: item.libraryData!.notes,
                     tags: item.libraryData!.tags
                 }));
-            
-            formData.append('content', JSON.stringify([
+            finalContent = JSON.stringify([
                 ...libResources,
+                ...resources.map(r => ({ title: r.title, notes: r.notes, tags: r.tags })),
                 { type: 'instruction', text: contentInput || topic }
-            ]));
+            ]);
         } else {
             // For other tasks, inject library context into the content field
             const libraryContext = researchFocus
                 .filter(item => item.type === 'library' && item.libraryData)
                 .map(item => `[Reference: ${item.libraryData!.title}] Notes: ${item.libraryData!.notes}`)
                 .join('\n\n');
-            
-            formData.append('content', contentInput + (libraryContext ? '\n\n' + libraryContext : ''));
+            finalContent = contentInput + (libraryContext ? '\n\n' + libraryContext : '');
         }
+        formData.append('content', finalContent);
 
         researchFocus.forEach(item => {
             if (item.type === 'file' && item.fileData) {

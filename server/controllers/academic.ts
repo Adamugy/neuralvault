@@ -124,7 +124,7 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
             data: {
                 sessionId: currentSessionId,
                 role: 'user',
-                content: `Task: ${taskType}, Topic: ${topic}, Content: ${content?.substring(0, 100) ?? '(none)'}...`
+                content: `Task: ${taskType}, Topic: ${topic}, Content: ${typeof content === 'string' ? content.substring(0, 100) : JSON.stringify(content ?? '').substring(0, 100)}...`
             }
         });
 
