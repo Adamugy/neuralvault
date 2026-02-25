@@ -38,7 +38,7 @@ function setupSecurity(app: express.Express) {
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                "img-src": ["'self'", "data:", "https://*.google.com", "https://*.nvaulty.online", "https://images.unsplash.com", "https://www.transparenttextures.com"],
+                "img-src": ["'self'", "data:", "https://*.google.com", "https://*.nvaulty.online", "https://images.unsplash.com", "https://www.transparenttextures.com", "https://grainy-gradients.vercel.app"],
                 "script-src": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
                 "script-src-elem": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
                 "connect-src": ["'self'", "https://*.googleapis.com", "https://esm.sh", "https://*.nvaulty.online"],
@@ -50,6 +50,7 @@ function setupSecurity(app: express.Express) {
 
     app.use((req, res, next) => {
         res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Permissions-Policy', 'interest-cohort=(), browsing-topics=(), run-ad-auction=(), join-ad-interest-group=(), private-state-token-redemption=(), private-state-token-issuance=(), private-aggregation=(), attribution-reporting=()');
         next();
     });
 

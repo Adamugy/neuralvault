@@ -1,4 +1,13 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load production environment variables early
+if (process.env.NODE_ENV === 'production') {
+    dotenv.config({ path: path.join(process.cwd(), '.env.production') });
+} else {
+    dotenv.config();
+}
 
 const envSchema = z.object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -15,6 +24,8 @@ const envSchema = z.object({
     APP_URL: z.string().url().optional(),
     DOMAIN: z.string().optional().default('localhost'),
     RESEND_API_KEY: z.string().optional(),
+    PASSKEY_RP_ID: z.string().optional(),
+    PASSKEY_ORIGIN: z.string().optional(),
     SESSION_IDLE_TIMEOUT: z.string().default('30m'),
 });
 

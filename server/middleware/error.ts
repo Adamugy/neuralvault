@@ -5,8 +5,9 @@ import { env } from '../utils/env.js';
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
     const isProduction = env.NODE_ENV === 'production';
 
-    if (!isProduction || (err as any).status >= 500) {
-        console.error(`[Error] ${req.method} ${req.originalUrl}:`, err.message);
+    if (!isProduction || (err as any).status >= 500 || (err instanceof ApiError && err.statusCode >= 400)) {
+        const statusCode = (err instanceof ApiError) ? err.statusCode : ((err as any).status || 500);
+        console.error(`[Error ${statusCode}] ${req.method} ${req.path}:`, err.message);
         if (err.stack && !isProduction) console.error(err.stack);
     }
 

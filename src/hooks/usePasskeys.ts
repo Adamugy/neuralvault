@@ -18,7 +18,7 @@ export const usePasskeys = () => {
             const options = await optionsRes.json();
 
             // 2. Browser interacts with hardware
-            const attestationResponse = await startRegistration(options);
+            const attestationResponse = await startRegistration({ optionsJSON: options });
 
             // 3. Send response back to server
             const verifyRes = await fetch('/api/auth/passkey/registration-verify', {
@@ -59,7 +59,7 @@ export const usePasskeys = () => {
             const options = await optionsRes.json();
 
             // 2. Browser interacts with hardware
-            const assertionResponse = await startAuthentication(options);
+            const assertionResponse = await startAuthentication({ optionsJSON: options });
 
             // 3. Send response back to server
             const verifyRes = await fetch('/api/auth/passkey/login-verify', {

@@ -7,6 +7,7 @@ import { BadRequestError, UnauthorizedError, ConflictError } from '../utils/erro
 import { reprocessImageFromBuffer } from '../utils/security.js';
 import path from 'path';
 import crypto from 'crypto';
+import { getContextFingerprint } from '../middleware/zeroTrust.js';
 
 /**
  * POST /api/auth/signup
@@ -106,12 +107,20 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
     const token = AuthService.generateToken(user.id, user.email);
 
     // Capture context fingerprint for security hardening
-    const { getContextFingerprint } = await import('../middleware/zeroTrust.js');
+    console.log(`[Auth Debug] Capturing context fingerprint...`);
     const fingerprint = getContextFingerprint(req);
 
     // Create session in database with fingerprint
-    await AuthService.createSession(user.id, token, fingerprint);
+    console.log(`[Auth Debug] Creating session for user ID: ${user.id} with token starting: ${token.substring(0, 10)}...`);
+    try {
+        await AuthService.createSession(user.id, token, fingerprint);
+        console.log(`[Auth Debug] Session created successfully.`);
+    } catch (err: any) {
+        console.error(`[Auth Debug] ERROR creating session:`, err.message);
+        throw err; // Will be caught by errorHandler
+    }
 
+    console.log(`[Auth Debug] Sign-in successful for: ${email}`);
     res.json({
         user: {
             id: (user as any).id,
@@ -144,27 +153,39 @@ export const signout = asyncHandler(async (req: Request, res: Response) => {
  */
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId!;
+    console.log(`[Auth Debug] Fetching profile for userId: ${userId}`);
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId }
-    });
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId }
+        });
 
-    if (!user) {
-        throw new UnauthorizedError();
-    }
-
-    res.json({
-        user: {
-            id: (user as any).id,
-            email: (user as any).email,
-            name: user.name,
-            lastName: user.lastName,
-            role: user.role,
-            avatarUrl: user.avatarUrl,
-            plan: user.plan,
-            emailVerified: user.emailVerified
+        if (!user) {
+            console.warn(`[Auth Debug] User not found for ID: ${userId}`);
+            throw new UnauthorizedError('Usuário não encontrado');
         }
-    });
+
+        console.log(`[Auth Debug] Profile fetched successfully for: ${user.email}`);
+        res.json({
+            user: {
+                id: (user as any).id,
+                email: (user as any).email,
+                name: user.name,
+                lastName: user.lastName,
+                role: user.role,
+                avatarUrl: user.avatarUrl,
+                plan: user.plan,
+                emailVerified: user.emailVerified
+            }
+        });
+    } catch (error: any) {
+        console.error(`[Auth Debug] CRITICAL Error in getMe for userId ${userId}:`, {
+            message: error.message,
+            stack: error.stack,
+            code: (error as any).code || 'N/A'
+        });
+        throw error;
+    }
 });
 
 /**
