@@ -45,22 +45,43 @@ const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowCla
 };
 
 export const SignInPage = () => {
-  const { signIn, setSession, loading } = useAuth();
+  const { signIn, verify2FA, setSession, loading } = useAuth();
   const { loginWithPasskey } = usePasskeys();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  
+  // 2FA States
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
-      await signIn(email, password);
+      const result = await signIn(email, password);
+      if (result.status === '2fa_required') {
+        setRequires2FA(true);
+        setTempToken(result.tempToken || '');
+        return;
+      }
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
+    }
+  };
+
+  const handle2FAVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await verify2FA(tempToken, twoFactorCode);
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Código de 2FA inválido');
     }
   };
 
@@ -89,78 +110,123 @@ export const SignInPage = () => {
       accentGlowClass1="bg-indigo-500/15"
       accentGlowClass2="bg-purple-500/15"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
-            {error}
+      {requires2FA ? (
+        <form onSubmit={handle2FAVerify} className="space-y-6">
+          <div className="text-center mb-4">
+            <Lock className="w-10 h-10 text-[var(--neon-primary)] mx-auto mb-3" />
+            <h2 className="text-xl font-bold text-white">Verificação em Duas Etapas</h2>
+            <p className="text-slate-400 text-sm mt-1">Insira o código de 6 dígitos gerado pelo seu aplicativo autenticador.</p>
           </div>
-        )}
-        <div>
-          <label className="block text-slate-400 text-sm mb-2">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
-              placeholder="you@example.com"
+              type="text"
+              value={twoFactorCode}
+              onChange={(e) => setTwoFactorCode(e.target.value)}
+              className="w-full bg-slate-950/50 border border-white/10 text-white text-center text-2xl tracking-[0.5em] py-4 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+              placeholder="000000"
               required
+              maxLength={6}
+              autoFocus
             />
           </div>
-        </div>
-        <div>
-          <label className="block text-slate-400 text-sm mb-2">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={loading || passkeyLoading}
-          className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-        >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
-        </button>
 
-        <div className="relative py-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/5"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[#0f172a] px-2 text-slate-500">Ou use biometria</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handlePasskeyLogin}
-          disabled={loading || passkeyLoading}
-          className="w-full bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all hover:border-[var(--neon-primary)]/50 group"
-        >
-          {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin text-[var(--neon-primary)]" /> : <Fingerprint className="w-4 h-4 text-[var(--neon-primary)] group-hover:scale-110 transition-transform" />}
-          Entrar com Passkey
-        </button>
-
-        <p className="text-center text-slate-400 text-sm mt-4">
-          Don't have an account?{' '}
-          <button 
-            type="button"
-            onClick={() => navigate('/sign-up')}
-            className="text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium"
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
           >
-            Sign Up
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Verificar e Entrar'}
           </button>
-        </p>
-      </form>
+
+          <button
+            type="button"
+            onClick={() => setRequires2FA(false)}
+            className="w-full text-slate-400 hover:text-white text-sm transition-colors py-2"
+          >
+            Voltar para o login
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl text-sm">
+              {error}
+            </div>
+          )}
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading || passkeyLoading}
+            className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+          </button>
+
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/5"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[#0f172a] px-2 text-slate-500">Ou use biometria</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handlePasskeyLogin}
+            disabled={loading || passkeyLoading}
+            className="w-full bg-slate-900 hover:bg-slate-800 text-white border border-white/10 rounded-xl py-3 text-sm font-medium flex items-center justify-center gap-2 transition-all hover:border-[var(--neon-primary)]/50 group"
+          >
+            {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin text-[var(--neon-primary)]" /> : <Fingerprint className="w-4 h-4 text-[var(--neon-primary)] group-hover:scale-110 transition-transform" />}
+            Entrar com Passkey
+          </button>
+
+          <p className="text-center text-slate-400 text-sm mt-4">
+            Don't have an account?{' '}
+            <button 
+              type="button"
+              onClick={() => navigate('/sign-up')}
+              className="text-[var(--neon-primary)] hover:text-[var(--neon-accent)] font-medium"
+            >
+              Sign Up
+            </button>
+          </p>
+        </form>
+      )}
     </AuthLayout>
   );
 };

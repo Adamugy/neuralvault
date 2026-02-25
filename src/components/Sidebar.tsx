@@ -115,8 +115,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
             </button>
 
             <div className={`flex items-center mb-3 py-2 rounded-xl bg-white/5 border border-white/10 transition-all duration-300 ${(isCollapsed && !isMobileOpen) ? 'lg:px-0 lg:justify-center' : 'px-3 gap-3'}`}>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm border border-[var(--neon-primary)]/30 flex-shrink-0">
-                {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm border border-[var(--neon-primary)]/30 flex-shrink-0 overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                  user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'
+                )}
               </div>
               <div className={`min-w-0 transition-all duration-300 ${(isCollapsed && !isMobileOpen) ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0' : 'opacity-100'}`}>
                 <div className="text-sm font-medium text-slate-200 truncate">

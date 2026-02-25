@@ -3,11 +3,10 @@ import { prisma } from '../services/prisma.js';
 import { MailService } from '../services/mailService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { BadRequestError, UnauthorizedError } from '../utils/errors.js';
-/**
- * POST /api/auth/signup
- * Register a new user
- */
+import { reprocessImageFromBuffer } from '../utils/security.js';
+import path from 'path';
 import crypto from 'crypto';
+import { getContextFingerprint } from '../middleware/zeroTrust.js';
 /**
  * POST /api/auth/signup
  * Register a new user
@@ -31,7 +30,10 @@ export const signup = asyncHandler(async (req, res) => {
         where: { email: email.toLowerCase() }
     });
     if (existingUser) {
-        throw new BadRequestError('Email already registered');
+        // SECURITY: Return success message even if email is registered to prevent account enumeration.
+        return res.status(201).json({
+            message: 'Usuário registrado com sucesso. Por favor, verifique seu e-mail para ativar sua conta.'
+        });
     }
     // Hash password
     const passwordHash = await AuthService.hashPassword(password);
@@ -71,28 +73,43 @@ export const signin = asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
         where: { email: email.toLowerCase() }
     });
-    if (!user) {
-        throw new UnauthorizedError('Invalid email or password');
-    }
-    // Verify password
-    const isValid = await AuthService.verifyPassword(password, user.passwordHash);
-    if (!isValid) {
+    // Verify password safely (constant-time check even if user not found)
+    const isValid = await AuthService.verifyPasswordSafe(password, user ? user.passwordHash : null);
+    if (!user || !isValid) {
         throw new UnauthorizedError('Invalid email or password');
     }
     // Check if email is verified
     if (!user.emailVerified) {
         throw new UnauthorizedError('Por favor, verifique seu e-mail antes de fazer login.');
     }
-    // Generate token
+    // Generate JWT token
     const token = AuthService.generateToken(user.id, user.email);
-    await AuthService.createSession(user.id, token);
+    // Capture context fingerprint for security hardening
+    console.log(`[Auth Debug] Capturing context fingerprint...`);
+    const fingerprint = getContextFingerprint(req);
+    // Create session in database with fingerprint
+    console.log(`[Auth Debug] Creating session for user ID: ${user.id} with token starting: ${token.substring(0, 10)}...`);
+    try {
+        await AuthService.createSession(user.id, token, fingerprint);
+        console.log(`[Auth Debug] Session created successfully.`);
+    }
+    catch (err) {
+        console.error(`[Auth Debug] ERROR creating session:`, err.message);
+        throw err; // Will be caught by errorHandler
+    }
+    console.log(`[Auth Debug] Sign-in successful for: ${email}`);
+    const userWithPasskeys = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { authenticators: { select: { id: true } } }
+    });
     res.json({
         user: {
             id: user.id,
             email: user.email,
             name: user.name,
             avatarUrl: user.avatarUrl,
-            plan: user.plan
+            plan: user.plan,
+            hasPasskey: userWithPasskeys?.authenticators?.length > 0
         },
         token
     });
@@ -115,24 +132,39 @@ export const signout = asyncHandler(async (req, res) => {
  */
 export const getMe = asyncHandler(async (req, res) => {
     const userId = req.userId;
-    const user = await prisma.user.findUnique({
-        where: { id: userId }
-    });
-    if (!user) {
-        throw new UnauthorizedError();
-    }
-    res.json({
-        user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            lastName: user.lastName,
-            role: user.role,
-            avatarUrl: user.avatarUrl,
-            plan: user.plan,
-            emailVerified: user.emailVerified
+    console.log(`[Auth Debug] Fetching profile for userId: ${userId}`);
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            include: { authenticators: { select: { id: true } } }
+        });
+        if (!user) {
+            console.warn(`[Auth Debug] User not found for ID: ${userId}`);
+            throw new UnauthorizedError('Usuário não encontrado');
         }
-    });
+        console.log(`[Auth Debug] Profile fetched successfully for: ${user.email}`);
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                lastName: user.lastName,
+                role: user.role,
+                avatarUrl: user.avatarUrl,
+                plan: user.plan,
+                emailVerified: user.emailVerified,
+                hasPasskey: user.authenticators.length > 0
+            }
+        });
+    }
+    catch (error) {
+        console.error(`[Auth Debug] CRITICAL Error in getMe for userId ${userId}:`, {
+            message: error.message,
+            stack: error.stack,
+            code: error.code || 'N/A'
+        });
+        throw error;
+    }
 });
 /**
  * PATCH /api/auth/me
@@ -148,7 +180,8 @@ export const updateMe = asyncHandler(async (req, res) => {
             lastName: lastName !== undefined ? lastName : undefined,
             role: role !== undefined ? role : undefined,
             avatarUrl: avatarUrl !== undefined ? avatarUrl : undefined
-        }
+        },
+        include: { authenticators: { select: { id: true } } }
     });
     res.json({
         user: {
@@ -159,7 +192,8 @@ export const updateMe = asyncHandler(async (req, res) => {
             role: user.role,
             avatarUrl: user.avatarUrl,
             plan: user.plan,
-            emailVerified: user.emailVerified
+            emailVerified: user.emailVerified,
+            hasPasskey: user.authenticators.length > 0
         }
     });
 });
@@ -199,11 +233,9 @@ export const resendVerification = asyncHandler(async (req, res) => {
     const user = await prisma.user.findUnique({
         where: { email: email.toLowerCase() }
     });
-    if (!user) {
-        throw new BadRequestError('User not found');
-    }
-    if (user.emailVerified) {
-        throw new BadRequestError('Email is already verified');
+    if (!user || user.emailVerified) {
+        // SECURITY: Return success regardless of existence or status to prevent enumeration.
+        return res.json({ message: 'Se o e-mail for válido e não estiver verificado, você receberá um link de verificação.' });
     }
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await prisma.user.update({
@@ -213,7 +245,7 @@ export const resendVerification = asyncHandler(async (req, res) => {
     console.log(`[Auth] Verification token resent: ${verificationToken}`);
     // Send verification email
     await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);
-    res.json({ message: 'Verification email resent' });
+    res.json({ message: 'Se o e-mail for válido e não estiver verificado, você receberá um link de verificação.' });
 });
 /**
  * POST /api/auth/avatar
@@ -229,8 +261,11 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
     if (file.size > 1024 * 1024) {
         throw new BadRequestError('File too large. Max 1MB allowed.');
     }
+    // Security: Strip metadata from avatar
+    const ext = path.extname(file.originalname || '');
+    const reprocessedBuffer = await reprocessImageFromBuffer(file.buffer, ext);
     // Convert to Base64
-    const base64Image = file.buffer.toString('base64');
+    const base64Image = reprocessedBuffer.toString('base64');
     const avatarUrl = `data:${file.mimetype};base64,${base64Image}`;
     const user = await prisma.user.update({
         where: { id: userId },

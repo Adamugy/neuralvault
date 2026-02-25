@@ -9,6 +9,7 @@ const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN || '7d';
 export interface JWTPayload {
     userId: string;
     email: string;
+    isPending2FA?: boolean;
 }
 
 export class AuthService {
@@ -33,6 +34,11 @@ export class AuthService {
     static generateToken(userId: string, email: string): string {
         const payload: JWTPayload = { userId, email };
         return jwt.sign(payload, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
+    }
+
+    static generateTemp2FAToken(userId: string, email: string): string {
+        const payload: JWTPayload = { userId, email, isPending2FA: true };
+        return jwt.sign(payload, env.JWT_SECRET, { expiresIn: '5m' } as jwt.SignOptions);
     }
 
     static verifyToken(token: string): JWTPayload {

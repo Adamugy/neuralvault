@@ -7,9 +7,10 @@ import { AcademicHelper } from './components/AcademicHelper';
 import { Settings } from './components/Settings';
 import { ViewState, Resource, UserProfile, AppSettings, PlanTier } from './types';
 import { useAuth, useUser } from './contexts/AuthContext';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SignInPage, SignUpPage, VerifyEmailPage } from './components/AuthComponents';
 import LandingPage from './components/LandingPage';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Initial Mock Data Removed
 const INITIAL_RESOURCES: Resource[] = [];
@@ -164,35 +165,50 @@ const AppContent: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const renderContent = () => {
-    switch (currentView) {
-      case ViewState.DASHBOARD:
-        return (
-          <ResourceBoard 
-            resources={resources} 
-            setResources={setResources} 
-            appSettings={appSettings} 
-            userProfile={userProfile}
-          />
-        );
-      case ViewState.CHAT:
-        return <ChatInterface userProfile={userProfile} resources={resources} />;
-      case ViewState.IMAGE_ANALYSIS:
-        return <ImageAnalysis userProfile={userProfile} resources={resources} />;
-      case ViewState.ACADEMIC_HELPER:
-        return <AcademicHelper resources={resources} userProfile={userProfile} />;
-      case ViewState.SETTINGS:
-        return (
-          <Settings 
-            userProfile={userProfile} 
-            setUserProfile={setUserProfile} 
-            appSettings={appSettings} 
-            setAppSettings={setAppSettings}
-            onSaveProfile={handleSaveProfile}
-          />
-        );
-      default:
-        return <ResourceBoard resources={resources} setResources={setResources} appSettings={appSettings} userProfile={userProfile} />;
-    }
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+            key={currentView}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="h-full w-full"
+        >
+            {(() => {
+                switch (currentView) {
+                  case ViewState.DASHBOARD:
+                    return (
+                      <ResourceBoard 
+                        resources={resources} 
+                        setResources={setResources} 
+                        appSettings={appSettings} 
+                        userProfile={userProfile}
+                      />
+                    );
+                  case ViewState.CHAT:
+                    return <ChatInterface userProfile={userProfile} resources={resources} />;
+                  case ViewState.IMAGE_ANALYSIS:
+                    return <ImageAnalysis userProfile={userProfile} resources={resources} />;
+                  case ViewState.ACADEMIC_HELPER:
+                    return <AcademicHelper resources={resources} userProfile={userProfile} />;
+                  case ViewState.SETTINGS:
+                    return (
+                      <Settings 
+                        userProfile={userProfile} 
+                        setUserProfile={setUserProfile} 
+                        appSettings={appSettings} 
+                        setAppSettings={setAppSettings}
+                        onSaveProfile={handleSaveProfile}
+                      />
+                    );
+                  default:
+                    return <ResourceBoard resources={resources} setResources={setResources} appSettings={appSettings} userProfile={userProfile} />;
+                }
+            })()}
+        </motion.div>
+      </AnimatePresence>
+    );
   };
 
   return (
@@ -240,57 +256,95 @@ const AppContent: React.FC = () => {
 
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
   
   return (
-    <Routes>
-      {/* Rota da Landing Page - Página inicial não autenticada */}
-      <Route
-        path="/"
-        element={
-          isLoaded && isSignedIn ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <LandingPage />
-          )
-        }
-      />
-      {/* Rotas de autenticação */}
-      <Route
-        path="/sign-in"
-        element={
-          isLoaded && isSignedIn ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <SignInPage />
-          )
-        }
-      />
-      <Route
-        path="/verify-email"
-        element={<VerifyEmailPage />}
-      />
-      <Route
-        path="/sign-up"
-        element={
-          isLoaded && isSignedIn ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
-            <SignUpPage />
-          )
-        }
-      />
-      {/* Rotas protegidas */}
-      <Route
-        path="/dashboard/*"
-        element={
-          <ProtectedRoute>
-            <AppContent />
-          </ProtectedRoute>
-        }
-      />
-      {/* Redirecionamento para a página inicial */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Rota da Landing Page - Página inicial não autenticada */}
+        <Route
+          path="/"
+          element={
+            <div className="w-full h-full overflow-hidden">
+                {isLoaded && isSignedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5, ease: "easeInOut" }}
+                  >
+                    <LandingPage />
+                  </motion.div>
+                )}
+            </div>
+          }
+        />
+        {/* Rotas de autenticação */}
+        <Route
+          path="/sign-in"
+          element={
+            <div className="w-full h-full overflow-hidden">
+                {isLoaded && isSignedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <SignInPage />
+                  </motion.div>
+                )}
+            </div>
+          }
+        />
+        <Route
+          path="/verify-email"
+          element={
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+                <VerifyEmailPage />
+            </motion.div>
+          }
+        />
+        <Route
+          path="/sign-up"
+          element={
+            <div className="w-full h-full overflow-hidden">
+                {isLoaded && isSignedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <SignUpPage />
+                  </motion.div>
+                )}
+            </div>
+          }
+        />
+        {/* Rotas protegidas */}
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <AppContent />
+            </ProtectedRoute>
+          }
+        />
+        {/* Redirecionamento para a página inicial */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

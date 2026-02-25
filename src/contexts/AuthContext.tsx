@@ -9,6 +9,7 @@ interface User {
   avatarUrl: string | null;
   plan: string;
   emailVerified: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 interface AuthContextType {
@@ -16,11 +17,12 @@ interface AuthContextType {
   loading: boolean;
   isLoaded: boolean;
   isSignedIn: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ status: 'success' | '2fa_required', tempToken?: string }>;
   signUp: (email: string, password: string, name?: string, role?: string, lastName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
   setSession: (token: string, user: User) => void;
+  verify2FA: (tempToken: string, token: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -82,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkSession();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<{ status: 'success' | '2fa_required', tempToken?: string }> => {
     setLoading(true);
     try {
       const res = await fetch('/api/auth/signin', {
@@ -91,12 +93,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         body: JSON.stringify({ email, password })
       });
 
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.message || 'Login failed');
       }
 
+      if (data.status === '2fa_required') {
+        return { status: '2fa_required', tempToken: data.tempToken };
+      }
+
+      localStorage.setItem('auth_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+      return { status: 'success' };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const verify2FA = useCallback(async (tempToken: string, code: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/2fa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken, token: code })
+      });
+
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || '2FA verification failed');
+      }
+
       localStorage.setItem('auth_token', data.token);
       setToken(data.token);
       setUser(data.user);
@@ -180,7 +208,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getToken,
     setSession,
     refreshUser,
-  }), [user, loading, signIn, signUp, signOut, getToken, setSession, refreshUser]);
+    verify2FA,
+  }), [user, loading, signIn, signUp, signOut, getToken, setSession, refreshUser, verify2FA]);
 
   return (
     <AuthContext.Provider value={value}>

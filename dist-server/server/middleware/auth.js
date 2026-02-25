@@ -14,15 +14,20 @@ export const requireApiAuth = async (req, res, next) => {
         const token = authHeader.substring(7);
         // Verify and decode token
         const decoded = AuthService.verifyToken(token);
-        // Validate session exists and is not expired
-        const isValid = await AuthService.validateSession(token);
+        // Capture context fingerprint for security verification
+        const { getContextFingerprint } = await import('./zeroTrust.js');
+        const fingerprint = getContextFingerprint(req);
+        // Validate session exists, is not expired, and matches context fingerprint
+        const isValid = await AuthService.validateSession(token, fingerprint);
         if (!isValid) {
-            console.log('[Auth] Invalid or expired session');
+            console.log('[Auth] Invalid or expired session (or fingerprint mismatch)');
             throw new UnauthorizedError();
         }
         // Attach user info to request
         req.userId = decoded.userId;
         req.userEmail = decoded.email;
+        // Reset inactivity timer
+        await AuthService.touchSession(token);
         console.log('[Auth] Authenticated user:', decoded.userId);
         next();
     }

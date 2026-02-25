@@ -125,7 +125,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
           </div>
           <div className="hidden sm:block">
             <h2 className="font-semibold text-white tracking-tight flex items-center gap-2 text-sm leading-tight">
-              Gemini 3 Pro
+              Gemini Pro
               <span className="text-[9px] uppercase font-bold tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-indigo-400">Researcher</span>
             </h2>
             <div className="flex items-center gap-2 text-[10px] text-slate-500">
@@ -318,7 +318,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             </button>
           </div>
           <p className="text-center text-[10px] text-slate-600 mt-4 font-medium tracking-wide">
-            {thinkingMode ? "MODO DE RACIOCÍNIO PROFUNDO ATIVADO • RESPOSTAS MAIS DETALHADAS" : "GEMINI 3 PRO PREVIEW • INTELIGÊNCIA ARTIFICIAL PARA PESQUISA"}
+            {thinkingMode ? "MODO DE RACIOCÍNIO PROFUNDO ATIVADO • RESPOSTAS MAIS DETALHADAS" : "GEMINI PRO PREVIEW • INTELIGÊNCIA ARTIFICIAL PARA PESQUISA"}
           </p>
         </div>
       </div>

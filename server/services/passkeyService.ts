@@ -75,7 +75,7 @@ export const getRegistrationOptions = async (userId: string, email: string) => {
         })),
         authenticatorSelection: {
             residentKey: 'required',
-            userVerification: 'preferred',
+            userVerification: 'required',
         },
     });
 
@@ -107,6 +107,7 @@ export const verifyPasskeyRegistration = async (userId: string, body: any) => {
         expectedChallenge: (user as any).currentChallenge,
         expectedOrigin: origin,
         expectedRPID: rpID,
+        requireUserVerification: true,
     });
 
     const { verified, registrationInfo } = verification;
@@ -163,7 +164,7 @@ export const getAuthOptions = async (email: string) => {
             // We omit transports during login to allow better discovery 
             // across different device types/methods.
         })),
-        userVerification: 'preferred',
+        userVerification: 'required',
     });
 
     // Store challenge
@@ -205,6 +206,7 @@ export const verifyPasskeyLogin = async (email: string, body: any) => {
             expectedChallenge: (user as any).currentChallenge,
             expectedOrigin: origin,
             expectedRPID: rpID,
+            requireUserVerification: true,
             credential: {
                 id: dbAuthenticator.credentialID,
                 publicKey: new Uint8Array(dbAuthenticator.credentialPublicKey),

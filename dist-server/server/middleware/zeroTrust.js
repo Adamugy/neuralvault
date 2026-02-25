@@ -8,25 +8,12 @@ import crypto from 'crypto';
  */
 export const validateSessionContext = (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return next(); // Let specialized auth middleware handle missing tokens
-    }
-    // In a robust implementation, the context would be extracted from the JWT 
-    // or a server-side session store linked to the token.
-    // Placeholder implementation logic:
-    // 1. Extract context stored during login
-    // 2. Hash current context: IP + User-Agent
-    // 3. Compare. If different, return 401.
-    const currentUA = req.headers['user-agent'] || 'unknown';
-    const currentIP = req.ip || 'unknown';
-    console.log(`[ZeroTrust] Validating context for ${currentIP}`);
-    // For now, we just pass through but log the concept.
-    // Real implementaton would require modifying JWT structure.
+    if (!authHeader?.startsWith('Bearer '))
+        return next();
+    // Context validation linked to the session/token would happen here.
+    // Hash current context: IP + User-Agent and compare with established session.
     next();
 };
-/**
- * Utility to generate a context fingerprint
- */
 export const getContextFingerprint = (req) => {
     const ua = req.headers['user-agent'] || 'unknown';
     const ip = req.ip || 'unknown';

@@ -11,8 +11,10 @@ const startServer = async () => {
     }
     if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
         app.listen(env.PORT, () => {
-            console.log(`🚀 Servidor rodando em http://localhost:${env.PORT}`);
-            console.log(`🌍 Ambiente: ${env.NODE_ENV}`);
+            console.log(`🚀 Servidor rodando em ambiente: ${env.NODE_ENV}`);
+            console.log(`📡 Porta: ${env.PORT}`);
+            if (env.APP_URL)
+                console.log(`🌍 App URL: ${env.APP_URL}`);
         });
     }
 };

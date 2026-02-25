@@ -73,8 +73,8 @@ function setupSecurity(app: express.Express) {
 }
 
 function setupRoutes(app: express.Express) {
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     app.use(validateSessionContext);
 
     if (!isProduction) {
@@ -118,6 +118,14 @@ function setupStaticServing(app: express.Express) {
 
     app.get('*', (req: Request, res: Response) => {
         const indexPath = path.join(distPath, 'index.html');
-        fs.existsSync(indexPath) ? res.sendFile(indexPath) : res.status(404).send('Not Found');
+        if (fs.existsSync(indexPath)) {
+            // Prevent aggressive caching of the entry point
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            res.sendFile(indexPath);
+        } else {
+            res.status(404).send('Not Found');
+        }
     });
 }

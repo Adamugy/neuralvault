@@ -1,7 +1,11 @@
+import path from 'path';
+import fs from 'fs/promises';
 import { ai, fileToGenerativePart } from '../services/gemini.js';
 import { BadRequestError } from '../utils/errors.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../services/prisma.js';
+import { validateFileContent, sanitizeSvg, reprocessImage, validateImageDimensions } from '../utils/security.js';
+import { SECURITY_CONFIG } from '../utils/config.js';
 export const generate = asyncHandler(async (req, res) => {
     const userId = req.userId;
     const { taskType, topic, content, level, sessionId } = req.body;
@@ -12,6 +16,10 @@ export const generate = asyncHandler(async (req, res) => {
     // Identify or Create Session
     let currentSessionId = sessionId;
     if (!currentSessionId) {
+        const sessionCount = await prisma.academicSession.count({ where: { userId: userId } });
+        if (sessionCount >= SECURITY_CONFIG.MAX_SESSIONS_PER_USER) {
+            throw new BadRequestError(`Session limit reached. Please delete old academic sessions.`);
+        }
         const newSession = await prisma.academicSession.create({
             data: {
                 userId: userId,
@@ -19,6 +27,13 @@ export const generate = asyncHandler(async (req, res) => {
             }
         });
         currentSessionId = newSession.id;
+    }
+    else {
+        // Limit messages per session
+        const messageCount = await prisma.academicMessage.count({ where: { sessionId: currentSessionId } });
+        if (messageCount >= SECURITY_CONFIG.MAX_MESSAGES_PER_SESSION) {
+            throw new BadRequestError(`Message limit reached for this session. Please start a new session.`);
+        }
     }
     const systemInstruction = `You are an expert academic advisor acting as a mentor for a ${level} student. 
     Your goal is to be helpful, encouraging, and academically rigorous.
@@ -51,6 +66,36 @@ export const generate = asyncHandler(async (req, res) => {
             break;
         default:
             prompt = `Task: ${taskType}. Topic: ${topic}. Context: ${content}`;
+    }
+    if (files && files.length > 0) {
+        for (const file of files) {
+            try {
+                const { ext, mime } = await validateFileContent(file.path);
+                // Resource Limits: Dimension check
+                await validateImageDimensions(file.path, mime);
+                if (mime === 'image/svg+xml')
+                    await sanitizeSvg(file.path);
+                if (['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
+                    await reprocessImage(file.path, ext);
+                }
+                const currentExt = path.extname(file.filename);
+                if (currentExt !== ext) {
+                    const newFilename = `${file.filename}${ext}`;
+                    const newPath = path.join(path.dirname(file.path), newFilename);
+                    await fs.rename(file.path, newPath);
+                    file.path = newPath;
+                    file.filename = newFilename;
+                }
+                file.mimetype = mime;
+            }
+            catch (error) {
+                // Cleanup all files on any failure
+                for (const f of files) {
+                    await fs.unlink(f.path).catch(() => { });
+                }
+                throw error;
+            }
+        }
     }
     const imageParts = files ? files.map(file => fileToGenerativePart(file.path, file.mimetype)) : [];
     const model = ai.getGenerativeModel({
@@ -85,15 +130,22 @@ export const generate = asyncHandler(async (req, res) => {
         // Save generated document if present
         let documentId = null;
         if (parsedResponse.document) {
-            const savedDoc = await prisma.generatedDocument.create({
-                data: {
-                    userId: userId,
-                    title: topic || 'Untitled Generation',
-                    content: parsedResponse.document,
-                    type: taskType
-                }
-            });
-            documentId = savedDoc.id;
+            const docCount = await prisma.generatedDocument.count({ where: { userId: userId } });
+            if (docCount >= SECURITY_CONFIG.MAX_DOCUMENTS_PER_USER) {
+                // If quota full, we just don't save the document but return it to user
+                console.warn(`User ${userId} reached document quota. documentId will be null.`);
+            }
+            else {
+                const savedDoc = await prisma.generatedDocument.create({
+                    data: {
+                        userId: userId,
+                        title: topic || 'Untitled Generation',
+                        content: parsedResponse.document,
+                        type: taskType
+                    }
+                });
+                documentId = savedDoc.id;
+            }
         }
         res.json({
             result: parsedResponse.document, // Maintain compatibility
@@ -110,6 +162,16 @@ export const generate = asyncHandler(async (req, res) => {
             thought: "I encountered an error processing your request.",
             sessionId: currentSessionId
         });
+    }
+    finally {
+        // Hard Invariant: All transient files must be cleaned up from the uploads directory
+        if (files && files.length > 0) {
+            for (const file of files) {
+                await fs.unlink(file.path).catch((err) => {
+                    console.error(`[Academic Cleanup] Failed to unlink ${file.path}:`, err.message);
+                });
+            }
+        }
     }
 });
 export const getHistory = asyncHandler(async (req, res) => {

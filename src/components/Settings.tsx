@@ -26,6 +26,15 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  
+  // 2FA states
+  const [isSettingUp2FA, setIsSettingUp2FA] = useState(false);
+  const [twoFactorQRCode, setTwoFactorQRCode] = useState('');
+  const [twoFactorSecret, setTwoFactorSecret] = useState('');
+  const [twoFactorVerifyCode, setTwoFactorVerifyCode] = useState('');
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+  const [isDisabling2FA, setIsDisabling2FA] = useState(false);
+  
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { registerPasskey } = usePasskeys();
   const { refreshUser, getToken } = useAuth();
@@ -50,6 +59,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setPasskeyLoading(true);
     try {
       await registerPasskey(userProfile.email);
+      setUserProfile(prev => ({ ...prev, hasPasskey: true }));
       alert('Passkey registrada com sucesso!');
     } catch (error: any) {
       console.error('Passkey error:', error);
@@ -100,6 +110,82 @@ export const Settings: React.FC<SettingsProps> = ({
     } finally {
       setAvatarLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleGenerate2FA = async () => {
+    setIsVerifying2FA(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/auth/2fa/generate', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setTwoFactorQRCode(data.qrCodeUrl);
+      setTwoFactorSecret(data.secret);
+      setIsSettingUp2FA(true);
+    } catch (err: any) {
+      alert(err.message || 'Erro ao gerar 2FA');
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
+
+  const handleEnable2FA = async () => {
+    setIsVerifying2FA(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/auth/2fa/enable', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: twoFactorVerifyCode })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      
+      setUserProfile(prev => ({ ...prev, twoFactorEnabled: true }));
+      setAppSettings(prev => ({ ...prev, twoFactorEnabled: true }));
+      setIsSettingUp2FA(false);
+      setTwoFactorVerifyCode('');
+      alert('2FA ativada com sucesso!');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao ativar 2FA');
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    if (!confirm('Deseja realmente desativar a autenticação de dois fatores? Sua conta ficará menos segura.')) return;
+    
+    const code = prompt('Insira seu código de 6 dígitos para desativar:');
+    if (!code) return;
+
+    setIsVerifying2FA(true);
+    try {
+      const token = await getToken();
+      const res = await fetch('/api/auth/2fa/disable', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ token: code })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      
+      setUserProfile(prev => ({ ...prev, twoFactorEnabled: false }));
+      setAppSettings(prev => ({ ...prev, twoFactorEnabled: false }));
+      alert('2FA desativada.');
+    } catch (err: any) {
+      alert(err.message || 'Erro ao desativar 2FA');
+    } finally {
+      setIsVerifying2FA(false);
     }
   };
 
@@ -364,14 +450,33 @@ export const Settings: React.FC<SettingsProps> = ({
                              <div>
                                 <h4 className="text-white font-medium">Passkeys (WebAuthn)</h4>
                                 <p className="text-sm text-slate-400">Ative o login sem senha usando biometria ou chaves USB.</p>
+                                <div className="flex gap-3 mt-2 text-slate-500">
+                                    <div className="flex items-center gap-1.5 transition-colors hover:text-[#0078d4]" title="Windows Hello">
+                                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M0 0v11.408h11.408V0zm12.592 0v11.408H24V0zM0 12.592V24h11.408V12.592zm12.592 0V24H24V12.592z"/></svg>
+                                        <span className="text-[10px] font-bold uppercase tracking-tighter">Windows</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 transition-colors hover:text-white" title="Apple FaceID/TouchID">
+                                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17.057 12.767c.013 2.59 2.233 3.504 2.26 3.518-.02.07-.353 1.205-1.154 2.373-.692 1.01-1.41 2.016-2.531 2.037-1.099.02-1.455-.648-2.715-.648-1.258 0-1.652.627-2.713.67-.1.01-1.921.03-2.674-1.071-.85-1.11-1.453-2.822-1.453-4.529 0-2.747 1.782-4.194 3.532-4.194.896 0 1.74.62 2.29.62.548 0 1.57-.756 2.65-.756 1.127 0 2.155.589 2.808 1.48-.09.055-2.3 1.282-2.3 4.5zm-2.028-7.536c.559-.678.937-1.621.834-2.564-.811.033-1.79.54-2.374 1.22-.524.603-.982 1.564-.86 2.483.903.07 1.84-.461 2.4-.139z"/></svg>
+                                        <span className="text-[10px] font-bold uppercase tracking-tighter">Apple</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 transition-colors hover:text-[#3ddc84]" title="Android">
+                                        <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M17.523 15.3414c-.5511 0-.9995-.4486-.9995-.9997s.4484-.9997.9995-.9997.9995.4486.9995.9997-.4484.9997-.9995.9997m-11046 0c-.5511 0-.9995-.4486-.9995-.9997s.4484-.9997.9995-.9997.9995.4486.9995.9997-.4484.9997-.9995.9997m11.4045-6.0232l1.9973-3.4592c.1118-.1938.0456-.4412-.1481-.5531-.1939-.1117-.4413-.0456-.553.1481l-2.0213 3.5008c-1.4924-.6831-3.1558-1.0725-4.9082-1.0725s-3.4158.3894-4.9082 1.0725l-2.0213-3.5008c-.1117-.1937-.3591-.2598-.553-.1481-.1938.1119-.2599.3593-.1481.5531l1.9973 3.4592c-3.193 1.8383-5.3491 5.2533-5.3491 9.1917h20.404c0-3.9384-2.1561-7.3534-5.3491-9.1917"/></svg>
+                                        <span className="text-[10px] font-bold uppercase tracking-tighter">Android</span>
+                                    </div>
+                                </div>
                             </div>
                          </div>
                         <button 
                             onClick={handleRegisterPasskey}
-                            disabled={passkeyLoading}
-                            className="px-4 py-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                            disabled={passkeyLoading || userProfile.hasPasskey}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                userProfile.hasPasskey 
+                                ? 'bg-emerald-500/20 text-emerald-500 cursor-not-allowed border border-emerald-500/30' 
+                                : 'bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white shadow-[0_0_15px_-5px_var(--neon-primary)]'
+                            }`}
                         >
-                            {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Registrar Passkey'}
+                            {passkeyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : userProfile.hasPasskey ? <Check className="w-4 h-4" /> : null}
+                            {userProfile.hasPasskey ? 'Registrado' : 'Registrar Passkey'}
                         </button>
                     </div>
 
@@ -383,17 +488,78 @@ export const Settings: React.FC<SettingsProps> = ({
                                  <Lock className="w-6 h-6" />
                              </div>
                              <div>
-                                <h4 className="text-white font-medium">Two-Factor Authentication</h4>
-                                <p className="text-sm text-slate-400">Add an extra layer of security to your account.</p>
+                                <h4 className="text-white font-medium">Two-Factor Authentication (TOTP)</h4>
+                                <p className="text-sm text-slate-400">Adicione uma camada extra de segurança usando Google Authenticator ou similar.</p>
+                                {userProfile.twoFactorEnabled && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded mt-1 inline-block">Ativado</span>
+                                )}
                             </div>
                          </div>
                         <button 
-                            onClick={() => setAppSettings({...appSettings, twoFactorEnabled: !appSettings.twoFactorEnabled})}
-                            className={`w-12 h-6 rounded-full transition-colors relative ${appSettings.twoFactorEnabled ? 'bg-teal-600' : 'bg-slate-700'}`}
+                            onClick={userProfile.twoFactorEnabled ? handleDisable2FA : handleGenerate2FA}
+                            disabled={isVerifying2FA}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                userProfile.twoFactorEnabled 
+                                ? 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20' 
+                                : 'bg-teal-600 hover:bg-teal-500 text-white shadow-[0_0_15px_-5px_#0d9488]'
+                            }`}
                         >
-                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${appSettings.twoFactorEnabled ? 'left-7' : 'left-1'}`} />
+                            {isVerifying2FA ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            {userProfile.twoFactorEnabled ? 'Desativar 2FA' : 'Configurar 2FA'}
                         </button>
                     </div>
+
+                    {isSettingUp2FA && (
+                        <div className="mt-6 p-6 bg-white/5 border border-white/10 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="flex flex-col md:flex-row gap-8 items-center">
+                                <div className="bg-white p-4 rounded-xl shadow-xl shadow-teal-500/10">
+                                    {twoFactorQRCode ? (
+                                        <img src={twoFactorQRCode} alt="2FA QR Code" className="w-40 h-40" />
+                                    ) : (
+                                        <div className="w-40 h-40 flex items-center justify-center bg-slate-100">
+                                            <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <h5 className="text-white font-bold mb-1">Escaneie o código QR</h5>
+                                        <p className="text-slate-400 text-sm">Escaneie esta imagem com seu app autenticador (Google Authenticator, Authy, etc).</p>
+                                    </div>
+                                    <div className="bg-black/40 p-3 rounded-lg border border-white/5">
+                                        <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Ou insira manualmente:</p>
+                                        <code className="text-teal-400 text-sm font-mono break-all">{twoFactorSecret}</code>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="block text-slate-400 text-xs font-medium uppercase">Código de Verificação</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                value={twoFactorVerifyCode}
+                                                onChange={(e) => setTwoFactorVerifyCode(e.target.value)}
+                                                placeholder="000 000"
+                                                maxLength={6}
+                                                className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-lg tracking-widest outline-none focus:ring-1 focus:ring-teal-500 transition-all w-32"
+                                            />
+                                            <button 
+                                                onClick={handleEnable2FA}
+                                                disabled={isVerifying2FA || twoFactorVerifyCode.length < 6}
+                                                className="bg-teal-600 hover:bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                                            >
+                                                Confirmar
+                                            </button>
+                                            <button 
+                                                onClick={() => setIsSettingUp2FA(false)}
+                                                className="px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="h-px bg-white/10" />
 

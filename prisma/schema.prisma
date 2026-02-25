@@ -26,6 +26,8 @@ model User {
   authenticators Authenticator[]
   currentChallenge String?
   verificationToken String?
+  twoFactorEnabled Boolean         @default(false)
+  twoFactorSecret  String?
   academicSessions AcademicSession[]
   generatedDocs    GeneratedDocument[]
 }

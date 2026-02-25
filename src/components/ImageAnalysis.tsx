@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, X, Zap, Loader2, ScanLine, Lock, Star, Sparkles, Brain, Bot, Copy, Download, ScanEye, GraduationCap } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useAuth } from '../contexts/AuthContext';
 import { UserProfile, Resource } from '../types';
 import { SearchBar } from './SearchBar';
@@ -237,8 +239,10 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                         </button>
                     </div>
                 </div>
-                <div className="p-8 prose prose-invert max-w-none">
-                    <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{result}</p>
+                <div className="p-8 prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {result}
+                    </ReactMarkdown>
                 </div>
                 <div className="px-6 py-4 bg-white/5 border-t border-white/10 flex justify-end">
                     <button 

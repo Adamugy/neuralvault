@@ -58,6 +58,8 @@ export interface UserProfile {
   role: string;
   plan: PlanTier;
   emailVerified?: boolean;
+  hasPasskey?: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AppSettings {

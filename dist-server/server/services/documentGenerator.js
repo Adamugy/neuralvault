@@ -43,10 +43,25 @@ export class DocumentGenerator {
             this.cleanup(qmdPath, outPath).catch(err => console.warn('[Cleanup Warning]', err));
         }
     }
+    /**
+     * Strips characters that could allow YAML header injection.
+     * Newlines would break out of the title scalar and inject new YAML keys.
+     * Double-quotes would prematurely close the quoted scalar.
+     */
+    static sanitizeYamlScalar(value) {
+        return value
+            .replace(/[\r\n]/g, ' ') // no newlines inside YAML scalar
+            .replace(/"/g, '\"') // escape double-quotes
+            .replace(/\x00/g, ''); // strip null bytes
+    }
     static constructQmd(data, format) {
         const { title, content, latexFormula } = data;
+        // Sanitize title to prevent YAML injection (Arbitrary File Read / RCE).
+        const safeTitle = this.sanitizeYamlScalar(title);
+        // Strip null bytes from body content as defence-in-depth.
+        const safeContent = content.replace(/\x00/g, '');
         const yamlHeader = `---
-title: "${title}"
+title: "${safeTitle}"
 format:
   ${format}:
     margin:
@@ -55,7 +70,7 @@ format:
 ---
 
 `;
-        let body = content;
+        let body = safeContent;
         if (latexFormula) {
             body += `\n\n### Mathematical Formulation\n\n$$ ${latexFormula} $$\n`;
         }

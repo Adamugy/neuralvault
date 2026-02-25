@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import GeminiDemo from './GeminiDemo';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Feature {
   icon: any;
@@ -30,7 +31,11 @@ interface Feature {
 }
 
 const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Feature) => void }) => (
-  <div 
+  <motion.div 
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0 }
+    }}
     onClick={() => onOpen(feature)}
     className="glass-panel p-8 rounded-2xl border-indigo-500/10 hover:border-indigo-500/50 transition-all duration-500 group hover:-translate-y-2 hover:shadow-[0_20px_50px_-20px_rgba(99,102,241,0.3)] relative overflow-hidden cursor-pointer"
   >
@@ -41,9 +46,9 @@ const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Featur
     <h3 className="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition-colors">{feature.title}</h3>
     <p className="text-slate-400 leading-relaxed text-sm group-hover:text-slate-300">{feature.description}</p>
     <div className="mt-6 flex items-center text-xs font-bold text-indigo-400 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0">
-      Learn More <ArrowRight className="ml-1 w-3 h-3" />
+      Saiba Mais <ArrowRight className="ml-1 w-3 h-3" />
     </div>
-  </div>
+  </motion.div>
 );
 
 const LandingPage: React.FC = () => {
@@ -104,7 +109,7 @@ const LandingPage: React.FC = () => {
   const features: Feature[] = [
     {
       icon: MessageSquareText,
-      title: "Gemini 3 Pro Tutor",
+      title: "Gemini Pro Tutor",
       description: "Chat with an advanced AI that understands deep learning concepts, math, and code with multi-step reasoning.",
       color: "indigo-500",
       details: "Our tutor isn't just a chatbot; it's a reasoning engine trained on vast academic datasets. It utilizes Chain-of-Thought processing to break down complex theorems."
@@ -114,7 +119,7 @@ const LandingPage: React.FC = () => {
       title: "Visual Intelligence",
       description: "Upload diagrams or whiteboard photos. Our AI extracts formulas and explains complex architectures instantly.",
       color: "cyan-400",
-      details: "Leveraging the multimodal capabilities of Gemini 3 Pro, Visual Intelligence identifies handwritten LaTeX and research charts with high accuracy."
+      details: "Leveraging the multimodal capabilities of Gemini Pro, Visual Intelligence identifies handwritten LaTeX and research charts with high accuracy."
     },
     {
       icon: LayoutDashboard,
@@ -183,13 +188,13 @@ const LandingPage: React.FC = () => {
                   onClick={() => navigate('/sign-in')}
                   className="text-xs font-black text-slate-400 hover:text-white transition-all uppercase tracking-widest px-4"
                 >
-                  Log In
+                  Entrar
                 </button>
                 <button 
                   onClick={() => navigate('/sign-up')}
                   className="hidden sm:flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(99,102,241,0.3)] hover:scale-105 active:scale-95"
                 >
-                  Join Beta <ChevronRight className="w-4 h-4" />
+                  Cadastrar <ChevronRight className="w-4 h-4" />
                 </button>
             </div>
         </div>
@@ -206,13 +211,13 @@ const LandingPage: React.FC = () => {
                 >
                     <X className="w-6 h-6 text-slate-500" />
                 </button>
-                <div className="flex items-center gap-4 mb-8">
+                    <div className="flex items-center gap-4 mb-8">
                     <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
                         <selectedFeature.icon className="w-8 h-8 text-indigo-400" />
                     </div>
                     <div>
                         <h4 className="text-2xl font-black text-white">{selectedFeature.title}</h4>
-                        <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em]">Module Intelligence Alpha</div>
+                        <div className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.3em]">Module Intelligence</div>
                     </div>
                 </div>
                 <div className="space-y-6">
@@ -226,7 +231,7 @@ const LandingPage: React.FC = () => {
                         </div>
                         <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
                             <div className="text-[10px] font-black uppercase text-slate-500 mb-1">Model Version</div>
-                            <div className="text-white font-mono text-xs">Gemini 3 Pro</div>
+                            <div className="text-white font-mono text-xs">Gemini Pro</div>
                         </div>
                     </div>
                     <button 
@@ -243,42 +248,66 @@ const LandingPage: React.FC = () => {
       {/* Hero Section */}
       <section id="hero" className="relative pt-32 pb-16 lg:pt-52 lg:pb-32 px-6 z-10">
         <div className="max-w-6xl mx-auto text-center relative">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-panel text-xs font-black text-cyan-400 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700 hover:border-cyan-400/50 transition-colors cursor-default group box-glow">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-3 px-4 py-2 rounded-full glass-panel text-xs font-black text-cyan-400 mb-8 cursor-default group box-glow"
+          >
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
             </span>
-            <span className="tracking-[0.2em] uppercase">Reasoning Engine v3.0 Powered</span>
+            <span className="tracking-[0.2em] uppercase">Reasoning Engine Powered</span>
             <Sparkles className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
-          </div>
+          </motion.div>
           
-          <h1 className="text-5xl sm:text-6xl md:text-[7.5rem] font-black text-white mb-8 tracking-tighter leading-[0.9] md:leading-[0.85] animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100">
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.1 }}
+            className="text-5xl sm:text-6xl md:text-[7.5rem] font-black text-white mb-8 tracking-tighter leading-[0.9] md:leading-[0.85]"
+          >
             Thinking <br />
             <span className="neon-gradient-text text-glow">Beyond Sync.</span>
-          </h1>
+          </motion.h1>
           
-          <p className="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed"
+          >
             A second brain that doesn't just store files, it <span className="text-white font-black underline decoration-indigo-500/50 underline-offset-8">synthesizes insights</span>. 
             Experience the next era of academic work.
-          </p>
+          </motion.p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 w-full sm:w-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto"
+          >
             <button 
               onClick={() => navigate('/sign-up')}
               className="w-full sm:w-auto px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xl transition-all shadow-[0_0_40px_rgba(99,102,241,0.4)] hover:shadow-[0_0_60px_rgba(99,102,241,0.6)] hover:-translate-y-1 relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out transform skew-x-12" />
               <span className="relative flex items-center justify-center gap-2">
-                Deploy Brain <Zap className="w-6 h-6 fill-current" />
+                Começar Agora <Zap className="w-6 h-6 fill-current" />
               </span>
             </button>
             <button 
               onClick={() => scrollToSection('demo')}
               className="w-full sm:w-auto px-10 py-5 glass-panel hover:bg-white/5 text-white rounded-2xl font-black text-xl transition-all border border-white/10 hover:border-white/30 flex items-center justify-center gap-2"
             >
-              Test Logic
+              Ver Demo
             </button>
-          </div>
+          </motion.div>
 
           {/* Abstract Device Representation (Animated Window) */}
           <div className="relative mt-24 max-w-5xl mx-auto animate-in fade-in zoom-in duration-1000 delay-500 group">
@@ -294,7 +323,7 @@ const LandingPage: React.FC = () => {
                  </div>
                  <div className="flex-1 text-center">
                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/5 border border-white/5 text-[8px] md:text-[9px] font-mono text-slate-400 tracking-[0.2em] uppercase">
-                     NeuralVault-Core_v3
+                     NeuralVault-Core
                    </div>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
@@ -387,50 +416,81 @@ const LandingPage: React.FC = () => {
       {/* Features Grid */}
       <section id="features" className="py-20 md:py-32 relative z-10 bg-slate-950/40 border-y border-white/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 md:mb-24">
-            <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Functional Core</div>
-            <h2 className="text-3xl md:text-6xl font-black text-white mb-6 tracking-tighter">Built for Modern Minds</h2>
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16 md:mb-24"
+          >
+            <div className="text-[10px] text-indigo-500 font-black uppercase tracking-[0.4em] mb-4">Core Funcional</div>
+            <h2 className="text-3xl md:text-6xl font-black text-white mb-6 tracking-tighter">Criado para Mentes Modernas</h2>
             <div className="w-24 h-1 bg-gradient-to-r from-indigo-500 to-transparent mx-auto rounded-full"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          </motion.div>
+          
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
+          >
             {features.map((feature, idx) => (
               <FeatureCard key={idx} feature={feature} onOpen={setSelectedFeature} />
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Interactive Demo Section */}
       <section id="demo" className="py-20 md:py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1 }}
+            className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-center"
+          >
             <div className="flex-1 space-y-6 md:space-y-8 text-center lg:text-left">
               <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
-                Live Interaction
+                Interação em Tempo Real
               </div>
               <h2 className="text-4xl md:text-7xl font-black text-white leading-[0.9] tracking-tighter">
-                Ask your <br />
-                <span className="text-indigo-400 italic">Second Brain</span>
+                Consulte o seu <br />
+                <span className="text-indigo-400 italic">Cérebro Digital</span>
               </h2>
               <p className="text-slate-400 text-base md:text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Direct neural link to Gemini 3 Pro. Try querying your logic, debugging code, or summarizing research papers instantly.
+                Link neural direto para o Gemini Pro. Experimente consultar sua lógica, depurar código ou resumir artigos de pesquisa instantaneamente.
               </p>
               <div className="space-y-4">
                   <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Activity className="w-4 h-4 text-emerald-400" />
-                      API Health: 99.8ms Latency
+                      Status API: 99.8ms Latência
                   </div>
                   <div className="flex justify-center lg:justify-start items-center gap-4 text-xs font-bold text-slate-500 uppercase tracking-widest">
                       <Database className="w-4 h-4 text-cyan-400" />
-                      Token Density: Optimal
+                      Densidade de Tokens: Ideal
                   </div>
               </div>
             </div>
-            <div className="flex-1 w-full relative">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="flex-1 w-full relative"
+            >
               <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-full opacity-50 animate-pulse"></div>
               <GeminiDemo />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
@@ -444,9 +504,9 @@ const LandingPage: React.FC = () => {
                 <div className={`absolute inset-0 bg-gradient-to-br from-indigo-600/10 via-transparent to-cyan-500/5 transition-opacity duration-1000 ${isSystemActive ? 'opacity-100' : 'opacity-0'}`} />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 text-center relative z-10">
                     {[
-                        { label: 'Papers Indexed', value: '450k+', color: 'indigo-400' },
-                        { label: 'Neural Connections', value: '2.5M', color: 'cyan-400' },
-                        { label: 'Researchers', value: '18k+', color: 'fuchsia-400' },
+                        { label: 'Papers Indexed', value: 'Global', color: 'indigo-400' },
+                        { label: 'Neural Connections', value: 'Ilimitado', color: 'cyan-400' },
+                        { label: 'Researchers', value: 'Explore', color: 'fuchsia-400' },
                         { label: 'System Uptime', value: '99.9%', color: 'emerald-400' }
                     ].map((stat, i) => (
                         <div key={i} className="group/stat">

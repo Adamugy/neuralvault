@@ -30,6 +30,7 @@ uploads/*
 # Build
 dist/
 dist-ssr/
+dist-server/
 build/
 .temp/
 .cache/

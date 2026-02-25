@@ -49,7 +49,7 @@ const GeminiDemo: React.FC = () => {
             <Bot className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">Gemini 3 Pro Tutor</h4>
+            <h4 className="text-sm font-bold text-white">Gemini Pro Tutor</h4>
             <p className="text-[10px] text-emerald-400 flex items-center gap-1 uppercase tracking-wider font-bold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live Reasoning Active
