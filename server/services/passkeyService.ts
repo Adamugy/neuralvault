@@ -119,10 +119,11 @@ export const verifyPasskeyRegistration = async (userId: string, body: any) => {
         const { id, publicKey, counter } = credential;
 
         console.log(`[Passkey Debug] Registration verified for user ${userId}. Saving authenticator...`);
+        // NOTE: `id` from simplewebauthn is already a base64url string — store it directly.
         await prisma.authenticator.create({
             data: {
                 userId,
-                credentialID: Buffer.from(id).toString('base64url'),
+                credentialID: id,
                 credentialPublicKey: Buffer.from(publicKey),
                 counter: BigInt(counter),
                 credentialDeviceType: 'single_device',
