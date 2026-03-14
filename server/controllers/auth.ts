@@ -484,3 +484,80 @@ export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+/**
+ * POST /api/auth/forgot-password
+ * Send a password reset email
+ */
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    if (!email) {
+        throw new BadRequestError('Email is required');
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+    });
+
+    // Security: Always return success to prevent email enumeration
+    if (!user) {
+        return res.json({ message: 'Se o e-mail existir no nosso sistema, você receberá um link de recuperação.' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            resetToken,
+            resetTokenExpiry
+        } as any
+    });
+
+    await MailService.sendPasswordResetEmail(user.email, resetToken, user.name || undefined);
+
+    res.json({ message: 'Se o e-mail existir no nosso sistema, você receberá um link de recuperação.' });
+});
+
+/**
+ * POST /api/auth/reset-password
+ * Reset user password using token
+ */
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        throw new BadRequestError('Token e nova senha são obrigatórios');
+    }
+
+    if (newPassword.length < 8) {
+        throw new BadRequestError('A senha deve ter pelo menos 8 caracteres');
+    }
+
+    const user = await prisma.user.findFirst({
+        where: {
+            resetToken: token,
+            resetTokenExpiry: {
+                gt: new Date()
+            }
+        } as any
+    });
+
+    if (!user) {
+        throw new BadRequestError('Token inválido ou expirado. Por favor, solicite a recuperação de senha novamente.');
+    }
+
+    const passwordHash = await AuthService.hashPassword(newPassword);
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            passwordHash,
+            resetToken: null,
+            resetTokenExpiry: null
+        } as any
+    });
+
+    res.json({ message: 'Senha redefinida com sucesso. Você já pode fazer login com sua nova senha.' });
+});

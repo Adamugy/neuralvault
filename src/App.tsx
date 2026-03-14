@@ -8,7 +8,7 @@ import { Settings } from './components/Settings';
 import { ViewState, Resource, UserProfile, AppSettings, PlanTier } from './types';
 import { useAuth, useUser } from './contexts/AuthContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { SignInPage, SignUpPage, VerifyEmailPage } from './components/AuthComponents';
+import { SignInPage, SignUpPage, VerifyEmailPage, ForgotPasswordPage, ResetPasswordPage } from './components/AuthComponents';
 import LandingPage from './components/LandingPage';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -314,6 +314,44 @@ function App() {
             >
                 <VerifyEmailPage />
             </motion.div>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <div className="w-full h-full overflow-hidden">
+                {isLoaded && isSignedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ForgotPasswordPage />
+                  </motion.div>
+                )}
+            </div>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <div className="w-full h-full overflow-hidden">
+                {isLoaded && isSignedIn ? (
+                  <Navigate to="/dashboard" replace />
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <ResetPasswordPage />
+                  </motion.div>
+                )}
+            </div>
           }
         />
         <Route

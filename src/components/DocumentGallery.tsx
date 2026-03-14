@@ -39,6 +39,28 @@ export const DocumentGallery: React.FC = () => {
     };
 
     const handleExport = async (doc: GeneratedDocument, format: 'pdf' | 'docx') => {
+        if (format === 'docx') {
+            const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
+                                  xmlns:w='urn:schemas-microsoft-com:office:word' 
+                                  xmlns='http://www.w3.org/TR/REC-html40'>
+                            <head><meta charset='utf-8'><title>${doc.title}</title></head><body>`;
+            const footer = "</body></html>";
+            
+            const sourceHTML = header + 
+              `<h1>${doc.title || "Academic Document"}</h1>` + 
+              doc.content.split('\n').map(p => `<p>${p}</p>`).join('') + 
+              footer;
+            
+            const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+            const fileDownload = document.createElement("a");
+            document.body.appendChild(fileDownload);
+            fileDownload.href = source;
+            fileDownload.download = `${doc.title || 'document'}.doc`; 
+            fileDownload.click();
+            document.body.removeChild(fileDownload);
+            return;
+        }
+
         try {
             const token = await getToken();
             const res = await fetch(`/api/academic/export-${format}`, {
@@ -65,7 +87,19 @@ export const DocumentGallery: React.FC = () => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            showToast(`Failed to export ${format.toUpperCase()}`, 'error');
+            console.error('Export error:', error);
+            showToast(`Failed to export ${format.toUpperCase()}. Falling back...`, 'warning');
+            if (format === 'pdf') {
+                 // Simple fallback for PDF
+                 const printWindow = window.open('', '_blank');
+                 if (printWindow) {
+                     printWindow.document.write(`<html><head><title>${doc.title}</title></head><body style="font-family: sans-serif; padding: 20px; white-space: pre-wrap;"><h1>${doc.title}</h1>\n\n${doc.content}</body></html>`);
+                     printWindow.document.close();
+                     printWindow.onload = () => {
+                         printWindow.print();
+                     };
+                 }
+            }
         }
     };
 

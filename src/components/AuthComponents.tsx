@@ -181,7 +181,16 @@ export const SignInPage = () => {
             </div>
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-2">Password</label>
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-slate-400 text-sm">Password</label>
+              <button 
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                className="text-xs text-[var(--neon-primary)] hover:text-[var(--neon-accent)] hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
               <input
@@ -596,5 +605,231 @@ export const UserButton = () => {
         Sign Up
       </button>
     </div>
+  );
+};
+
+export const ForgotPasswordPage = () => {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const { showToast } = useNotification();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao solicitar recuperação de senha');
+      }
+
+      setSuccess(true);
+      showToast(data.message || 'Email de recuperação enviado', 'success');
+    } catch (error: any) {
+      showToast(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout title="Recuperar Senha">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-white mb-2">Recuperar Senha</h2>
+        <p className="text-slate-400">
+          Insira seu e-mail para receber um link de redefinição de senha.
+        </p>
+      </div>
+
+      {success ? (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
+          <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-6 h-6 text-emerald-400" />
+          </div>
+          <h3 className="text-white font-medium mb-2">Verifique seu e-mail</h3>
+          <p className="text-emerald-200/70 text-sm mb-6">
+            Se o e-mail {email} estiver registrado, enviamos um link para redefinir sua senha.
+          </p>
+          <button
+            onClick={() => navigate('/sign-in')}
+            className="text-[var(--neon-primary)] hover:text-white transition-colors text-sm font-medium"
+          >
+            Voltar para o Login
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+                placeholder="seu@email.com"
+                required
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Enviar link de recuperação'}
+          </button>
+          <div className="text-center mt-4">
+            <button
+              type="button"
+              onClick={() => navigate('/sign-in')}
+              className="text-sm border-none bg-transparent text-slate-400 hover:text-white transition-colors"
+            >
+              Voltar para o Login
+            </button>
+          </div>
+        </form>
+      )}
+    </AuthLayout>
+  );
+};
+
+export const ResetPasswordPage = () => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const { showToast } = useNotification();
+  const navigate = useNavigate();
+
+  const token = new URLSearchParams(window.location.search).get('token');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirmPassword) {
+      showToast('As senhas não coincidem', 'error');
+      return;
+    }
+    if (!token) {
+      showToast('Token inválido ou ausente', 'error');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword: password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Erro ao redefinir a senha');
+      }
+
+      setSuccess(true);
+      showToast('Senha redefinida com sucesso!', 'success');
+    } catch (error: any) {
+      showToast(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!token) {
+    return (
+      <AuthLayout title="Link Inválido">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Link Inválido</h2>
+          <p className="text-slate-400 mb-6">O link de redefinição de senha é inválido ou está ausente.</p>
+          <button
+            onClick={() => navigate('/forgot-password')}
+            className="bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white px-6 py-2 rounded-xl"
+          >
+            Solicitar Novo Link
+          </button>
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  return (
+    <AuthLayout title="Nova Senha">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-white mb-2">Criar Nova Senha</h2>
+        <p className="text-slate-400">Digite sua nova senha abaixo.</p>
+      </div>
+
+      {success ? (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
+          <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-6 h-6 text-emerald-400" />
+          </div>
+          <h3 className="text-white font-medium mb-2">Senha Atualizada</h3>
+          <p className="text-emerald-200/70 text-sm mb-6">
+            Sua senha foi redefinida com sucesso.
+          </p>
+          <button
+            onClick={() => navigate('/sign-in')}
+            className="bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white px-6 py-2 rounded-xl transition-colors font-medium"
+          >
+            Ir para o Login
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Nova Senha</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+                placeholder="••••••••"
+                required
+                minLength={8}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-slate-400 text-sm mb-2">Confirmar Nova Senha</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-slate-950/50 border border-white/10 text-white pl-10 pr-4 py-3 rounded-xl focus:border-[var(--neon-primary)] focus:ring-1 focus:ring-[var(--neon-primary)]/20 outline-none transition-colors"
+                placeholder="••••••••"
+                required
+                minLength={8}
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[var(--neon-primary)] hover:bg-[#5b5ef0] text-white shadow-lg shadow-indigo-500/20 border-none rounded-xl py-3 text-base font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Redefinir Senha'}
+          </button>
+        </form>
+      )}
+    </AuthLayout>
   );
 };

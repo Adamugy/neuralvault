@@ -93,6 +93,25 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
     }
   };
 
+  const handleCopy = () => {
+    if (result) {
+      navigator.clipboard.writeText(result);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!result) return;
+    const blob = new Blob([result], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'image_analysis.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
       {/* Uniform Header */}
@@ -231,10 +250,10 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                         Analysis Result
                     </h3>
                     <div className="flex gap-2">
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                        <button onClick={handleCopy} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
                             <Copy className="w-4 h-4" />
                         </button>
-                        <button className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                        <button onClick={handleDownload} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
                             <Download className="w-4 h-4" />
                         </button>
                     </div>

@@ -11,6 +11,8 @@ router.post('/signup', AuthController.signup);
 router.post('/signin', AuthController.signin);
 router.post('/verify-email', AuthController.verifyEmail);
 router.post('/resend-verification', AuthController.resendVerification);
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
 
 // Protected routes
 router.post('/signout', requireApiAuth, AuthController.signout);

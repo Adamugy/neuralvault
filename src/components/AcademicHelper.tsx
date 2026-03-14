@@ -108,9 +108,8 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   }, [authLoaded, isLibraryOpen, getToken]);
 
   const handleGenerate = async () => {
-    if (!topic && activeTask !== 'refine' && activeTask !== 'organize') return; 
-    if (activeTask === 'organize' && !topic) return;
-    if (!contentInput && (activeTask === 'refine' || activeTask === 'draft')) return;
+    if (activeTask === 'refine' && !contentInput) return;
+    if (activeTask !== 'refine' && !topic) return;
 
     if (!isPremium && (activeTask === 'refine' || activeTask === 'draft')) {
        onOpenUpgrade?.();

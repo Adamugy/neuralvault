@@ -26,6 +26,8 @@ model User {
   authenticators Authenticator[]
   currentChallenge String?
   verificationToken String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
   twoFactorEnabled Boolean         @default(false)
   twoFactorSecret  String?
   academicSessions AcademicSession[]
