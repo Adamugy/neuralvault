@@ -63,6 +63,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   
   // View State
   const [viewMode, setViewMode] = useState<'editor' | 'gallery'>('editor');
+  const [mobileSubTab, setMobileSubTab] = useState<'tools' | 'preview'>('tools');
   const [showHistory, setShowHistory] = useState(false);
   const [historySessions, setHistorySessions] = useState<any[]>([]);
   
@@ -175,6 +176,9 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         setIsEditing(false);
         setResearchFocus([]);
         if (data.sessionId) setSessionId(data.sessionId);
+        
+        // On mobile, switch to preview tab after generation
+        setMobileSubTab('preview');
         
         // Initialize chat with the AI's "thought" or default
         setMessages([{
@@ -447,12 +451,14 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                 </button>
             </div>
 
-           {/* Uniform Search Bar */}
-           <SearchBar 
-             searchTerm={searchTerm}
-             setSearchTerm={setSearchTerm}
-             resources={resources}
-           />
+           {/* Uniform Search Bar - Hidden on small mobile to save space */}
+           <div className="hidden md:block flex-1 max-w-md mx-4">
+               <SearchBar 
+                 searchTerm={searchTerm}
+                 setSearchTerm={setSearchTerm}
+                 resources={resources}
+               />
+           </div>
 
            <div className="flex items-center gap-3 flex-shrink-0">
                {!isPremium && (
@@ -463,9 +469,35 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            </div>
        </div>
 
-       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+           {/* Mobile Tools/Preview Toggle - Only visible on mobile in Editor mode when result exists */}
+           {viewMode === 'editor' && result && (
+               <div className="lg:hidden flex items-center justify-center p-2 bg-[#0f0f11] border-b border-white/10 z-20">
+                    <div className="flex bg-white/5 p-1 rounded-lg border border-white/10 w-full max-w-sm">
+                        <button 
+                            onClick={() => setMobileSubTab('tools')}
+                            className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                                mobileSubTab === 'tools' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400'
+                            }`}
+                        >
+                            <Edit3 className="w-3 h-3" /> Tools
+                        </button>
+                        <button 
+                            onClick={() => setMobileSubTab('preview')}
+                            className={`flex-1 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                                mobileSubTab === 'preview' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400'
+                            }`}
+                        >
+                            <FileText className="w-3 h-3" /> Preview
+                        </button>
+                    </div>
+               </div>
+           )}
+
            {/* Left Sidebar - Tools */}
-           <div className="w-full lg:w-[400px] flex-col border-r border-white/10 glass-panel lg:flex shadow-xl z-10 overflow-y-auto scrollbar-hide">
+           <div className={`w-full lg:w-[400px] flex-col border-r border-white/10 glass-panel lg:flex shadow-xl z-10 overflow-y-auto scrollbar-hide ${
+               (viewMode !== 'editor' || (result && mobileSubTab === 'preview')) ? 'hidden lg:flex' : 'flex'
+           }`}>
                
                {/* Task Selector */}
                 <div className="p-3 grid grid-cols-2 gap-2">
@@ -539,7 +571,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     value={activeTask === 'refine' ? contentInput : topic}
                                     onChange={(e) => activeTask === 'refine' ? setContentInput(e.target.value) : setTopic(e.target.value)}
                                     placeholder={activeTask === 'refine' ? "Paste your draft here..." : "Describe your paper topic or paste notes..."}
-                                    className="w-full h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none transition-all font-mono leading-relaxed"
+                                    className="w-full h-40 lg:h-64 bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none transition-all font-mono leading-relaxed"
                                 />
                             </div>
 
@@ -677,7 +709,9 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            </div>
 
            {/* Right Content - Document Preview */}
-           <div className="flex-1 bg-[#0f0f11] p-4 lg:p-8 overflow-y-auto flex justify-center">
+           <div className={`flex-1 bg-[#0f0f11] p-4 lg:p-8 overflow-y-auto flex justify-center ${
+               (viewMode === 'editor' && result && mobileSubTab === 'tools') ? 'hidden lg:flex' : 'flex'
+           }`}>
                 {viewMode === 'gallery' ? (
                      <div className="w-full max-w-6xl">
                         <div className="mb-6">

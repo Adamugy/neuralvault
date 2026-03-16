@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as AuthController from '../controllers/auth.js';
 import { requireApiAuth } from '../middleware/auth.js';
 import multer from 'multer';
+import * as PasskeyController from '../controllers/passkey.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -25,6 +26,12 @@ router.post('/2fa/generate', requireApiAuth, AuthController.generate2FA);
 router.post('/2fa/enable', requireApiAuth, AuthController.enable2FA);
 router.post('/2fa/disable', requireApiAuth, AuthController.disable2FA);
 router.post('/2fa/verify', AuthController.verify2FA);
+
+// Passkey routes
+router.post('/passkey/registration-options', PasskeyController.registrationOptions);
+router.post('/passkey/registration-verify', PasskeyController.registrationVerify);
+router.post('/passkey/login-options', PasskeyController.loginOptions);
+router.post('/passkey/login-verify', PasskeyController.loginVerify);
 
 export default router;
 

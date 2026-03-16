@@ -1,4 +1,5 @@
 import { AuthService } from '../services/authService.js';
+import { TwoFactorService } from '../services/twoFactorService.js';
 import { prisma } from '../services/prisma.js';
 import { MailService } from '../services/mailService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -82,6 +83,16 @@ export const signin = asyncHandler(async (req, res) => {
     if (!user.emailVerified) {
         throw new UnauthorizedError('Por favor, verifique seu e-mail antes de fazer login.');
     }
+    console.log(`[Auth Debug] Sign-in level 1 successful for: ${email}`);
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+        console.log(`[Auth] 2FA required for user: ${email}`);
+        const tempToken = AuthService.generateTemp2FAToken(user.id, user.email);
+        return res.json({
+            status: '2fa_required',
+            tempToken
+        });
+    }
     // Generate JWT token
     const token = AuthService.generateToken(user.id, user.email);
     // Capture context fingerprint for security hardening
@@ -97,7 +108,7 @@ export const signin = asyncHandler(async (req, res) => {
         console.error(`[Auth Debug] ERROR creating session:`, err.message);
         throw err; // Will be caught by errorHandler
     }
-    console.log(`[Auth Debug] Sign-in successful for: ${email}`);
+    console.log(`[Auth Debug] Sign-in complete for: ${email}`);
     const userWithPasskeys = await prisma.user.findUnique({
         where: { id: user.id },
         include: { authenticators: { select: { id: true } } }
@@ -109,7 +120,8 @@ export const signin = asyncHandler(async (req, res) => {
             name: user.name,
             avatarUrl: user.avatarUrl,
             plan: user.plan,
-            hasPasskey: userWithPasskeys?.authenticators?.length > 0
+            hasPasskey: userWithPasskeys?.authenticators?.length > 0,
+            twoFactorEnabled: user.twoFactorEnabled
         },
         token
     });
@@ -153,7 +165,8 @@ export const getMe = asyncHandler(async (req, res) => {
                 avatarUrl: user.avatarUrl,
                 plan: user.plan,
                 emailVerified: user.emailVerified,
-                hasPasskey: user.authenticators.length > 0
+                hasPasskey: user.authenticators.length > 0,
+                twoFactorEnabled: user.twoFactorEnabled
             }
         });
     }
@@ -275,4 +288,176 @@ export const uploadAvatar = asyncHandler(async (req, res) => {
         message: 'Avatar updated successfully',
         avatarUrl: user.avatarUrl
     });
+});
+/**
+ * POST /api/auth/2fa/generate
+ * Generate 2FA secret and QR code for setup
+ */
+export const generate2FA = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+    if (!user)
+        throw new UnauthorizedError();
+    const secret = TwoFactorService.generateSecret();
+    const qrCodeUrl = await TwoFactorService.generateQRCode(user.email, 'NeuralVault', secret);
+    // Store secret temporarily (not enabled yet)
+    await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorSecret: secret }
+    });
+    res.json({ qrCodeUrl, secret });
+});
+/**
+ * POST /api/auth/2fa/enable
+ * Verify first token and enable 2FA
+ */
+export const enable2FA = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { token } = req.body;
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+    if (!user || !user.twoFactorSecret) {
+        throw new BadRequestError('2FA setup not initiated');
+    }
+    const isValid = await TwoFactorService.verifyToken(token, user.twoFactorSecret);
+    if (!isValid) {
+        throw new BadRequestError('Código inválido. Tente novamente.');
+    }
+    await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorEnabled: true }
+    });
+    res.json({ message: 'Autenticação de dois fatores ativada com sucesso!' });
+});
+/**
+ * POST /api/auth/2fa/disable
+ * Disable 2FA
+ */
+export const disable2FA = asyncHandler(async (req, res) => {
+    const userId = req.userId;
+    const { token } = req.body;
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+        throw new BadRequestError('2FA não está ativada');
+    }
+    const isValid = await TwoFactorService.verifyToken(token, user.twoFactorSecret);
+    if (!isValid) {
+        throw new BadRequestError('Código inválido. Tente novamente para desativar.');
+    }
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            twoFactorEnabled: false,
+            twoFactorSecret: null
+        }
+    });
+    res.json({ message: 'Autenticação de dois fatores desativada.' });
+});
+/**
+ * POST /api/auth/2fa/verify
+ * Public endpoint to verify 2FA during login
+ */
+export const verify2FA = asyncHandler(async (req, res) => {
+    const { tempToken, token } = req.body;
+    if (!tempToken || !token) {
+        throw new BadRequestError('Token temporário e código são obrigatórios');
+    }
+    // Verify temp token
+    const decoded = AuthService.verifyToken(tempToken);
+    if (!decoded.isPending2FA) {
+        throw new UnauthorizedError('Token inválido');
+    }
+    const user = await prisma.user.findUnique({
+        where: { id: decoded.userId }
+    });
+    if (!user || !user.twoFactorSecret) {
+        throw new UnauthorizedError();
+    }
+    const isValid = await TwoFactorService.verifyToken(token, user.twoFactorSecret);
+    if (!isValid) {
+        throw new UnauthorizedError('Código 2FA inválido');
+    }
+    // Success! Generate real token
+    const finalToken = AuthService.generateToken(user.id, user.email);
+    const { getContextFingerprint } = await import('../middleware/zeroTrust.js');
+    const fingerprint = getContextFingerprint(req);
+    await AuthService.createSession(user.id, finalToken, fingerprint);
+    res.json({
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            plan: user.plan,
+            twoFactorEnabled: true
+        },
+        token: finalToken
+    });
+});
+/**
+ * POST /api/auth/forgot-password
+ * Send a password reset email
+ */
+export const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        throw new BadRequestError('Email is required');
+    }
+    const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+    });
+    // Security: Always return success to prevent email enumeration
+    if (!user) {
+        return res.json({ message: 'Se o e-mail existir no nosso sistema, você receberá um link de recuperação.' });
+    }
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            resetToken,
+            resetTokenExpiry
+        }
+    });
+    await MailService.sendPasswordResetEmail(user.email, resetToken, user.name || undefined);
+    res.json({ message: 'Se o e-mail existir no nosso sistema, você receberá um link de recuperação.' });
+});
+/**
+ * POST /api/auth/reset-password
+ * Reset user password using token
+ */
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+        throw new BadRequestError('Token e nova senha são obrigatórios');
+    }
+    if (newPassword.length < 8) {
+        throw new BadRequestError('A senha deve ter pelo menos 8 caracteres');
+    }
+    const user = await prisma.user.findFirst({
+        where: {
+            resetToken: token,
+            resetTokenExpiry: {
+                gt: new Date()
+            }
+        }
+    });
+    if (!user) {
+        throw new BadRequestError('Token inválido ou expirado. Por favor, solicite a recuperação de senha novamente.');
+    }
+    const passwordHash = await AuthService.hashPassword(newPassword);
+    await prisma.user.update({
+        where: { id: user.id },
+        data: {
+            passwordHash,
+            resetToken: null,
+            resetTokenExpiry: null
+        }
+    });
+    res.json({ message: 'Senha redefinida com sucesso. Você já pode fazer login com sua nova senha.' });
 });

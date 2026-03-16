@@ -20,6 +20,6 @@ export const validateSessionContext = (req: Request, res: Response, next: NextFu
 
 export const getContextFingerprint = (req: Request): string => {
     const ua = req.headers['user-agent'] || 'unknown';
-    const ip = req.ip || 'unknown';
-    return crypto.createHash('sha256').update(`${ip}-${ua}`).digest('hex');
+    // Removed IP from fingerprint as it can change frequently in Cloud Run/Mobile environments
+    return crypto.createHash('sha256').update(ua).digest('hex');
 };

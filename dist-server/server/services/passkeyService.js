@@ -50,16 +50,18 @@ export const getRegistrationOptions = async (userId, email) => {
         rpID,
         userID: isoUint8Array.fromUTF8String(userId),
         userName: email,
-        attestationType: 'none',
+        timeout: 60000,
+        attestationType: 'none', // Max compatibility (Android/Windows)
         excludeCredentials: userAuthenticators.map(cred => ({
             id: cred.credentialID,
             type: 'public-key',
             transports: cred.transports,
         })),
         authenticatorSelection: {
-            residentKey: 'required',
+            residentKey: 'required', // Create discoverable credential
             userVerification: 'required',
         },
+        supportedAlgorithmIDs: [-7, -257],
     });
     // Store challenge in user record
     await prisma.user.update({
@@ -90,18 +92,27 @@ export const verifyPasskeyRegistration = async (userId, body) => {
     if (verification.verified && registrationInfo) {
         const { credential } = registrationInfo;
         const { id, publicKey, counter } = credential;
-        console.log(`[Passkey Debug] Registration verified for user ${userId}. Saving authenticator...`);
-        await prisma.authenticator.create({
-            data: {
-                userId,
-                credentialID: Buffer.from(id).toString('base64url'),
-                credentialPublicKey: Buffer.from(publicKey),
-                counter: BigInt(counter),
-                credentialDeviceType: 'single_device',
-                credentialBackedUp: true,
-                transports: body.response.transports || [],
-            },
-        });
+        console.log(`[Passkey Debug] Registration verified for user ${userId}. Saving authenticator with credentialID: "${id}"...`);
+        try {
+            // NOTE: `id` from simplewebauthn is already a base64url string — store it directly.
+            await prisma.authenticator.create({
+                data: {
+                    userId,
+                    credentialID: id,
+                    credentialPublicKey: Buffer.from(publicKey),
+                    counter: BigInt(counter),
+                    credentialDeviceType: 'single_device',
+                    credentialBackedUp: true,
+                    transports: body.response.transports || [],
+                },
+            });
+            console.log(`[Passkey Debug] ✅ Authenticator saved successfully for user ${userId}, credentialID: "${id}"`);
+        }
+        catch (saveError) {
+            console.error(`[Passkey Debug] ❌ FAILED to save authenticator for user ${userId}:`, saveError?.message || saveError);
+            console.error(`[Passkey Debug] Save error details:`, JSON.stringify({ code: saveError?.code, meta: saveError?.meta }));
+            throw saveError;
+        }
         // Clear challenge
         await prisma.user.update({
             where: { id: userId },
@@ -117,54 +128,106 @@ export const verifyPasskeyRegistration = async (userId, body) => {
  * Authentication: Step 1 - Generate Auth Options
  */
 export const getAuthOptions = async (email) => {
-    console.log(`[Passkey Debug] Generating auth options for: ${email} (rpID: ${rpID})`);
-    const user = await prisma.user.findUnique({
-        where: { email },
-        include: { authenticators: true },
-    });
-    if (!user || !user.authenticators || user.authenticators.length === 0) {
-        console.error(`[Passkey Debug] No passkeys found for: ${email}`);
-        throw new Error('User has no passkeys registered');
+    console.log(`[Passkey Debug] Generating auth options. Mode: ${email ? 'specific' : 'discoverable'} (rpID: ${rpID})`);
+    // 1. If email is provided, use the old flow (user-specific challenge)
+    if (email) {
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: { authenticators: true },
+        });
+        if (!user || !user.authenticators || user.authenticators.length === 0) {
+            console.error(`[Passkey Debug] No passkeys found for: ${email}`);
+            throw new Error('User has no passkeys registered');
+        }
+        const options = await generateAuthenticationOptions({
+            timeout: 60000,
+            allowCredentials: [], // Still allows discoverable credentials
+            userVerification: 'required',
+            rpID,
+        });
+        // Store challenge in user
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { currentChallenge: options.challenge },
+        });
+        return { options };
     }
+    // 2. Discoverable Flow: Generate a generic challenge
     const options = await generateAuthenticationOptions({
-        rpID,
-        allowCredentials: user.authenticators.map((cred) => ({
-            id: cred.credentialID,
-            type: 'public-key',
-            // We omit transports during login to allow better discovery 
-            // across different device types/methods.
-        })),
+        timeout: 60000,
+        allowCredentials: [], // Triggers account picker
         userVerification: 'required',
+        rpID,
     });
-    // Store challenge
-    await prisma.user.update({
-        where: { id: user.id },
-        data: { currentChallenge: options.challenge },
+    // Store in PasskeyChallenge table (expires in 5 minutes)
+    const challengeRecord = await prisma.passkeyChallenge.create({
+        data: {
+            challenge: options.challenge,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        },
     });
-    return options;
+    return {
+        options,
+        challengeId: challengeRecord.id // Return id to client to identify the challenge later
+    };
 };
 /**
  * Authentication: Step 2 - Verify Response
  */
-export const verifyPasskeyLogin = async (email, body) => {
-    console.log(`[Passkey Debug] Verifying login for: ${email}, credentialId: ${body.id}`);
-    const user = await prisma.user.findUnique({
-        where: { email },
-        include: { authenticators: true },
+export const verifyPasskeyLogin = async (body, challengeId) => {
+    const credentialIdFromBrowser = body.id; // base64url string from browser
+    console.log(`[Passkey Debug] Verifying login. Browser credentialId: "${credentialIdFromBrowser}", challengeId: ${challengeId || 'session-tied'}`);
+    // 1. Find the authenticator by credential ID
+    // Try the raw base64url ID first (correct format after fix)
+    let dbAuthenticator = await prisma.authenticator.findUnique({
+        where: { credentialID: credentialIdFromBrowser },
+        include: { user: true }
     });
-    if (!user || !user.currentChallenge) {
-        console.error(`[Passkey Debug] Auth challenge not found for: ${email}`);
-        throw new Error('Authentication challenge not found');
-    }
-    const dbAuthenticator = user.authenticators.find((auth) => auth.credentialID === body.id);
+    // Fallback: try re-encoded variant (handles records saved with old double-encoding bug)
     if (!dbAuthenticator) {
-        console.error(`[Passkey Debug] Authenticator ${body.id} not found in DB for user ${email}`);
-        throw new Error('Authenticator not found for this user');
+        const reEncoded = Buffer.from(credentialIdFromBrowser, 'base64url').toString('base64url');
+        if (reEncoded !== credentialIdFromBrowser) {
+            console.log(`[Passkey Debug] Not found by raw ID, trying re-encoded: "${reEncoded}"`);
+            dbAuthenticator = await prisma.authenticator.findUnique({
+                where: { credentialID: reEncoded },
+                include: { user: true }
+            });
+        }
+    }
+    if (!dbAuthenticator) {
+        // Log all stored IDs for diagnosis
+        const allIds = await prisma.authenticator.findMany({ select: { credentialID: true } });
+        console.error(`[Passkey Debug] Authenticator "${credentialIdFromBrowser}" not found. DB has ${allIds.length} record(s): ${allIds.map(a => `"${a.credentialID}"`).join(', ')}`);
+        throw new Error('Authenticator not recognized. If you have an account, please sign in with password first to link this device.');
+    }
+    console.log(`[Passkey Debug] Found authenticator in DB with credentialID: "${dbAuthenticator.credentialID}"`);
+    const user = dbAuthenticator.user;
+    // 2. Retrieve the challenge
+    let expectedChallenge = null;
+    if (challengeId) {
+        // Look in PasskeyChallenge table
+        const challengeRecord = await prisma.passkeyChallenge.findUnique({
+            where: { id: challengeId },
+        });
+        if (!challengeRecord || challengeRecord.expiresAt < new Date()) {
+            throw new Error('Authentication challenge expired or invalid');
+        }
+        expectedChallenge = challengeRecord.challenge;
+        // Cleanup used challenge
+        await prisma.passkeyChallenge.delete({ where: { id: challengeId } }).catch(() => { });
+    }
+    else {
+        // Look in User record (legacy/email-provided flow)
+        expectedChallenge = user.currentChallenge;
+    }
+    if (!expectedChallenge) {
+        console.error(`[Passkey Debug] Auth challenge not found for user: ${user.email}`);
+        throw new Error('Authentication challenge not found');
     }
     try {
         const verification = await verifyAuthenticationResponse({
             response: body,
-            expectedChallenge: user.currentChallenge,
+            expectedChallenge,
             expectedOrigin: origin,
             expectedRPID: rpID,
             requireUserVerification: true,
@@ -175,25 +238,33 @@ export const verifyPasskeyLogin = async (email, body) => {
             },
         });
         if (verification.verified) {
-            console.log(`[Passkey Debug] Login verified successfully for: ${email}`);
+            console.log(`[Passkey Debug] Login verified successfully for: ${user.email}`);
             // Update counter
             await prisma.authenticator.update({
                 where: { id: dbAuthenticator.id },
                 data: { counter: BigInt(verification.authenticationInfo.newCounter) },
             });
-            // Clear challenge
+            // Clear challenge on user
             await prisma.user.update({
                 where: { id: user.id },
                 data: { currentChallenge: null },
             });
+            // CHECK 2FA: Ensure persistent state
+            const twoFactorRequired = user.twoFactorEnabled === true;
+            console.log(`[Passkey Debug] 2FA required for ${user.email}: ${twoFactorRequired}`);
+            return {
+                verified: true,
+                user,
+                twoFactorRequired
+            };
         }
         else {
-            console.warn(`[Passkey Debug] Login verification FAILED for: ${email}`);
+            console.warn(`[Passkey Debug] Login verification FAILED for: ${user.email}`);
+            return { verified: false };
         }
-        return { verification, user };
     }
     catch (err) {
-        console.error(`[Passkey Debug] CRITICAL error during verification:`, err.message);
+        console.error(`[Passkey Debug] Error during verification:`, err.message);
         throw err;
     }
 };

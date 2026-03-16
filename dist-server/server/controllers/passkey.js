@@ -31,27 +31,40 @@ export const registrationVerify = asyncHandler(async (req, res) => {
     }
 });
 export const loginOptions = asyncHandler(async (req, res) => {
-    const { email } = req.body;
-    if (!email)
-        return res.status(400).json({ error: 'Email is required' });
+    const { email } = req.body; // Email is now optional
     try {
-        const options = await passkeyService.getAuthOptions(email);
-        res.json(options);
+        const { options, challengeId } = await passkeyService.getAuthOptions(email);
+        res.json({ options, challengeId });
     }
     catch (error) {
         res.status(404).json({ error: error.message });
     }
 });
 export const loginVerify = asyncHandler(async (req, res) => {
-    const { email, body } = req.body;
-    if (!email || !body)
-        return res.status(400).json({ error: 'Email and body are required' });
+    const { email, body, challengeId } = req.body;
+    if (!body)
+        return res.status(400).json({ error: 'Credential body is required' });
     try {
-        const { verification, user } = await passkeyService.verifyPasskeyLogin(email, body);
-        if (verification.verified) {
+        const result = await passkeyService.verifyPasskeyLogin(body, challengeId);
+        if (result.verified && result.user) {
+            const user = result.user;
+            // Handle 2FA Persistence
+            if (result.twoFactorRequired) {
+                const tempToken = AuthService.generateTemp2FAToken(user.id, user.email);
+                return res.json({
+                    verified: true,
+                    status: '2fa_required',
+                    tempToken,
+                    message: 'Two-factor authentication required'
+                });
+            }
+            // Normal login
             const token = AuthService.generateToken(user.id, user.email);
+            // Create session in DB
+            await AuthService.createSession(user.id, token);
             res.json({
                 verified: true,
+                status: 'success',
                 token,
                 user: {
                     id: user.id,
@@ -66,6 +79,7 @@ export const loginVerify = asyncHandler(async (req, res) => {
         }
     }
     catch (error) {
+        console.error('[Passkey Controller Error]', error);
         res.status(400).json({ error: error.message });
     }
 });

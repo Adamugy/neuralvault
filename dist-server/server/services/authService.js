@@ -24,6 +24,10 @@ export class AuthService {
         const payload = { userId, email };
         return jwt.sign(payload, env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
     }
+    static generateTemp2FAToken(userId, email) {
+        const payload = { userId, email, isPending2FA: true };
+        return jwt.sign(payload, env.JWT_SECRET, { expiresIn: '5m' });
+    }
     static verifyToken(token) {
         try {
             return jwt.verify(token, env.JWT_SECRET);

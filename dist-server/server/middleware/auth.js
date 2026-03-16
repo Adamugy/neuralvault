@@ -9,7 +9,7 @@ export const requireApiAuth = async (req, res, next) => {
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             console.log('[Auth] Missing or invalid Authorization header');
-            throw new UnauthorizedError();
+            return next(new UnauthorizedError());
         }
         const token = authHeader.substring(7);
         // Verify and decode token
@@ -21,7 +21,7 @@ export const requireApiAuth = async (req, res, next) => {
         const isValid = await AuthService.validateSession(token, fingerprint);
         if (!isValid) {
             console.log('[Auth] Invalid or expired session (or fingerprint mismatch)');
-            throw new UnauthorizedError();
+            return next(new UnauthorizedError());
         }
         // Attach user info to request
         req.userId = decoded.userId;
@@ -33,9 +33,9 @@ export const requireApiAuth = async (req, res, next) => {
     }
     catch (error) {
         if (error instanceof UnauthorizedError) {
-            throw error;
+            return next(error);
         }
         console.error('[Auth] Error verifying token:', error);
-        throw new UnauthorizedError();
+        return next(new UnauthorizedError());
     }
 };
