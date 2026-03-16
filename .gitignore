@@ -110,3 +110,5 @@ gcloudignore
 #agent
 .agent
 
+#ps1
+*.ps1
