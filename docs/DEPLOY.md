@@ -36,7 +36,8 @@ As migrações da base de dados correm automaticamente sempre que a aplicação 
 | `DOMAIN` | `neuralvault.onrender.com` (ou o domínio próprio) |
 | `PASSKEY_RP_ID` | igual a `DOMAIN` |
 | `PASSKEY_ORIGIN` | igual a `APP_URL` |
-| `RESEND_API_KEY` | opcional, para emails (reposição de senha) |
+| `RESEND_API_KEY` | **obrigatória para login**: sem ela o email de verificação não sai e ninguém consegue entrar |
+| `MAIL_FROM` | remetente, ex. `NeuralVault <no-reply@nvaulty.online>`; o domínio tem de estar verificado no Resend |
 
 `JWT_SECRET` é gerado automaticamente pelo Render.
 

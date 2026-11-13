@@ -63,11 +63,6 @@ export const signup = asyncHandler(async (req: Request, res: Response) => {
         } as any
     });
 
-    console.log(`[Auth] User created. Verification token: ${verificationToken}`);
-
-    // Send verification email
-    await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);
-
     // Send verification email
     await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);
 
@@ -301,8 +296,6 @@ export const resendVerification = asyncHandler(async (req: Request, res: Respons
         where: { id: user.id },
         data: { verificationToken }
     });
-
-    console.log(`[Auth] Verification token resent: ${verificationToken}`);
 
     // Send verification email
     await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);

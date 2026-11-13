@@ -2,6 +2,14 @@ import { Resend } from 'resend';
 import { env } from '../utils/env.js';
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
+// Sender must belong to a domain verified in Resend (or onboarding@resend.dev for testing)
+const from = env.MAIL_FROM || 'NeuralVault <no-reply@nvaulty.online>';
+// Links carry one-time tokens: only print them outside production
+const logSimulatedLink = (label: string, email: string, link: string) => {
+    if (env.NODE_ENV !== 'production') {
+        console.log(`[MailService] Simulation: ${label} link for ${email} is ${link}`);
+    }
+};
 
 export class MailService {
     /**
@@ -10,7 +18,7 @@ export class MailService {
     static async sendVerificationEmail(email: string, token: string, name?: string) {
         if (!resend) {
             console.warn('[MailService] RESEND_API_KEY not configured. Skipping email.');
-            console.log(`[MailService] Simulation: Verification link for ${email} is ${env.APP_URL}/verify-email?token=${token}`);
+            logSimulatedLink('Verification', email, `${env.APP_URL}/verify-email?token=${token}`);
             return;
         }
 
@@ -19,7 +27,7 @@ export class MailService {
 
         try {
             await resend.emails.send({
-                from: 'NeuralVault <no-reply@nvaulty.online>',
+                from,
                 to: email,
                 subject: 'Verifique seu Email - NeuralVault',
                 html: `
@@ -47,7 +55,7 @@ export class MailService {
     static async sendPasswordResetEmail(email: string, token: string, name?: string) {
         if (!resend) {
             console.warn('[MailService] RESEND_API_KEY not configured. Skipping email.');
-            console.log(`[MailService] Simulation: Password reset link for ${email} is ${env.APP_URL}/reset-password?token=${token}`);
+            logSimulatedLink('Password reset', email, `${env.APP_URL}/reset-password?token=${token}`);
             return;
         }
 
@@ -56,7 +64,7 @@ export class MailService {
 
         try {
             await resend.emails.send({
-                from: 'NeuralVault <no-reply@nvaulty.online>',
+                from,
                 to: email,
                 subject: 'Redefinição de Senha - NeuralVault',
                 html: `

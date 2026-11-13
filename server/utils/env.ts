@@ -24,6 +24,7 @@ const envSchema = z.object({
     APP_URL: z.string().url().optional(),
     DOMAIN: z.string().optional().default('localhost'),
     RESEND_API_KEY: z.string().optional(),
+    MAIL_FROM: z.string().optional(),
     PASSKEY_RP_ID: z.string().optional(),
     PASSKEY_ORIGIN: z.string().optional(),
     SESSION_IDLE_TIMEOUT: z.string().default('30m'),
