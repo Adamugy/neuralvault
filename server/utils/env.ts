@@ -27,6 +27,7 @@ const envSchema = z.object({
     PASSKEY_RP_ID: z.string().optional(),
     PASSKEY_ORIGIN: z.string().optional(),
     SESSION_IDLE_TIMEOUT: z.string().default('30m'),
+    UPLOADS_DIR: z.string().optional(),
 });
 
 const result = envSchema.safeParse(process.env);

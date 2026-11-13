@@ -8,8 +8,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// UPLOADS_DIR lets hosting providers point uploads at a persistent disk
+// (e.g. a Render Disk mounted at /var/data/uploads). Falls back to <repo>/uploads.
 // Going up 2 levels because this is in server/utils/
-export const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+export const uploadsDir = process.env.UPLOADS_DIR
+    ? path.resolve(process.env.UPLOADS_DIR)
+    : path.join(__dirname, '..', '..', 'uploads');
 
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });

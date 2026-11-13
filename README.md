@@ -21,8 +21,8 @@ Built on a foundation of performance and type safety.
 
 * **Frontend**: React, TypeScript, TailwindCSS (Glassmorphism & Neon Design System).
 * **Backend**: Node.js, Express, Prisma ORM.
-* **Data**: PostgreSQL (Cloud SQL), Google Cloud Storage.
-* **Infrastructure**: Google Cloud Run, Cloud Build (CI/CD).
+* **Data**: PostgreSQL (Neon).
+* **Infrastructure**: Render (Docker). See [docs/DEPLOY.md](docs/DEPLOY.md).
 * **AI**: Google Gemini 1.5 Pro.
 
 ## 🚀 Getting Started

@@ -1,0 +1,42 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Database is external (Neon). Secrets are marked sync:false and set in the Render dashboard.
+services:
+  - type: web
+    name: neuralvault
+    runtime: docker
+    plan: free            # change to "starter" to enable the persistent disk below
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: DOMAIN
+        sync: false
+      - key: PASSKEY_RP_ID
+        sync: false
+      - key: PASSKEY_ORIGIN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
+    # Persistent disk for uploaded files (requires a paid plan).
+    # Uncomment after switching plan to "starter".
+    # disk:
+    #   name: uploads
+    #   mountPath: /var/data
+    #   sizeGB: 1

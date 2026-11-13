@@ -21,21 +21,24 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Set production environment
 ENV NODE_ENV=production
 
 # Install only production dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# Copy built files from builder
+# Copy built files and the generated Prisma client from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Prisma CLI is only needed to apply migrations at startup
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 
-# Expose port 3000 (Vite typically uses 3000, server.ts might use 3001 or process.env.PORT)
+# Hosting providers (Render, Railway, Fly) inject PORT; 3000 is the local default
+ENV PORT=3000
 EXPOSE 3000
 
-# Entry point: Use the compiled server
-# Note: In Cloud Run, the PORT env var is provided automatically
-CMD ["node", "dist-server/server/index.js"]
+# Apply pending migrations, then start the compiled server
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist-server/server/index.js"]
