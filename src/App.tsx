@@ -5,7 +5,7 @@ import { ChatInterface } from './components/ChatInterface';
 import { ImageAnalysis } from './components/ImageAnalysis';
 import { AcademicHelper } from './components/AcademicHelper';
 import { Settings } from './components/Settings';
-import { ViewState, Resource, UserProfile, AppSettings, PlanTier } from './types';
+import { ViewState, Resource, UserProfile, AppSettings } from './types';
 import { useAuth, useUser } from './contexts/AuthContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SignInPage, SignUpPage, VerifyEmailPage, ForgotPasswordPage, ResetPasswordPage } from './components/AuthComponents';
@@ -54,31 +54,8 @@ const AppContent: React.FC = () => {
     hasPasskey: false
   });
 
-  useEffect(() => {
-    const syncPlan = async () => {
-      if (!authLoaded || !isLoaded || !user) return;
-      const token = await getToken();
-      if (!token) return;
-
-      const res = await fetch('/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) return;
-
-      const data = await res.json();
-      const plan = data?.user?.plan;
-      if (plan === 'free' || plan === 'researcher' || plan === 'lab') {
-        setUserProfile(prev => ({ ...prev, plan: plan as PlanTier }));
-      }
-    };
-
-    syncPlan();
-  }, [authLoaded, isLoaded, user, getToken]);
-
-
-
+  // Single profile sync: full fetch when the user changes (includes plan),
+  // otherwise mirror updates already present in the auth context.
   useEffect(() => {
     if (!isLoaded || !user) return;
 
