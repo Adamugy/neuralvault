@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ResourceBoard } from '../ResourceBoard';
 import { ViewState } from '../../types';
@@ -46,6 +46,14 @@ const mockUser = {
 };
 
 describe('ResourceBoard Component', () => {
+  beforeEach(() => {
+    // The board loads the library from /api/bootstrap on mount
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ folders: [], resources: [] }),
+    }));
+  });
+
   it('should render resources correctly', () => {
     render(
       <ResourceBoard 
@@ -59,7 +67,7 @@ describe('ResourceBoard Component', () => {
     expect(screen.getByText('Resource Beta')).toBeDefined();
   });
 
-  it('should display "No resources found" when list is empty', () => {
+  it('should display "No resources found" when list is empty', async () => {
     render(
       <ResourceBoard 
         resources={[]} 
@@ -68,6 +76,21 @@ describe('ResourceBoard Component', () => {
       />
     );
 
-    expect(screen.getByText('No resources found in this folder.')).toBeDefined();
+    // Skeleton first, then the empty state once loading finishes
+    expect(screen.getByRole('status', { name: 'Loading resources' })).toBeDefined();
+    expect(await screen.findByText('No resources found in this folder.')).toBeDefined();
+  });
+
+  it('should offer a retry when the library fails to load', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    render(
+      <ResourceBoard
+        resources={[]}
+        setResources={vi.fn()}
+        userProfile={mockUser as any}
+      />
+    );
+
+    expect(await screen.findByRole('button', { name: 'Try Again' })).toBeDefined();
   });
 });

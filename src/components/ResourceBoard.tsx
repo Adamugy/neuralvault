@@ -23,6 +23,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
+  // Initial load state: skeleton while the library loads, retry on failure
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   
   // Folder State
   const [folders, setFolders] = useState<FolderType[]>([{ id: 'general', name: 'General' }]);
@@ -63,6 +67,8 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
     if (!authLoaded) return;
 
     let cancelled = false;
+    setIsLoading(true);
+    setLoadError(false);
     (async () => {
       try {
         const res = await apiFetch('/api/bootstrap');
@@ -80,14 +86,16 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
         setFolders(normalizedFolders);
         setResources(apiResources);
       } catch {
-        // ignore
+        if (!cancelled) setLoadError(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [authLoaded]);
+  }, [authLoaded, reloadKey]);
 
   // Settings Defaults
   const layout = appSettings?.resourceLayout || 'grid';
@@ -636,7 +644,34 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
         </div>
 
         {/* Results */}
-        {visibleResources.length === 0 ? (
+        {isLoading && resources.length === 0 ? (
+          <div className="bg-card border border-hairline rounded-xl overflow-hidden animate-pulse" role="status" aria-label="Loading resources">
+            <div className="h-[41px] border-b border-hairline" />
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} className="h-[61px] border-b border-hairline last:border-b-0 flex items-center gap-3 px-4">
+                <div className="w-4 h-4 rounded bg-surface-card" />
+                <div className="w-8 h-8 rounded-md bg-surface-card" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/3 rounded bg-surface-card" />
+                  <div className="h-2.5 w-1/5 rounded bg-surface-card" />
+                </div>
+                <div className="hidden md:block h-3 w-24 rounded bg-surface-card" />
+                <div className="h-3 w-16 rounded bg-surface-card" />
+              </div>
+            ))}
+          </div>
+        ) : loadError && resources.length === 0 ? (
+          <div role="alert" className="bg-card border border-hairline rounded-xl h-56 flex flex-col items-center justify-center gap-3 text-center px-6">
+            <p className="text-ink font-medium">Couldn't load your resources.</p>
+            <p className="text-sm text-muted">Check your connection and try again.</p>
+            <button
+              onClick={() => setReloadKey(k => k + 1)}
+              className="h-10 px-4 rounded-md text-sm font-medium text-ink bg-card border border-hairline-strong hover:border-ink transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : visibleResources.length === 0 ? (
           <div className="bg-card border border-dashed border-hairline-strong rounded-xl h-56 flex flex-col items-center justify-center text-muted">
             <Folder className="w-10 h-10 mb-3 text-muted-soft" aria-hidden="true" />
             <p>No resources found in this folder.</p>
