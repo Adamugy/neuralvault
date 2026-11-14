@@ -113,17 +113,17 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
   };
 
   return (
-    <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
+    <div className="h-full flex flex-col bg-card border border-hairline rounded-xl overflow-hidden relative">
       {/* Uniform Header */}
-      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-hairline bg-canvas/95 flex justify-between items-center">
+      <div className="sticky top-0 z-20 px-4 md:px-5 py-3 border-b border-hairline bg-card flex justify-between items-center">
         <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center" aria-hidden="true">
             <ScanEye className="w-4 h-4 text-white" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-ink tracking-tight">Image Analysis</h1>
+            <h1 className="text-sm font-semibold text-ink">Image Analysis</h1>
             <div className="flex items-center gap-2 text-xs text-muted">
-               <Sparkles className="w-3 h-3 text-amber-ink" />
+               <Sparkles className="w-3 h-3 text-accent" aria-hidden="true" />
                <span>Visual AI Insights</span>
             </div>
           </div>

@@ -107,16 +107,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
   };
 
   return (
-    <div className="h-full flex flex-col bg-canvas relative">
+    <div className="h-full flex flex-col bg-card border border-hairline rounded-xl overflow-hidden relative">
 
       {/* Header - Sleek & Floating */}
-      <div className="sticky top-0 z-20 px-4 md:px-6 py-2.5 border-b border-hairline bg-canvas/95 flex justify-between items-center">
+      <div className="sticky top-0 z-20 px-4 md:px-5 py-3 border-b border-hairline bg-card flex justify-between items-center">
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="relative">
-            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center" aria-hidden="true">
               <Bot className="w-4 h-4 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-canvas" />
+            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-success border-2 border-card" aria-hidden="true" />
           </div>
           <div className="hidden sm:block">
             <h2 className="font-semibold text-ink tracking-tight flex items-center gap-2 text-sm leading-tight">

@@ -416,16 +416,16 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   ];
 
   return (
-    <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
-       <div className="py-2.5 px-6 border-b border-hairline bg-canvas/95 flex justify-between items-center z-30 sticky top-0">
+    <div className="h-full flex flex-col bg-card border border-hairline rounded-xl overflow-hidden relative">
+       <div className="py-3 px-4 md:px-5 border-b border-hairline bg-card flex justify-between items-center z-30 sticky top-0">
            <div className="flex items-center gap-4 flex-shrink-0">
-               <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
+               <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center" aria-hidden="true">
                    <GraduationCap className="w-5 h-5 text-white" />
                </div>
                <div className="hidden sm:block">
-                   <h1 className="text-sm font-bold text-ink tracking-tight">Academic Assistant</h1>
+                   <h1 className="text-sm font-semibold text-ink">Academic Assistant</h1>
                    <div className="flex items-center gap-2 text-xs text-muted">
-                       <Sparkles className="w-3 h-3 text-amber-ink" />
+                       <Sparkles className="w-3 h-3 text-accent" aria-hidden="true" />
                        <span>AI Research Helper</span>
                    </div>
                </div>

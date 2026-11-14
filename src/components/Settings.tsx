@@ -201,19 +201,20 @@ export const Settings: React.FC<SettingsProps> = ({
   ];
 
   return (
-    <div className="h-full bg-transparent flex flex-col md:flex-row overflow-hidden">
+    <div className="h-full flex flex-col md:flex-row bg-card border border-hairline rounded-xl overflow-hidden">
       {/* Settings Sidebar / Mobile Tabs */}
-      <div className="w-full md:w-64 glass-panel border-b md:border-b-0 md:border-r border-hairline p-4 md:p-6 flex-shrink-0 z-10">
-        <h2 className="text-lg font-bold text-ink mb-4 px-2 hidden md:block">Settings</h2>
-        <nav className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible no-scrollbar pb-2 md:pb-0">
+      <div className="w-full md:w-60 bg-surface-soft border-b md:border-b-0 md:border-r border-hairline p-3 md:p-4 flex-shrink-0 z-10">
+        <h2 className="font-display text-2xl text-ink mb-3 px-2 hidden md:block">Settings</h2>
+        <nav aria-label="Settings sections" className="flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar pb-2 md:pb-0">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-3 px-4 py-2.5 md:py-3 rounded-xl text-sm font-medium transition whitespace-nowrap ${
+              aria-current={activeTab === tab.id ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 h-10 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab.id
-                  ? 'bg-[var(--neon-primary)]/10 text-[var(--neon-primary)] border border-[var(--neon-primary)]/20'
-                  : 'text-muted hover:bg-surface-soft hover:text-ink border border-transparent'
+                  ? 'bg-card text-ink shadow-soft'
+                  : 'text-muted hover:bg-surface-strong/60 hover:text-ink'
               }`}
             >
               <tab.icon className="w-4 h-4" />
