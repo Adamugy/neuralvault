@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { BrainCircuit } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { ResourceBoard } from './components/ResourceBoard';
 import { ChatInterface } from './components/ChatInterface';
@@ -211,7 +212,7 @@ const AppContent: React.FC = () => {
         <header className="lg:hidden h-16 border-b border-hairline flex items-center justify-between px-4 bg-canvas z-40 flex-shrink-0">
             <div className="flex items-center gap-2">
                 <div className="text-primary" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain-circuit"><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 3 2.5 2.5 0 0 0-.02 3 2.5 2.5 0 0 0 1.2 3 2.5 2.5 0 0 0 2.02 3 2.5 2.5 0 0 0 4.96.46 2.5 2.5 0 0 0 1.98-3 2.5 2.5 0 0 0 1.32-3 2.5 2.5 0 0 0 .02-3 2.5 2.5 0 0 0-1.2-3 2.5 2.5 0 0 0-2.02-3"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="M12 12h.01"/></svg>
+                    <BrainCircuit className="w-6 h-6" />
                 </div>
                 <span translate="no" className="font-display text-2xl leading-none text-ink">NeuralVault</span>
             </div>
