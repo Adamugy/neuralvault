@@ -1,17 +1,42 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { BrainCircuit, ChevronRight } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
-import { ResourceBoard } from './components/ResourceBoard';
-import { ChatInterface } from './components/ChatInterface';
-import { ImageAnalysis } from './components/ImageAnalysis';
-import { AcademicHelper } from './components/AcademicHelper';
-import { Settings } from './components/Settings';
 import { ViewState, Resource, UserProfile, AppSettings } from './types';
 import { useAuth, useUser } from './contexts/AuthContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { SignInPage, SignUpPage, VerifyEmailPage, ForgotPasswordPage, ResetPasswordPage } from './components/AuthComponents';
-import LandingPage from './components/LandingPage';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Each page and dashboard view is its own chunk, downloaded only when opened.
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const authPages = () => import('./components/AuthComponents');
+const SignInPage = lazy(() => authPages().then(m => ({ default: m.SignInPage })));
+const SignUpPage = lazy(() => authPages().then(m => ({ default: m.SignUpPage })));
+const VerifyEmailPage = lazy(() => authPages().then(m => ({ default: m.VerifyEmailPage })));
+const ForgotPasswordPage = lazy(() => authPages().then(m => ({ default: m.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => authPages().then(m => ({ default: m.ResetPasswordPage })));
+const ResourceBoard = lazy(() => import('./components/ResourceBoard').then(m => ({ default: m.ResourceBoard })));
+const ChatInterface = lazy(() => import('./components/ChatInterface').then(m => ({ default: m.ChatInterface })));
+const ImageAnalysis = lazy(() => import('./components/ImageAnalysis').then(m => ({ default: m.ImageAnalysis })));
+const AcademicHelper = lazy(() => import('./components/AcademicHelper').then(m => ({ default: m.AcademicHelper })));
+const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+
+const PageFallback: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-canvas" role="status" aria-label="Loading">
+    <div className="animate-spin rounded-full h-10 w-10 border-2 border-hairline-strong border-t-primary"></div>
+  </div>
+);
+
+// Skeleton shaped like a dashboard view, shown while its chunk loads
+const ViewFallback: React.FC = () => (
+  <div className="h-full space-y-6 animate-pulse" role="status" aria-label="Loading">
+    <div className="h-9 w-64 rounded-md bg-surface-card" />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="h-40 rounded-xl bg-surface-card" />
+      <div className="h-40 rounded-xl bg-surface-card" />
+    </div>
+    <div className="h-64 rounded-xl bg-surface-card" />
+  </div>
+);
 
 // Initial Mock Data Removed
 const INITIAL_RESOURCES: Resource[] = [];
@@ -95,7 +120,24 @@ const AppContent: React.FC = () => {
     };
 
     if (lastSyncedUserIdRef.current !== user.id) {
-        fetchFullProfile();
+        // The session check (/api/auth/me) already returns the full profile. Only the
+        // sign-in response is partial (no role/lastName), so fetch just in that case.
+        if (user.role !== undefined && user.lastName !== undefined) {
+            setUserProfile(prev => ({
+                ...prev,
+                name: user.name || prev.name,
+                lastName: user.lastName || '',
+                email: userEmail || prev.email,
+                role: user.role || '',
+                avatarUrl: user.avatarUrl || '',
+                plan: (user.plan as UserProfile['plan']) || prev.plan,
+                emailVerified: user.emailVerified ?? userEmailVerified,
+                hasPasskey: user.hasPasskey ?? prev.hasPasskey,
+                twoFactorEnabled: user.twoFactorEnabled ?? prev.twoFactorEnabled
+            }));
+        } else {
+            fetchFullProfile();
+        }
         lastSyncedUserIdRef.current = user.id;
     } else {
         // Just sync existing data if ID is the same but object changed (e.g. emailVerified)
@@ -164,6 +206,7 @@ const AppContent: React.FC = () => {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="h-full w-full"
         >
+            <Suspense fallback={<ViewFallback />}>
             {(() => {
                 switch (currentView) {
                   case ViewState.DASHBOARD:
@@ -195,6 +238,7 @@ const AppContent: React.FC = () => {
                     return <ResourceBoard resources={resources} setResources={setResources} appSettings={appSettings} userProfile={userProfile} />;
                 }
             })()}
+            </Suspense>
         </motion.div>
       </AnimatePresence>
     );
@@ -272,6 +316,7 @@ function App() {
   const location = useLocation();
   
   return (
+    <Suspense fallback={<PageFallback />}>
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         {/* Landing Page Route - Unauthenticated initial page */}
@@ -396,6 +441,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
+    </Suspense>
   );
 }
 
