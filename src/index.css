@@ -12,9 +12,9 @@
 
 /*
  * NeuralVault design tokens.
- * Warm editorial system (see DESIGN.md): cream canvas, warm ink, coral actions,
- * dark warm surfaces for product chrome. Coral used for text/buttons is darkened
- * from #cc785c to #ad5536 so white-on-coral and coral-on-cream pass WCAG AA.
+ * Soft blue on cream: cream canvas, navy ink, blue actions, navy surfaces for
+ * product chrome. Action blue #3a62a0 passes WCAG AA with white text and on cream;
+ * the softer accent #6b8fc9 is for large display text and details on navy.
  */
 @theme {
   --font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -22,33 +22,33 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Brand */
-  --color-primary: #ad5536;
-  --color-primary-active: #8f4429;
-  --color-primary-soft: #f6e4dc;
-  --color-coral: #cc785c;
+  --color-primary: #3a62a0;
+  --color-primary-active: #2c4f85;
+  --color-primary-soft: #e4ecf7;
+  --color-accent: #6b8fc9;
 
   /* Surfaces */
-  --color-canvas: #faf9f5;
-  --color-card: #fffefb;
-  --color-surface-soft: #f5f0e8;
-  --color-surface-card: #efe9de;
-  --color-surface-strong: #e8e0d2;
-  --color-surface-dark: #181715;
-  --color-surface-dark-elevated: #252320;
-  --color-surface-dark-soft: #1f1e1b;
+  --color-canvas: #faf8f3;
+  --color-card: #fffefa;
+  --color-surface-soft: #f3f0e8;
+  --color-surface-card: #ebe7dc;
+  --color-surface-strong: #e2ddd0;
+  --color-surface-dark: #18233a;
+  --color-surface-dark-elevated: #22304b;
+  --color-surface-dark-soft: #1d2a43;
 
   /* Text */
-  --color-ink: #141413;
-  --color-body-strong: #252523;
-  --color-body: #3d3d3a;
-  --color-muted: #65635d;
-  --color-muted-soft: #8e8b82;
-  --color-on-dark: #faf9f5;
-  --color-on-dark-soft: #a09d96;
+  --color-ink: #16202e;
+  --color-body-strong: #263142;
+  --color-body: #3c4657;
+  --color-muted: #5d6676;
+  --color-muted-soft: #8d94a0;
+  --color-on-dark: #f4f1ea;
+  --color-on-dark-soft: #a8b2c4;
 
   /* Lines */
-  --color-hairline: #e6dfd8;
-  --color-hairline-strong: #d6cdc2;
+  --color-hairline: #e3ded3;
+  --color-hairline-strong: #d3cdc0;
 
   /* Accents and status (the "-ink" variants are for text on cream) */
   --color-teal: #5db8a6;
@@ -66,8 +66,8 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  --shadow-soft: 0 1px 3px rgba(20, 20, 19, 0.08);
-  --shadow-lift: 0 8px 24px -12px rgba(20, 20, 19, 0.18);
+  --shadow-soft: 0 1px 3px rgba(22, 32, 46, 0.08);
+  --shadow-lift: 0 8px 24px -12px rgba(22, 32, 46, 0.18);
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
@@ -163,9 +163,9 @@
     border: 1px solid var(--color-hairline);
   }
 
-  /* Former neon gradient headline: solid coral accent */
+  /* Former neon gradient headline: solid accent */
   .neon-gradient-text {
-    color: var(--color-coral);
+    color: var(--color-accent);
   }
 
   .text-glow,

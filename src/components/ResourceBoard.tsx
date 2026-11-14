@@ -395,7 +395,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   ).sort((a, b) => b[1] - a[1]);
   const topTags = tagCounts.slice(0, 5);
   const tagTotal = topTags.reduce((sum, [, n]) => sum + n, 0);
-  const TAG_COLORS = ['bg-primary', 'bg-teal-ink', 'bg-amber', 'bg-coral', 'bg-muted-soft'];
+  const TAG_COLORS = ['bg-primary', 'bg-teal-ink', 'bg-amber', 'bg-accent', 'bg-muted-soft'];
   const folderName = (id?: string) => folders.find(f => f.id === (id || 'general'))?.name || 'General';
   const hostOf = (url?: string) => { try { return url ? new URL(url).hostname.replace(/^www\./, '') : ''; } catch { return ''; } };
   const dateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });

@@ -306,7 +306,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="space-y-6">
-              <p className="text-body-strong leading-relaxed text-lg border-l-2 border-coral pl-5">
+              <p className="text-body-strong leading-relaxed text-lg border-l-2 border-accent pl-5">
                 {selectedFeature.details}
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -349,14 +349,14 @@ const LandingPage: React.FC = () => {
                 className="font-display text-[56px] sm:text-[72px] lg:text-[88px] text-ink leading-[0.98] tracking-[-0.03em] mb-8"
               >
                 Thinking <br />
-                <span className="text-coral italic">Beyond Sync.</span>
+                <span className="text-accent italic">Beyond Sync.</span>
               </h1>
 
               <p
                 data-hero-copy
                 className="text-lg md:text-xl text-body mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed"
               >
-                A second brain that doesn't just store files, it <span className="text-ink font-medium underline decoration-coral decoration-2 underline-offset-4">synthesizes insights</span>.
+                A second brain that doesn't just store files, it <span className="text-ink font-medium underline decoration-accent decoration-2 underline-offset-4">synthesizes insights</span>.
                 Experience the next era of academic work.
               </p>
 
@@ -403,8 +403,8 @@ const LandingPage: React.FC = () => {
                 {/* Device Screen Content */}
                 <div className="aspect-[4/3] sm:aspect-video flex flex-col items-center justify-center relative overflow-hidden px-6">
                   <svg data-circuit className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 450" preserveAspectRatio="none" aria-hidden="true">
-                    <path d="M250 190 L400 190" stroke="#cc785c" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
-                    <path d="M550 190 L400 190" stroke="#cc785c" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
+                    <path d="M250 190 L400 190" stroke="var(--color-accent)" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
+                    <path d="M550 190 L400 190" stroke="var(--color-accent)" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
                   </svg>
 
                   <div className="flex flex-col items-center gap-8 sm:gap-12 z-10 w-full max-w-md">
@@ -415,10 +415,10 @@ const LandingPage: React.FC = () => {
                         { Icon: Layers, label: 'Synthesis', ring: false },
                       ].map(({ Icon, label, ring }) => (
                         <div key={label} data-node className="flex flex-col items-center gap-3">
-                          <div className={`w-14 h-14 sm:w-[72px] sm:h-[72px] flex items-center justify-center ${ring ? 'rounded-full bg-coral/15 ring-1 ring-coral/60 animate-float' : 'rounded-lg bg-surface-dark-elevated'}`}>
-                            <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${ring ? 'text-coral' : 'text-on-dark'}`} aria-hidden="true" />
+                          <div className={`w-14 h-14 sm:w-[72px] sm:h-[72px] flex items-center justify-center ${ring ? 'rounded-full bg-accent/15 ring-1 ring-accent/60 animate-float' : 'rounded-lg bg-surface-dark-elevated'}`}>
+                            <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${ring ? 'text-accent' : 'text-on-dark'}`} aria-hidden="true" />
                           </div>
-                          <div className={`text-[11px] sm:text-xs font-mono tracking-[0.12em] uppercase ${ring ? 'text-coral' : 'text-on-dark-soft'}`}>{label}</div>
+                          <div className={`text-[11px] sm:text-xs font-mono tracking-[0.12em] uppercase ${ring ? 'text-accent' : 'text-on-dark-soft'}`}>{label}</div>
                         </div>
                       ))}
                     </div>
@@ -430,10 +430,10 @@ const LandingPage: React.FC = () => {
                           <span className="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
                           Processing
                         </div>
-                        <div data-load-label className="text-coral tabular-nums">88% LOAD</div>
+                        <div data-load-label className="text-accent tabular-nums">88% LOAD</div>
                       </div>
                       <div className="w-full h-1.5 bg-surface-dark-elevated rounded-full overflow-hidden">
-                        <div data-load-bar className="h-full bg-coral w-[88%] rounded-full"></div>
+                        <div data-load-bar className="h-full bg-accent w-[88%] rounded-full"></div>
                       </div>
                     </div>
                   </div>
@@ -468,7 +468,7 @@ const LandingPage: React.FC = () => {
               </div>
               <h2 className="font-display text-[44px] md:text-[64px] text-ink leading-[1.02] tracking-[-0.02em]">
                 Query your <br />
-                <span className="text-coral italic">Digital Brain</span>
+                <span className="text-accent italic">Digital Brain</span>
               </h2>
               <p className="text-body text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
                 Direct neural link to Gemini Pro. Experience querying logic, debugging code, or summarizing research articles instantly.
@@ -512,7 +512,7 @@ const LandingPage: React.FC = () => {
                 <div id="system-dashboard" className="mt-10 pt-10 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   {[
                     { dot: 'bg-success', text: 'Node Cluster #7: Healthy' },
-                    { dot: 'bg-coral', text: 'Memory Sync: Active' },
+                    { dot: 'bg-accent', text: 'Memory Sync: Active' },
                     { dot: 'bg-teal', text: 'Logic Core: Stable' },
                   ].map(item => (
                     <div key={item.text} className="flex items-center gap-3 bg-surface-dark-elevated px-4 py-3 rounded-md">
@@ -562,7 +562,7 @@ const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             <div className="md:col-span-2">
               <div className="flex items-center gap-2.5 mb-6">
-                <BrainCircuit className="w-8 h-8 text-coral" aria-hidden="true" />
+                <BrainCircuit className="w-8 h-8 text-accent" aria-hidden="true" />
                 <span translate="no" className="font-display text-3xl text-on-dark">NeuralVault</span>
               </div>
               <p className="max-w-sm leading-relaxed">

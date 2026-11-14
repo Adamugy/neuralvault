@@ -46,7 +46,7 @@ const GeminiDemo: React.FC = () => {
       <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-md bg-surface-dark-elevated flex items-center justify-center" aria-hidden="true">
-            <Bot className="w-5 h-5 text-coral" />
+            <Bot className="w-5 h-5 text-accent" />
           </div>
           <div>
             <h4 className="text-sm font-medium text-on-dark">Gemini Pro Tutor</h4>
@@ -74,7 +74,7 @@ const GeminiDemo: React.FC = () => {
                 aria-hidden="true"
                 className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-surface-dark-elevated"
               >
-                {msg.role === 'user' ? <User className="w-4 h-4 text-on-dark-soft" /> : <Bot className="w-4 h-4 text-coral" />}
+                {msg.role === 'user' ? <User className="w-4 h-4 text-on-dark-soft" /> : <Bot className="w-4 h-4 text-accent" />}
               </div>
               <div className={`px-4 py-3 rounded-lg text-sm leading-relaxed break-words ${
                 msg.role === 'user'
@@ -90,10 +90,10 @@ const GeminiDemo: React.FC = () => {
           <div className="flex justify-start">
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-surface-dark-elevated flex items-center justify-center" aria-hidden="true">
-                <Bot className="w-4 h-4 text-coral" />
+                <Bot className="w-4 h-4 text-accent" />
               </div>
               <div className="px-4 py-3 rounded-lg bg-surface-dark-elevated flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-coral animate-spin" aria-hidden="true" />
+                <Loader2 className="w-4 h-4 text-accent animate-spin" aria-hidden="true" />
                 <span className="text-xs text-on-dark-soft">Synthesizing…</span>
               </div>
             </div>
@@ -124,7 +124,7 @@ const GeminiDemo: React.FC = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask your second brain anything…"
-            className="w-full h-11 bg-surface-dark-soft border border-white/10 rounded-md pl-4 pr-12 text-sm text-on-dark placeholder:text-on-dark-soft focus:border-coral transition"
+            className="w-full h-11 bg-surface-dark-soft border border-white/10 rounded-md pl-4 pr-12 text-sm text-on-dark placeholder:text-on-dark-soft focus:border-accent transition"
           />
           <button
             onClick={() => handleSend()}
