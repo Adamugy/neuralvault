@@ -283,9 +283,9 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const renderResourceCard = (resource: Resource) => (
     <div 
       key={resource.id} 
-      className={`glass-panel border border-white/5 rounded-xl transition-all duration-300 group relative backdrop-blur-md
-        ${resource.completed ? 'opacity-40 hover:opacity-100' : 'hover:border-white/20 hover:bg-white/[0.02]'}
-        ${layout === 'grid' ? 'p-3 flex flex-col h-full' : 'p-2 flex items-center gap-3'}
+      className={`bg-canvas border border-hairline rounded-lg transition duration-200 group relative
+        ${resource.completed ? 'opacity-60 hover:opacity-100' : 'hover:border-hairline-strong hover:shadow-lift hover:-translate-y-px'}
+        ${layout === 'grid' ? 'p-4 flex flex-col h-full' : 'p-3 flex items-center gap-3'}
       `}
     >
       <div className={`${layout === 'grid' ? 'flex justify-between items-start mb-2.5 w-full' : 'flex-shrink-0'}`}>
@@ -294,62 +294,64 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             type="checkbox"
             checked={resource.completed}
             onChange={() => handleToggleComplete(resource.id)}
-            className="w-3.5 h-3.5 rounded border-white/10 bg-white/5 text-[var(--neon-primary)] focus:ring-0 cursor-pointer accent-[var(--neon-primary)] transition-all"
+            aria-label={resource.completed ? `Mark "${resource.title}" as not completed` : `Mark "${resource.title}" as completed`}
+            className="w-4 h-4 rounded cursor-pointer accent-[var(--neon-primary)]"
           />
-          <div className={`${resource.type === 'link' ? 'text-blue-400/80' : 'text-purple-400/80'} transition-transform group-hover:scale-110 duration-300`}>
+          <div className={`${resource.type === 'link' ? 'text-teal-ink' : 'text-primary'}`}>
             {resource.type === 'link' ? <LinkIcon className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
           </div>
         </div>
         {layout === 'grid' && (
              <button 
-                onClick={() => handleDelete(resource.id)} 
-                className="text-slate-600 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded-md"
+                onClick={() => handleDelete(resource.id)}
+                aria-label={`Delete "${resource.title}"`}
+                className="text-muted hover:text-error transition lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100 w-8 h-8 -m-1.5 flex items-center justify-center hover:bg-error-soft rounded-md"
              >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
              </button>
         )}
       </div>
       
       <div className={`${layout === 'grid' ? 'mb-1.5' : 'flex-1 min-w-0'}`}>
-        <h3 className={`font-medium text-slate-200 line-clamp-1 ${isCompact ? 'text-sm' : 'text-base'} ${resource.completed ? 'line-through text-slate-600' : 'group-hover:text-white transition-colors'}`}>
+        <h3 className={`font-medium text-ink line-clamp-1 break-words ${isCompact ? 'text-sm' : 'text-base'} ${resource.completed ? 'line-through text-muted' : ''}`}>
             {resource.title}
         </h3>
         {layout === 'list' && resource.notes && (
-             <p className="text-slate-500 text-[10px] truncate mt-0.5 font-light">{resource.notes}</p>
+             <p className="text-muted text-xs truncate mt-0.5">{resource.notes}</p>
         )}
       </div>
       
       {layout === 'grid' && resource.notes && (
-        <p className={`text-slate-500 text-[11px] mb-3 line-clamp-2 leading-relaxed font-light ${isCompact ? 'min-h-[0.8rem]' : 'min-h-[2rem]'}`}>
+        <p className={`text-muted text-[13px] mb-3 line-clamp-2 leading-relaxed ${isCompact ? 'min-h-[0.8rem]' : 'min-h-[2rem]'}`}>
             {resource.notes}
         </p>
       )}
 
       <div className={`flex flex-wrap gap-1.5 ${layout === 'grid' ? 'mb-4' : 'hidden lg:flex'}`}>
         {resource.tags.slice(0, layout === 'list' ? 2 : 3).map(tag => (
-          <span key={tag} className="text-[9px] px-1.5 py-0.5 bg-white/[0.02] rounded text-slate-500 border border-white/5 font-medium tracking-tight">
+          <span key={tag} className="text-xs px-2 py-0.5 bg-surface-soft rounded-full text-muted font-medium">
             {tag}
           </span>
         ))}
         {resource.tags.length > (layout === 'list' ? 2 : 3) && (
-          <span className="text-[9px] px-1.5 py-0.5 text-slate-600 font-medium">
+          <span className="text-xs px-1.5 py-0.5 text-muted font-medium">
             +{resource.tags.length - (layout === 'list' ? 2 : 3)}
           </span>
         )}
       </div>
 
       <div className={`${layout === 'grid' ? 'flex items-center justify-between mt-auto pt-3 w-full' : 'flex items-center gap-4 ml-auto'}`}>
-        <span className="text-[10px] text-slate-600 font-mono">
+        <span className="text-xs text-muted font-mono tabular-nums">
           {new Date(resource.dateAdded).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
         </span>
         
-        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0">
+        <div className="flex items-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100 transition">
             {resource.type === 'link' && resource.url && (
             <a 
                 href={resource.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-[10px] flex items-center gap-1 text-slate-400 hover:text-[var(--neon-primary)] transition-colors font-medium"
+                className="text-xs flex items-center gap-1 text-primary hover:text-primary-active transition-colors font-medium"
             >
                 Visit <ExternalLink className="w-2.5 h-2.5" />
             </a>
@@ -358,7 +360,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             {resource.type === 'file' && resource.url && (
             <button 
                 onClick={() => handleDownloadFile(resource)}
-                className="text-[10px] flex items-center gap-1 text-slate-400 hover:text-[var(--neon-accent)] transition-colors font-medium max-w-[100px]"
+                className="text-xs flex items-center gap-1 text-primary hover:text-primary-active transition-colors font-medium max-w-[100px]"
             >
                 <span className="truncate">{resource.fileName || "Download"}</span>
                 <Download className="w-2.5 h-2.5 flex-shrink-0" />
@@ -366,10 +368,11 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             )}
              {layout === 'list' && (
                  <button 
-                    onClick={() => handleDelete(resource.id)} 
-                    className="text-slate-600 hover:text-red-400 transition-colors p-1 hover:bg-red-500/10 rounded-md"
+                    onClick={() => handleDelete(resource.id)}
+                    aria-label={`Delete "${resource.title}"`}
+                    className="text-muted hover:text-error transition-colors w-8 h-8 flex items-center justify-center hover:bg-error-soft rounded-md"
                  >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                  </button>
             )}
         </div>
@@ -379,10 +382,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
   return (
     <div className="h-full flex flex-col bg-transparent">
-      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all bg-white/5 backdrop-blur-md z-30`}>
+      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition z-30`}>
         <div className="flex-shrink-0">
-          <h1 className={`${isCompact ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'} font-bold neon-gradient-text`}>Learning Resources</h1>
-          <p className="text-slate-500 text-xs hidden sm:block">Organize your papers, datasets, and tutorials.</p>
+          <h1 className={`${isCompact ? 'text-2xl' : 'text-3xl md:text-[34px]'} leading-tight font-display text-ink`}>Learning Resources</h1>
+          <p className="text-muted text-xs hidden sm:block">Organize your papers, datasets, and tutorials.</p>
         </div>
 
         {/* Uniform Search Bar */}
@@ -394,14 +397,14 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white px-4 py-2 rounded-xl font-medium transition-all shadow-[0_0_15px_-5px_var(--neon-primary)] hover:shadow-[0_0_20px_-5px_var(--neon-primary)] text-sm flex-shrink-0 w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white h-10 px-4 rounded-md font-medium transition active:scale-[0.99] text-sm flex-shrink-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Add Resource</span>
         </button>
       </div>
 
-      <div className="border-b border-white/10 bg-white/5 backdrop-blur-md">
+      <div className="border-b border-hairline">
         <div className={`${isCompact ? 'p-2' : 'p-3'} flex flex-col gap-3`}>
 
             <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
@@ -409,10 +412,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                 <div className="flex gap-2">
                     <button
                         onClick={() => setActiveFolderId('all')}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                        className={`flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium transition
                         ${activeFolderId === 'all' 
-                            ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_10px_var(--neon-primary)/30]' 
-                            : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}`}
+                            ? 'bg-[var(--neon-primary)] text-white' 
+                            : 'text-muted hover:text-ink hover:bg-surface-soft border border-transparent hover:border-hairline'}`}
                     >
                         <Folder className="w-3.5 h-3.5" />
                         All
@@ -421,10 +424,10 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                         <button
                             key={folder.id}
                             onClick={() => setActiveFolderId(folder.id)}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap
+                            className={`flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium transition whitespace-nowrap
                             ${activeFolderId === folder.id 
-                                ? 'bg-[var(--neon-primary)] text-white shadow-[0_0_10px_var(--neon-primary)/30]' 
-                                : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10'}`}
+                                ? 'bg-[var(--neon-primary)] text-white' 
+                                : 'text-muted hover:text-ink hover:bg-surface-soft border border-transparent hover:border-hairline'}`}
                         >
                             <Folder className="w-3.5 h-3.5" />
                             {folder.name}
@@ -432,7 +435,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                     ))}
                     <button
                         onClick={handleAddFolder}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-[var(--neon-primary)] hover:bg-white/5 border border-dashed border-white/20 hover:border-[var(--neon-primary)]/50 transition-all"
+                        className="flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium text-muted hover:text-primary hover:bg-surface-soft border border-dashed border-hairline-strong hover:border-[var(--neon-primary)]/50 transition"
                     >
                         <FolderPlus className="w-3.5 h-3.5" />
                         New Folder
@@ -444,8 +447,8 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 <button
                     onClick={() => setFilterTag(null)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition-colors
-                    ${!filterTag ? 'bg-[var(--neon-primary)]/20 border-[var(--neon-primary)]/50 text-[var(--neon-primary)]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                    className={`h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors
+                    ${!filterTag ? 'bg-primary-soft border-primary/40 text-primary-active' : 'bg-canvas border-hairline-strong text-body hover:border-ink hover:text-ink'}`}
                 >
                     All Tags
                 </button>
@@ -453,8 +456,8 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                     <button
                     key={tag}
                     onClick={() => setFilterTag(tag === filterTag ? null : tag)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition-colors
-                        ${filterTag === tag ? 'bg-[var(--neon-primary)]/20 border-[var(--neon-primary)]/50 text-[var(--neon-primary)]' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
+                    className={`h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors
+                        ${filterTag === tag ? 'bg-primary-soft border-primary/40 text-primary-active' : 'bg-canvas border-hairline-strong text-body hover:border-ink hover:text-ink'}`}
                     >
                     {tag}
                     </button>
@@ -466,7 +469,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
       {/* Grid */}
       <div className={`flex-1 overflow-y-auto ${isCompact ? 'p-4' : 'p-6'} scrollbar-hide`}>
         {activeResources.length === 0 && completedResources.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-slate-500">
+          <div className="h-64 flex flex-col items-center justify-center text-muted">
             <Folder className="w-12 h-12 mb-4 opacity-20" />
             <p>No resources found in this folder.</p>
           </div>
@@ -479,12 +482,12 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
             {completedResources.length > 0 && (
               <div className="mt-12">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="h-px bg-white/10 flex-1" />
-                  <div className="flex items-center gap-2 text-slate-500 text-sm font-medium px-2 py-1 rounded-full bg-white/5 border border-white/10">
+                  <div className="h-px bg-surface-card flex-1" />
+                  <div className="flex items-center gap-2 text-muted text-sm font-medium px-2 py-1 rounded-full bg-surface-soft border border-hairline">
                     <CheckCircle2 className="w-4 h-4" />
                     Completed
                   </div>
-                  <div className="h-px bg-white/10 flex-1" />
+                  <div className="h-px bg-surface-card flex-1" />
                 </div>
                 <div className={`grid gap-3 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-1'}`}>
                   {completedResources.map(renderResourceCard)}
@@ -497,13 +500,14 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
       {/* Folder Modal */}
       {isFolderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-sm shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Create Folder</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 overscroll-contain">
+          <div role="dialog" aria-modal="true" aria-labelledby="folder-dialog-title" className="bg-canvas rounded-xl w-full max-w-sm shadow-lift animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+            <div className="p-6 border-b border-hairline flex items-center justify-between">
+              <h2 id="folder-dialog-title" className="font-display text-2xl text-ink">Create Folder</h2>
               <button
                 onClick={() => setIsFolderModalOpen(false)}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                aria-label="Close"
+                className="w-10 h-10 flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-surface-soft transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -511,35 +515,35 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Folder name</label>
-                <input
+                <label htmlFor="rb-folder-name" className="block text-sm font-medium text-body-strong mb-1.5">Folder name</label>
+                <input id="rb-folder-name"
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCreateFolder();
                   }}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] focus:outline-none"
-                  placeholder="e.g., Diffusion Models"
+                  className="w-full h-10 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
+                  placeholder="e.g., Diffusion Models…"
                   autoFocus
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-white/10 flex justify-end gap-3 bg-white/5 rounded-b-2xl">
+            <div className="p-6 border-t border-hairline flex justify-end gap-3 bg-surface-soft rounded-b-xl">
               <button
                 onClick={() => setIsFolderModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="h-10 px-4 rounded-md text-sm font-medium text-body hover:text-ink hover:bg-surface-card transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateFolder}
                 disabled={!newFolderName.trim()}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`h-10 px-4 rounded-md text-sm font-medium transition-colors ${
                   !newFolderName.trim()
-                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                    : 'bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white shadow-[0_0_10px_var(--neon-primary)]'
+                    ? 'bg-surface-card text-muted-soft cursor-not-allowed'
+                    : 'bg-[var(--neon-primary)] hover:bg-primary-active text-white'
                 }`}
               >
                 Create
@@ -551,32 +555,32 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-          <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-md shadow-[0_0_50px_-20px_rgba(0,0,0,0.5)] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-            <div className="p-4 md:p-6 border-b border-white/10">
-              <h2 className="text-xl font-bold text-white">Add New Resource</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 overscroll-contain">
+          <div role="dialog" aria-modal="true" aria-labelledby="resource-dialog-title" className="bg-canvas rounded-xl w-full max-w-md shadow-lift animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            <div className="p-4 md:p-6 border-b border-hairline">
+              <h2 id="resource-dialog-title" className="font-display text-2xl text-ink">Add New Resource</h2>
             </div>
             <div className="p-4 md:p-6 space-y-5 overflow-y-auto">
               
               {/* Title & Type */}
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Title</label>
-                <input
+                <label htmlFor="rb-title" className="block text-sm font-medium text-body-strong mb-1.5">Title</label>
+                <input id="rb-title"
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] focus:outline-none"
-                  placeholder="e.g., Attention Is All You Need"
+                  className="w-full h-10 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
+                  placeholder="e.g., Attention Is All You Need…"
                 />
               </div>
 
               {/* Folder Selection */}
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Folder</label>
-                <select 
+                <label htmlFor="rb-folder" className="block text-sm font-medium text-body-strong mb-1.5">Folder</label>
+                <select id="rb-folder" 
                     value={selectedFolderId}
                     onChange={(e) => setSelectedFolderId(e.target.value)}
-                    className="w-full bg-slate-900/80 border border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] outline-none"
+                    className="w-full h-10 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                 >
                     {folders.map(f => (
                         <option key={f.id} value={f.id}>{f.name}</option>
@@ -584,19 +588,19 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                 </select>
               </div>
 
-              <div className="flex gap-4 p-1 bg-white/5 rounded-lg w-fit border border-white/10">
+              <div className="flex gap-4 p-1 bg-surface-soft rounded-lg w-fit border border-hairline">
                 <button
                     onClick={() => setNewType('link')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        newType === 'link' ? 'bg-[var(--neon-primary)]/20 text-[var(--neon-primary)] shadow-sm border border-[var(--neon-primary)]/30' : 'text-slate-400 hover:text-white'
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        newType === 'link' ? 'bg-canvas text-ink shadow-soft' : 'text-muted hover:text-ink'
                     }`}
                 >
                     Link URL
                 </button>
                 <button
                     onClick={() => setNewType('file')}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        newType === 'file' ? 'bg-[var(--neon-primary)]/20 text-[var(--neon-primary)] shadow-sm border border-[var(--neon-primary)]/30' : 'text-slate-400 hover:text-white'
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                        newType === 'file' ? 'bg-canvas text-ink shadow-soft' : 'text-muted hover:text-ink'
                     }`}
                 >
                     Upload File
@@ -606,19 +610,23 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
               {/* URL or File Input */}
               {newType === 'link' ? (
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">URL</label>
-                  <input
+                  <label htmlFor="rb-url" className="block text-sm font-medium text-body-strong mb-1.5">URL</label>
+                  <input id="rb-url"
                     type="url"
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] focus:outline-none"
-                    placeholder="https://arxiv.org/abs/..."
+                    className="w-full h-10 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
+                    placeholder="https://arxiv.org/abs/…"
                   />
                 </div>
               ) : (
                 <div 
-                  className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-slate-400 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors relative
-                    ${selectedFile ? 'border-[var(--neon-primary)]/50' : 'border-white/10'}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload file"
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e.currentTarget as HTMLElement).click(); } }}
+                  className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-muted bg-surface-soft cursor-pointer hover:bg-surface-card transition-colors relative
+                    ${selectedFile ? 'border-[var(--neon-primary)]/50' : 'border-hairline'}
                   `}
                   onClick={() => {
                       if (userProfile.plan === 'free' && (resources.filter(r => r.type === 'file').length >= 5)) {
@@ -629,17 +637,18 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                   }}
                 >
                    {selectedFile ? (
-                     <div className="w-full flex items-center gap-4 bg-black/40 p-3 rounded-lg border border-white/10">
-                        <div className="p-3 bg-red-500/20 rounded-lg text-red-400">
+                     <div className="w-full flex items-center gap-4 bg-surface-soft p-3 rounded-lg border border-hairline">
+                        <div className="p-3 bg-error-soft rounded-lg text-error">
                              <FileText className="w-6 h-6" />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <p className="text-sm font-medium text-white truncate">{selectedFile.name}</p>
-                            <p className="text-xs text-slate-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p className="text-sm font-medium text-ink truncate">{selectedFile.name}</p>
+                            <p className="text-xs text-muted">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                         <button 
                             onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }}
-                            className="p-1 hover:bg-white/10 rounded-full text-slate-400 hover:text-white"
+                            aria-label="Remove selected file"
+                            className="w-8 h-8 flex items-center justify-center hover:bg-surface-card rounded-full text-muted hover:text-ink"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -648,12 +657,12 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                      <>
                         {userProfile.plan === 'free' && (resources.filter(r => r.type === 'file').length >= 5) ? (
                             <div className="text-center">
-                                <Lock className="w-8 h-8 mb-2 mx-auto text-yellow-500" />
-                                <span className="text-sm text-yellow-500 font-medium">Free Plan Limit Reached (5/5)</span>
+                                <Lock className="w-8 h-8 mb-2 mx-auto text-amber-ink" />
+                                <span className="text-sm text-amber-ink font-medium">Free Plan Limit Reached (5/5)</span>
                             </div>
                         ) : (
                             <>
-                                <Upload className="w-8 h-8 mb-2 text-[var(--neon-primary)]" />
+                                <Upload className="w-8 h-8 mb-2 text-primary" aria-hidden="true" />
                                 <span className="text-sm">Click to upload file</span>
                             </>
                         )}
@@ -671,19 +680,19 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">Tags</label>
+                <label htmlFor="rb-tags" className="block text-sm font-medium text-body-strong mb-1.5">Tags</label>
                 <div className="flex gap-2 mb-2">
-                    <input 
+                    <input id="rb-tags" 
                         type="text"
                         value={newTagInput}
                         onChange={(e) => setNewTagInput(e.target.value)}
-                        placeholder="Create new tag..."
-                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--neon-primary)]"
+                        placeholder="Create new tag…"
+                        className="flex-1 min-w-0 h-10 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                         onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
                     />
                     <button 
                         onClick={handleAddTag}
-                        className="px-3 py-1.5 bg-white/5 border border-white/10 text-slate-300 rounded-lg text-sm hover:bg-white/10 hover:text-white"
+                        className="px-3 py-1.5 bg-surface-soft border border-hairline text-body rounded-lg text-sm hover:bg-surface-card hover:text-ink"
                     >
                         Add
                     </button>
@@ -695,8 +704,8 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
                       onClick={() => toggleTag(tag)}
                       className={`text-xs px-2 py-1 rounded border transition-colors ${
                         selectedTags.includes(tag)
-                          ? 'bg-[var(--neon-primary)]/20 border-[var(--neon-primary)] text-[var(--neon-primary)]'
-                          : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'
+                          ? 'bg-primary-soft border-primary/40 text-primary-active'
+                          : 'bg-surface-soft border-hairline text-muted hover:border-hairline-strong'
                       }`}
                     >
                       {tag}
@@ -707,26 +716,26 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>
-                <textarea
+                <label htmlFor="rb-notes" className="block text-sm font-medium text-body-strong mb-1.5">Notes</label>
+                <textarea id="rb-notes"
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-[var(--neon-primary)] focus:outline-none h-20 resize-none"
-                  placeholder="Key takeaways..."
+                  className="w-full h-24 py-2.5 bg-canvas border border-hairline-strong rounded-md px-3 text-sm text-ink placeholder:text-muted-soft focus:border-primary transition-colors resize-none"
+                  placeholder="Key takeaways…"
                 />
               </div>
             </div>
             
-            <div className="p-6 border-t border-white/10 flex justify-end gap-3 bg-white/5 rounded-b-2xl">
+            <div className="p-6 border-t border-hairline flex justify-end gap-3 bg-surface-soft rounded-b-xl">
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                className="h-10 px-4 rounded-md text-sm font-medium text-body hover:text-ink hover:bg-surface-card transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddResource}
-                className="px-4 py-2 rounded-lg bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/80 text-white font-medium transition-colors shadow-[0_0_15px_-5px_var(--neon-primary)]"
+                className="h-10 px-4 rounded-md bg-primary hover:bg-primary-active text-white text-sm font-medium transition active:scale-[0.99]"
               >
                 Add Resource
               </button>

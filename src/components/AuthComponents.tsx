@@ -557,7 +557,7 @@ export const UserButton = () => {
   const navigate = useNavigate();
 
   if (!isLoaded) {
-    return <div className="w-9 h-9 rounded-full bg-surface-card animate-pulse border border-white/10" />;
+    return <div className="w-9 h-9 rounded-full bg-surface-card animate-pulse border border-hairline" />;
   }
 
   if (isSignedIn && user) {
@@ -585,7 +585,7 @@ export const UserButton = () => {
         >
           <div className="px-4 py-3 border-b border-hairline mb-2">
             <p className="font-medium text-ink truncate">{user.name || 'User'}</p>
-            <p className="text-slate-400 text-xs truncate">{user.email}</p>
+            <p className="text-muted text-xs truncate">{user.email}</p>
           </div>
           <button
             onClick={() => navigate('/dashboard/settings')}
@@ -662,7 +662,7 @@ export const ForgotPasswordPage = () => {
     <AuthLayout title="Recuperar Senha">
       <div className="text-center mb-6">
         <h2 className="sr-only">Recuperar Senha</h2>
-        <p className="text-slate-400">
+        <p className="text-muted">
           Insira seu e-mail para receber um link de redefinição de senha.
         </p>
       </div>
@@ -670,9 +670,9 @@ export const ForgotPasswordPage = () => {
       {success ? (
         <div className="bg-success/10 border border-success/40 rounded-lg p-6 text-center">
           <div className="w-12 h-12 bg-success/15 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-6 h-6 text-emerald-400" />
+            <Mail className="w-6 h-6 text-success-ink" />
           </div>
-          <h3 className="text-white font-medium mb-2">Verifique seu e-mail</h3>
+          <h3 className="text-ink font-medium mb-2">Verifique seu e-mail</h3>
           <p className="text-body text-sm mb-6">
             Se o e-mail {email} estiver registrado, enviamos um link para redefinir sua senha.
           </p>
@@ -772,7 +772,7 @@ export const ResetPasswordPage = () => {
       <AuthLayout title="Link Inválido">
         <div className="text-center">
           <h2 className="sr-only">Link Inválido</h2>
-          <p className="text-slate-400 mb-6">O link de redefinição de senha é inválido ou está ausente.</p>
+          <p className="text-muted mb-6">O link de redefinição de senha é inválido ou está ausente.</p>
           <button
             onClick={() => navigate('/forgot-password')}
             className={primaryBtn + " w-auto px-6 mx-auto"}
@@ -788,15 +788,15 @@ export const ResetPasswordPage = () => {
     <AuthLayout title="Nova Senha">
       <div className="text-center mb-6">
         <h2 className="sr-only">Criar Nova Senha</h2>
-        <p className="text-slate-400">Digite sua nova senha abaixo.</p>
+        <p className="text-muted">Digite sua nova senha abaixo.</p>
       </div>
 
       {success ? (
         <div className="bg-success/10 border border-success/40 rounded-lg p-6 text-center">
           <div className="w-12 h-12 bg-success/15 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-emerald-400" />
+            <Lock className="w-6 h-6 text-success-ink" />
           </div>
-          <h3 className="text-white font-medium mb-2">Senha Atualizada</h3>
+          <h3 className="text-ink font-medium mb-2">Senha Atualizada</h3>
           <p className="text-body text-sm mb-6">
             Sua senha foi redefinida com sucesso.
           </p>

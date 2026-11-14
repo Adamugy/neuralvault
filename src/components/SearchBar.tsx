@@ -13,7 +13,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     searchTerm, 
     setSearchTerm, 
     resources,
-    placeholder = "Search resources, tags, or notes..."
+    placeholder = "Search resources, tags, or notes…"
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [filteredResults, setFilteredResults] = useState<Resource[]>([]);
@@ -34,8 +34,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
     return (
         <div className="flex-1 max-w-xl mx-4 relative group">
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${
-                isFocused ? 'text-[var(--neon-primary)]' : 'text-slate-500'
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${
+                isFocused ? 'text-primary' : 'text-muted'
             }`} />
             <input
                 type="text"
@@ -44,12 +44,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setTimeout(() => setIsFocused(false), 200)}
-                className="w-full bg-white/5 border border-white/10 text-slate-200 pl-10 pr-10 py-1.5 rounded-xl focus:outline-none focus:border-[var(--neon-primary)]/50 focus:bg-white/10 placeholder:text-slate-600 transition-all text-sm"
+                aria-label={placeholder.replace("…", "")}
+                name="search"
+                autoComplete="off"
+                className="w-full h-10 bg-canvas border border-hairline-strong text-ink pl-10 pr-10 rounded-md focus:border-primary placeholder:text-muted-soft transition-colors text-sm"
             />
             {searchTerm && (
                 <button 
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                    aria-label="Clear search"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded text-muted hover:text-ink transition-colors"
                 >
                     <X className="w-3.5 h-3.5" />
                 </button>
@@ -57,35 +61,35 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
             {/* Dropdown Results */}
             {isFocused && searchTerm.trim() !== '' && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-canvas border border-hairline rounded-lg shadow-lift overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="p-2 max-h-[400px] overflow-y-auto scrollbar-hide">
                         {filteredResults.length > 0 ? (
                             <div className="space-y-1">
                                 {filteredResults.slice(0, 5).map(res => (
                                     <button
                                         key={res.id}
-                                        className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 rounded-xl transition-colors text-left group/item"
+                                        className="w-full flex items-center gap-3 p-2.5 hover:bg-surface-soft rounded-md transition-colors text-left group/item"
                                         onClick={() => {
                                             // Handle redirection or selection if needed
                                             // For now, it just shows the result
                                         }}
                                     >
-                                        <div className={`p-1.5 rounded-lg ${res.type === 'link' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'}`}>
+                                        <div className={`p-1.5 rounded-lg ${res.type === 'link' ? 'bg-teal/15 text-teal-ink' : 'bg-primary-soft text-primary'}`}>
                                             {res.type === 'link' ? <LinkIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <div className="text-sm font-medium text-slate-200 truncate group-hover/item:text-[var(--neon-primary)] transition-colors">{res.title}</div>
-                                            <div className="text-[10px] text-slate-500 flex gap-2">
+                                            <div className="text-sm font-medium text-body-strong truncate group-hover/item:text-primary transition-colors">{res.title}</div>
+                                            <div className="text-xs text-muted flex gap-2">
                                                 <span>{new Date(res.dateAdded).toLocaleDateString()}</span>
                                                 {res.tags.length > 0 && <span className="truncate"># {res.tags[0]}</span>}
                                             </div>
                                         </div>
                                     </button>
                                 ))}
-                                <div className="h-px bg-white/5 mx-2 my-2" />
+                                <div className="h-px bg-surface-soft mx-2 my-2" />
                             </div>
                         ) : (
-                            <div className="px-4 py-3 text-sm text-slate-500 text-center italic">
+                            <div className="px-4 py-3 text-sm text-muted text-center">
                                 No local resources found.
                             </div>
                         )}
@@ -95,16 +99,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                             href={`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full flex items-center gap-3 p-3 hover:bg-[var(--neon-primary)]/10 rounded-xl transition-all group/web"
+                            className="w-full flex items-center gap-3 p-3 hover:bg-primary-soft rounded-md transition group/web"
                         >
-                            <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-full group-hover/web:bg-indigo-500 group-hover/web:text-white transition-all">
+                            <div className="p-2 bg-primary-soft text-primary rounded-full group-hover/web:bg-primary group-hover/web:text-white transition">
                                 <Globe className="w-4 h-4" />
                             </div>
                             <div className="flex-1">
-                                <div className="text-sm font-semibold text-slate-200 group-hover/web:text-[var(--neon-primary)]">Search the Web</div>
-                                <div className="text-[10px] text-slate-500">Google search for "{searchTerm}"</div>
+                                <div className="text-sm font-semibold text-body-strong group-hover/web:text-primary-active">Search the Web</div>
+                                <div className="text-xs text-muted">Google search for "{searchTerm}"</div>
                             </div>
-                            <ExternalLink className="w-4 h-4 text-slate-600 group-hover/web:text-[var(--neon-primary)]" />
+                            <ExternalLink className="w-4 h-4 text-muted group-hover/web:text-primary-active" />
                         </a>
                     </div>
                 </div>
