@@ -107,29 +107,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
   };
 
   return (
-    <div className="h-full flex flex-col bg-[#0a0a0c] relative">
-      {/* Dynamic Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/5 blur-[120px] rounded-full animate-pulse" />
-      </div>
+    <div className="h-full flex flex-col bg-canvas relative">
 
       {/* Header - Sleek & Floating */}
-      <div className="sticky top-0 z-20 px-4 md:px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
+      <div className="sticky top-0 z-20 px-4 md:px-6 py-2.5 border-b border-hairline bg-canvas/95 flex justify-between items-center">
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="relative">
-            <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg transform rotate-3 transition-transform hover:rotate-0">
+            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-[#0a0a0c]" />
+            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-canvas" />
           </div>
           <div className="hidden sm:block">
-            <h2 className="font-semibold text-white tracking-tight flex items-center gap-2 text-sm leading-tight">
+            <h2 className="font-semibold text-ink tracking-tight flex items-center gap-2 text-sm leading-tight">
               Gemini Pro
-              <span className="text-[9px] uppercase font-bold tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-indigo-400">Researcher</span>
+              <span className="text-xs uppercase font-bold tracking-widest bg-surface-soft border border-hairline px-2 py-0.5 rounded-full text-primary">Researcher</span>
             </h2>
-            <div className="flex items-center gap-2 text-[10px] text-slate-500">
-               <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-500" /> Researcher</span>
+            <div className="flex items-center gap-2 text-xs text-muted">
+               <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-amber-ink" /> Researcher</span>
             </div>
           </div>
         </div>
@@ -144,10 +139,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
         <div className="flex items-center gap-2 flex-shrink-0">
             <button
                 onClick={() => isPremium ? setThinkingMode(!thinkingMode) : onOpenUpgrade?.()}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-[10px] font-medium transition-all duration-300 ${
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-medium transition duration-300 ${
                 thinkingMode 
-                    ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_10px_-5px_rgba(99,102,241,0.5)]' 
-                    : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10 hover:text-slate-200'
+                    ? 'bg-primary-soft border-primary/30 text-primary' 
+                    : 'bg-surface-soft border-hairline text-muted hover:bg-surface-card hover:text-body-strong'
                 }`}
             >
                 <Brain className={`w-3 h-3 ${thinkingMode ? 'animate-pulse' : ''}`} />
@@ -160,15 +155,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       {/* Messages - Centered Content Layout */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto scrollbar-hide bg-noise"
+        className="flex-1 overflow-y-auto scrollbar-hide"
       >
         <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
           {messages.length === 0 && (
             <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-700">
-               <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                  <Bot className="w-10 h-10 text-indigo-500" />
+               <div className="w-20 h-20 rounded-xl bg-surface-soft border border-hairline flex items-center justify-center mb-4">
+                  <Bot className="w-10 h-10 text-primary" />
                </div>
-               <h1 className="text-3xl font-bold text-white tracking-tight">What shall we explore today?</h1>
+               <h1 className="font-display text-4xl md:text-[44px] leading-tight text-ink">What shall we explore today?</h1>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg">
                   {[
                     "Explain Transformers simply",
@@ -179,10 +174,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                     <button 
                         key={i}
                         onClick={() => setInput(tip)}
-                        className="p-4 rounded-2xl glass-panel border border-white/5 text-left text-sm text-slate-400 hover:border-indigo-500/40 hover:text-white transition-all group"
+                        className="p-4 rounded-xl glass-panel text-left text-sm text-muted hover:border-primary/30 hover:text-ink transition group"
                     >
                         {tip}
-                        <ChevronDown className="w-4 h-4 inline ml-2 opacity-0 group-hover:opacity-100 -rotate-90 transition-all" />
+                        <ChevronDown className="w-4 h-4 inline ml-2 opacity-0 group-hover:opacity-100 -rotate-90 transition" />
                     </button>
                   ))}
                </div>
@@ -197,24 +192,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               <div className={`flex gap-4 w-full ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 {/* Avatar */}
                 <div className={`w-7 h-7 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg
-                  ${msg.role === 'user' ? 'bg-slate-800' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
-                  {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-slate-100" /> : <Bot className="w-3.5 h-3.5 text-white" />}
+                  ${msg.role === 'user' ? 'bg-surface-card' : 'bg-primary'}`}>
+                  {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-body-strong" /> : <Bot className="w-3.5 h-3.5 text-ink" />}
                 </div>
                 
                 {/* Content Area */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-slate-200 uppercase tracking-tighter">
+                    <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">
                       {msg.role === 'user' ? 'You' : 'Gemini'}
                     </span>
-                    <span className="text-[10px] text-slate-600">
+                    <span className="text-xs text-muted">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
 
-                  <div className={`text-slate-200 leading-relaxed ${msg.role === 'user' ? 'bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl rounded-tr-sm' : ''}`}>
+                  <div className={`text-body-strong leading-relaxed ${msg.role === 'user' ? 'bg-primary-soft border border-primary/30 p-4 rounded-xl rounded-tr-sm' : ''}`}>
                     {msg.role === 'model' && msg.isThinking && (
-                      <div className="flex items-center gap-2 text-[10px] text-indigo-400 mb-4 font-bold border-b border-indigo-500/10 pb-2">
+                      <div className="flex items-center gap-2 text-xs text-primary mb-4 font-bold border-b border-primary/30 pb-2">
                         <Brain className="w-3 h-3 animate-pulse" />
                         THINKING PROCESS ACTIVATED
                       </div>
@@ -230,14 +225,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                             const isInline = !match;
                             
                             return !isInline ? (
-                              <div className="relative group my-4 rounded-xl overflow-hidden border border-white/10 bg-black/40">
-                                <div className="flex items-center justify-between px-4 py-2 bg-white/5 text-[10px] font-mono text-slate-500 uppercase tracking-widest border-b border-white/5">
+                              <div className="relative group my-4 rounded-xl overflow-hidden border border-hairline bg-surface-soft">
+                                <div className="flex items-center justify-between px-4 py-2 bg-surface-soft text-xs font-mono text-muted uppercase tracking-widest border-b border-hairline">
                                   <span>{match[1]}</span>
                                   <button
                                     onClick={() => handleCopy(codeText, msg.id)}
-                                    className="hover:text-white transition-colors flex items-center gap-1"
+                                    className="hover:text-ink transition-colors flex items-center gap-1"
                                   >
-                                    {copiedId === msg.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                                    {copiedId === msg.id ? <Check className="w-3 h-3 text-success-ink" /> : <Copy className="w-3 h-3" />}
                                     {copiedId === msg.id ? 'Copied' : 'Copy'}
                                   </button>
                                 </div>
@@ -252,7 +247,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                                 </SyntaxHighlighter>
                               </div>
                             ) : (
-                              <code className="bg-white/10 px-1.5 py-0.5 rounded text-indigo-300 font-mono text-xs" {...props}>
+                              <code className="bg-surface-card px-1.5 py-0.5 rounded text-primary font-mono text-xs" {...props}>
                                 {children}
                               </code>
                             );
@@ -270,17 +265,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
           
           {isLoading && (
             <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg animate-pulse">
-                <Loader2 className="w-4 h-4 text-white animate-spin" />
+              <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center animate-pulse">
+                <Loader2 className="w-4 h-4 text-ink animate-spin" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-slate-200 uppercase tracking-tighter">Gemini</span>
+                  <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">Gemini</span>
                 </div>
                 <div className="flex gap-1.5 p-4 items-center">
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                  <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></span>
                 </div>
               </div>
             </div>
@@ -290,12 +285,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       </div>
 
       {/* Input Area - Clean & Modern */}
-      <div className="px-4 md:px-6 py-6 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/90 to-transparent">
+      <div className="px-4 md:px-6 py-6 bg-canvas border-t border-hairline">
         <div className="max-w-3xl mx-auto">
-          <div className={`relative rounded-3xl border transition-all duration-300 group shadow-2xl glass-panel ${
+          <div className={`relative rounded-xl border transition duration-300 group shadow-lift glass-panel ${
             thinkingMode 
-              ? 'border-indigo-500/50 bg-indigo-500/5 ring-1 ring-indigo-500/20' 
-              : 'border-white/10 bg-white/5 focus-within:border-white/20'
+              ? 'border-primary/30 bg-primary-soft ring-1 ring-primary/20' 
+              : 'border-hairline bg-surface-soft focus-within:border-hairline-strong'
           }`}>
             <textarea
               value={input}
@@ -303,21 +298,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               onKeyDown={handleKeyDown}
               placeholder={thinkingMode ? "Ask a complex question for deep analysis..." : "How can I help with your studies today?"}
               rows={1}
-              className="w-full bg-transparent text-slate-100 pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
+              className="w-full bg-transparent text-body-strong pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
-              className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-2xl transition-all duration-300 group-focus-within:scale-105 active:scale-95
+              className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-xl transition duration-300 group-focus-within:scale-105 active:scale-95
                 ${!input.trim() || isLoading 
-                  ? 'text-slate-600 bg-white/5' 
-                  : 'text-white bg-indigo-500 hover:bg-indigo-400 shadow-[0_0_15px_-5px_rgba(99,102,241,0.8)]'}`}
+                  ? 'text-muted bg-surface-soft' 
+                  : 'text-white bg-primary hover:bg-primary'}`}
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
-          <p className="text-center text-[10px] text-slate-600 mt-4 font-medium tracking-wide">
+          <p className="text-center text-xs text-muted mt-4 font-medium tracking-wide">
             {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "GEMINI PRO PREVIEW • AI RESEARCH ASSISTANT"}
           </p>
         </div>
@@ -329,8 +324,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
         .markdown-content p { margin-bottom: 0.75rem; }
         .markdown-content p:last-child { margin-bottom: 0; }
         .markdown-content h1, .markdown-content h2, .markdown-content h3 { color: white; margin-top: 1rem; margin-bottom: 0.5rem; font-weight: bold; }
-        .bg-noise { background-image: url("https://www.transparenttextures.com/patterns/carbon-fibre.png"); background-opacity: 0.05; }
-      `}</style>
+`}</style>
     </div>
   );
 };
