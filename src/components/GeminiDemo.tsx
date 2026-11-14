@@ -42,42 +42,44 @@ const GeminiDemo: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto glass-panel rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative">
-      <div className="p-4 border-b border-white/5 bg-slate-900/40 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-            <Bot className="w-5 h-5 text-indigo-400" />
+    <div className="w-full max-w-2xl mx-auto rounded-xl overflow-hidden bg-surface-dark text-on-dark">
+      <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-md bg-surface-dark-elevated flex items-center justify-center" aria-hidden="true">
+            <Bot className="w-5 h-5 text-coral" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">Gemini Pro Tutor</h4>
-            <p className="text-[10px] text-emerald-400 flex items-center gap-1 uppercase tracking-wider font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h4 className="text-sm font-medium text-on-dark">Gemini Pro Tutor</h4>
+            <p className="text-xs text-teal flex items-center gap-1.5 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-teal" aria-hidden="true"></span>
               Live Reasoning Active
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-            <Terminal className="w-4 h-4 text-slate-500 hover:text-white cursor-pointer transition-colors" />
-            <Sparkles className="w-4 h-4 text-indigo-400 opacity-50" />
+        <div className="flex items-center gap-3 text-on-dark-soft" aria-hidden="true">
+          <Terminal className="w-4 h-4" />
+          <Sparkles className="w-4 h-4" />
         </div>
       </div>
 
-      <div 
+      <div
         ref={scrollRef}
-        className="h-[300px] md:h-[400px] overflow-y-auto p-4 md:p-6 space-y-4 scroll-smooth"
+        aria-live="polite"
+        className="h-[300px] md:h-[380px] overflow-y-auto overscroll-contain p-4 md:p-6 space-y-4"
       >
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center border ${
-                msg.role === 'user' ? 'bg-slate-800 border-white/10' : 'bg-indigo-500/10 border-indigo-500/20'
-              }`}>
-                {msg.role === 'user' ? <User className="w-4 h-4 text-slate-400" /> : <Bot className="w-4 h-4 text-indigo-400" />}
+            <div className={`max-w-[85%] min-w-0 flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div
+                aria-hidden="true"
+                className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-surface-dark-elevated"
+              >
+                {msg.role === 'user' ? <User className="w-4 h-4 text-on-dark-soft" /> : <Bot className="w-4 h-4 text-coral" />}
               </div>
-              <div className={`p-4 rounded-2xl text-sm leading-relaxed ${
-                msg.role === 'user' 
-                  ? 'bg-indigo-600 text-white shadow-lg' 
-                  : 'bg-slate-800/80 text-slate-200 border border-white/5'
+              <div className={`px-4 py-3 rounded-lg text-sm leading-relaxed break-words ${
+                msg.role === 'user'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface-dark-elevated text-on-dark'
               }`}>
                 {msg.content}
               </div>
@@ -87,46 +89,50 @@ const GeminiDemo: React.FC = () => {
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-indigo-400 animate-bounce" />
+              <div className="w-8 h-8 rounded-full bg-surface-dark-elevated flex items-center justify-center" aria-hidden="true">
+                <Bot className="w-4 h-4 text-coral" />
               </div>
-              <div className="p-4 rounded-2xl bg-slate-800/80 border border-white/5 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
-                <span className="text-xs text-slate-400">Synthesizing...</span>
+              <div className="px-4 py-3 rounded-lg bg-surface-dark-elevated flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-coral animate-spin" aria-hidden="true" />
+                <span className="text-xs text-on-dark-soft">Synthesizing…</span>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-4 bg-slate-900/60 border-t border-white/5">
-        <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-1">
+      <div className="p-4 border-t border-white/10">
+        <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
           {QUICK_PROMPTS.map(p => (
-            <button 
-                key={p} 
-                onClick={() => handleSend(p)}
-                disabled={isLoading}
-                className="whitespace-nowrap px-3 py-1 rounded-full border border-white/5 bg-slate-950 text-[10px] font-bold text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all active:scale-95 disabled:opacity-50"
+            <button
+              key={p}
+              onClick={() => handleSend(p)}
+              disabled={isLoading}
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-surface-dark-elevated text-xs font-medium text-on-dark-soft hover:text-on-dark hover:bg-white/10 active:scale-[0.98] transition disabled:opacity-50"
             >
-                {p}
+              {p}
             </button>
           ))}
         </div>
         <div className="relative flex items-center">
-          <input 
+          <input
             type="text"
+            name="demo-question"
+            autoComplete="off"
+            aria-label="Ask the demo tutor a question"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask your second brain anything..."
-            className="w-full bg-slate-950/50 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all text-white placeholder:text-slate-600"
+            placeholder="Ask your second brain anything…"
+            className="w-full h-11 bg-surface-dark-soft border border-white/10 rounded-md pl-4 pr-12 text-sm text-on-dark placeholder:text-on-dark-soft focus:border-coral transition"
           />
-          <button 
+          <button
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
-            className="absolute right-2 p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:hover:bg-indigo-500"
+            aria-label="Send question"
+            className="absolute right-1.5 w-8 h-8 flex items-center justify-center rounded-md bg-primary text-white hover:bg-primary-active active:scale-95 transition disabled:opacity-40"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* Only scan app sources: skip tooling folders (skills kit, screenshots, server build) */
+@source not "../.agents";
+@source not "../.claude";
+@source not "../.playwright-cli";
+@source not "../prints";
+@source not "../dist-server";
+@source not "../server";
+@source not "../scripts";
+@source not "../docs";
+
 /*
  * NeuralVault design tokens.
  * Warm editorial system (see DESIGN.md): cream canvas, warm ink, coral actions,
