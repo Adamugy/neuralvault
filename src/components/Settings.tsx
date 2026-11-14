@@ -268,41 +268,41 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-2">First Name</label>
-                  <input 
+                  <label htmlFor="set-first-name" className="block text-sm font-medium text-body-strong mb-1.5">First Name</label>
+                  <input id="set-first-name" name="given-name" autoComplete="given-name"
                     type="text" 
                     value={userProfile.name}
                     onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
-                    className="w-full bg-surface-soft border border-hairline rounded-lg px-4 py-2.5 text-ink focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition"
+                    className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                     placeholder="Your First Name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-2">Last Name</label>
-                  <input 
+                  <label htmlFor="set-last-name" className="block text-sm font-medium text-body-strong mb-1.5">Last Name</label>
+                  <input id="set-last-name" name="family-name" autoComplete="family-name"
                     type="text" 
                     value={userProfile.lastName || ''}
                     onChange={(e) => setUserProfile({...userProfile, lastName: e.target.value})}
-                    className="w-full bg-surface-soft border border-hairline rounded-lg px-4 py-2.5 text-ink focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition"
+                    className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                     placeholder="Your Last Name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-2">Email Address</label>
-                  <input 
+                  <label htmlFor="set-email" className="block text-sm font-medium text-body-strong mb-1.5">Email Address</label>
+                  <input id="set-email" name="email" autoComplete="email"
                     type="email" 
                     value={userProfile.email}
                     onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
-                    className="w-full bg-surface-soft border border-hairline rounded-lg px-4 py-2.5 text-ink focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition"
+                    className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-muted mb-2">Role / Title</label>
-                  <input 
+                  <label htmlFor="set-role" className="block text-sm font-medium text-body-strong mb-1.5">Role / Title</label>
+                  <input id="set-role" name="organization-title" autoComplete="organization-title"
                     type="text" 
                     value={userProfile.role}
                     onChange={(e) => setUserProfile({...userProfile, role: e.target.value})}
-                    className="w-full bg-surface-soft border border-hairline rounded-lg px-4 py-2.5 text-ink focus:ring-2 focus:ring-[var(--neon-primary)] outline-none transition"
+                    className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
                   />
                 </div>
               </div>
@@ -536,9 +536,13 @@ export const Settings: React.FC<SettingsProps> = ({
                                         <code className="text-teal-ink text-sm font-mono break-all">{twoFactorSecret}</code>
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="block text-muted text-xs font-medium uppercase">Verification Code</label>
+                                        <label htmlFor="set-2fa-code" className="block text-muted text-xs font-medium uppercase tracking-[0.08em]">Verification Code</label>
                                         <div className="flex gap-2">
-                                            <input 
+                                            <input
+                                                id="set-2fa-code"
+                                                name="one-time-code"
+                                                autoComplete="one-time-code"
+                                                inputMode="numeric" 
                                                 type="text" 
                                                 value={twoFactorVerifyCode}
                                                 onChange={(e) => setTwoFactorVerifyCode(e.target.value)}
@@ -571,8 +575,8 @@ export const Settings: React.FC<SettingsProps> = ({
                     <div>
                         <h4 className="text-ink font-medium mb-4">Change Password</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="password" placeholder="Current Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
-                            <input type="password" placeholder="New Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
+                            <input type="password" aria-label="Current Password" name="current-password" autoComplete="current-password" placeholder="Current Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
+                            <input type="password" aria-label="New Password" name="new-password" autoComplete="new-password" placeholder="New Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
                         </div>
                         <button className="mt-4 px-4 py-2 bg-surface-soft hover:bg-surface-card text-ink rounded-lg text-sm font-medium border border-hairline transition-colors">
                             Update Password

@@ -569,8 +569,9 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                 </label>
                                 <textarea
                                     value={activeTask === 'refine' ? contentInput : topic}
+                                    aria-label="Research context or draft"
                                     onChange={(e) => activeTask === 'refine' ? setContentInput(e.target.value) : setTopic(e.target.value)}
-                                    placeholder={activeTask === 'refine' ? "Paste your draft here..." : "Describe your paper topic or paste notes..."}
+                                    placeholder={activeTask === 'refine' ? "Paste your draft here…" : "Describe your paper topic or paste notes…"}
                                     className="w-full h-40 lg:h-64 bg-surface-soft border border-hairline rounded-xl p-4 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-[var(--neon-primary)] resize-none transition font-mono leading-relaxed"
                                 />
                             </div>
@@ -674,6 +675,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                  <form onSubmit={handleChatSubmit} className="relative">
                                     <textarea
                                         value={chatInput}
+                                        aria-label="Message the academic assistant"
                                         onChange={(e) => setChatInput(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -687,6 +689,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     <button
                                         type="submit"
                                         disabled={isGenerating || !chatInput.trim()}
+                                        aria-label="Send message"
                                         className="absolute right-3 bottom-3 p-2 bg-[var(--neon-primary)] text-white rounded-xl disabled:opacity-50"
                                     >
                                         {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -801,6 +804,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                 {isEditing ? (
                                     <textarea 
                                         value={editedResult}
+                                        aria-label="Edit generated document"
                                         onChange={(e) => setEditedResult(e.target.value)}
                                         className="w-full min-h-[600px] bg-surface-soft border-none focus:ring-0 p-4 rounded-lg font-serif text-ink leading-loose resize-none"
                                         placeholder="Start typing your refinement…"
@@ -886,6 +890,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                <input 
                                    type="text"
                                    placeholder="Search resources…"
+                                   aria-label="Search library resources"
                                    value={libSearchTerm}
                                    onChange={(e) => setLibSearchTerm(e.target.value)}
                                    className="bg-surface-soft border border-hairline rounded-xl pl-10 pr-4 py-2 text-sm text-ink focus:outline-none focus:border-[var(--neon-primary)] w-full md:w-64 transition"

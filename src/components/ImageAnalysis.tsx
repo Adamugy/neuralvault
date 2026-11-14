@@ -178,7 +178,8 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                     />
                     <button 
                       onClick={clearImage}
-                      className="absolute -top-2 -right-2 p-1.5 bg-error text-ink rounded-full shadow-lg hover:bg-error transition-colors"
+                      aria-label="Remove image"
+                      className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-error text-white rounded-full shadow-lift hover:bg-ink transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
@@ -250,10 +251,10 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                         Analysis Result
                     </h3>
                     <div className="flex gap-2">
-                        <button onClick={handleCopy} className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
+                        <button onClick={handleCopy} aria-label="Copy analysis" className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
                             <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={handleDownload} className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
+                        <button onClick={handleDownload} aria-label="Download analysis" className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
                             <Download className="w-4 h-4" />
                         </button>
                     </div>

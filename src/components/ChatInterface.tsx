@@ -294,9 +294,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
           }`}>
             <textarea
               value={input}
+              aria-label="Message the AI tutor"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={thinkingMode ? "Ask a complex question for deep analysis..." : "How can I help with your studies today?"}
+              placeholder={thinkingMode ? "Ask a complex question for deep analysis…" : "How can I help with your studies today?"}
               rows={1}
               className="w-full bg-transparent text-body-strong pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
@@ -304,10 +305,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             <button
               onClick={handleSend}
               disabled={!input.trim() || isLoading}
+              aria-label="Send message"
               className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-xl transition duration-300 group-focus-within:scale-105 active:scale-95
                 ${!input.trim() || isLoading 
                   ? 'text-muted bg-surface-soft' 
-                  : 'text-white bg-primary hover:bg-primary'}`}
+                  : 'text-white bg-primary hover:bg-primary-active'}`}
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
