@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Brain, Loader2, Lock, Copy, Check, ChevronDown, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Brain, Loader2, Lock, Copy, Check, ChevronDown, Sparkles, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -21,6 +21,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
   const [input, setInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // True once the first words of a streamed answer are on screen
+  const [isStreaming, setIsStreaming] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [thinkingMode, setThinkingMode] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,6 +54,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
     setIsLoading(true);
 
     const history = messages.map(m => ({ role: m.role, content: m.content }));
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const botId = crypto.randomUUID();
+    let received = '';
 
     try {
       const token = await getToken();
@@ -63,35 +70,66 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
         body: JSON.stringify({
           message: userMsg.content,
           history,
-          thinkingMode
-        })
+          thinkingMode,
+          stream: true
+        }),
+        signal: controller.signal
       });
 
       if (!res.ok) throw new Error('Chat failed');
-      const data = await res.json();
-      const responseText = data.text;
-      
-      const botMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'model',
-        content: responseText,
-        timestamp: Date.now(),
-        isThinking: thinkingMode
-      };
 
-      setMessages(prev => [...prev, botMsg]);
+      const isTextStream = (res.headers.get('content-type') || '').includes('text/plain');
+      if (isTextStream && res.body) {
+        // Show the answer as it is generated instead of waiting for the whole text
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          received += decoder.decode(value, { stream: true });
+          if (!received) continue;
+          const content = received;
+          setIsStreaming(true);
+          setMessages(prev => prev.some(m => m.id === botId)
+            ? prev.map(m => (m.id === botId ? { ...m, content } : m))
+            : [...prev, { id: botId, role: 'model', content, timestamp: Date.now(), isThinking: thinkingMode }]);
+        }
+        if (!received) throw new Error('Empty response');
+      } else {
+        const data = await res.json();
+        const botMsg: ChatMessage = {
+          id: botId,
+          role: 'model',
+          content: data.text,
+          timestamp: Date.now(),
+          isThinking: thinkingMode
+        };
+        setMessages(prev => [...prev, botMsg]);
+      }
     } catch (error) {
-      const errorMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: 'model',
-        content: "Sorry, I encountered an error while processing your request. Please check your connection or try again later.",
-        timestamp: Date.now()
-      };
-      setMessages(prev => [...prev, errorMsg]);
+      // Stopped by the user: keep what was already written, no error bubble
+      const stoppedByUser = controller.signal.aborted;
+      if (!(stoppedByUser && received)) {
+        const errorMsg: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: 'model',
+          content: stoppedByUser
+            ? "Stopped before the answer started."
+            : received
+              ? "The answer was interrupted before it finished. Please try again."
+              : "Sorry, I encountered an error while processing your request. Please check your connection or try again later.",
+          timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
+      abortRef.current = null;
+      setIsStreaming(false);
       setIsLoading(false);
     }
   };
+
+  const handleStop = () => abortRef.current?.abort();
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -128,9 +166,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             </div>
           </div>
         </div>
-        
+
         {/* Uniform Search Bar */}
-        <SearchBar 
+        <SearchBar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             resources={resources}
@@ -140,8 +178,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             <button
                 onClick={() => isPremium ? setThinkingMode(!thinkingMode) : onOpenUpgrade?.()}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-medium transition duration-300 ${
-                thinkingMode 
-                    ? 'bg-primary-soft border-primary/30 text-primary' 
+                thinkingMode
+                    ? 'bg-primary-soft border-primary/30 text-primary'
                     : 'bg-surface-soft border-hairline text-muted hover:bg-surface-card hover:text-body-strong'
                 }`}
             >
@@ -153,7 +191,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       </div>
 
       {/* Messages - Centered Content Layout */}
-      <div 
+      <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto scrollbar-hide"
       >
@@ -171,7 +209,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                     "Help me organize my papers",
                     "What's the latest in LLMs?"
                   ].map((tip, i) => (
-                    <button 
+                    <button
                         key={i}
                         onClick={() => setInput(tip)}
                         className="p-4 rounded-xl glass-panel text-left text-sm text-muted hover:border-primary/30 hover:text-ink transition group"
@@ -195,7 +233,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                   ${msg.role === 'user' ? 'bg-surface-card' : 'bg-primary'}`}>
                   {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-body-strong" /> : <Bot className="w-3.5 h-3.5 text-ink" />}
                 </div>
-                
+
                 {/* Content Area */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
@@ -214,16 +252,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                         THINKING PROCESS ACTIVATED
                       </div>
                     )}
-                    
+
                     <div className="markdown-content prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-transparent prose-pre:p-0">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           code({ node, className, children, ...props }: any) {
                             const match = /language-(\w+)/.exec(className || '');
                             const codeText = String(children).replace(/\n$/, '');
                             const isInline = !match;
-                            
+
                             return !isInline ? (
                               <div className="relative group my-4 rounded-xl overflow-hidden border border-hairline bg-surface-soft">
                                 <div className="flex items-center justify-between px-4 py-2 bg-surface-soft text-xs font-mono text-muted uppercase tracking-widest border-b border-hairline">
@@ -262,8 +300,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               </div>
             </div>
           ))}
-          
-          {isLoading && (
+
+          {isLoading && !isStreaming && (
             <div className="flex items-start gap-4">
               <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center animate-pulse">
                 <Loader2 className="w-4 h-4 text-ink animate-spin" />
@@ -288,8 +326,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       <div className="px-4 md:px-6 py-6 bg-canvas border-t border-hairline">
         <div className="max-w-3xl mx-auto">
           <div className={`relative rounded-xl border transition duration-300 group shadow-lift glass-panel ${
-            thinkingMode 
-              ? 'border-primary/30 bg-primary-soft ring-1 ring-primary/20' 
+            thinkingMode
+              ? 'border-primary/30 bg-primary-soft ring-1 ring-primary/20'
               : 'border-hairline bg-surface-soft focus-within:border-hairline-strong'
           }`}>
             <textarea
@@ -302,24 +340,34 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               className="w-full bg-transparent text-body-strong pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
             />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-              aria-label="Send message"
-              className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-xl transition duration-300 group-focus-within:scale-105 active:scale-95
-                ${!input.trim() || isLoading 
-                  ? 'text-muted bg-surface-soft' 
-                  : 'text-white bg-primary hover:bg-primary-active'}`}
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </button>
+            {isLoading ? (
+              <button
+                onClick={handleStop}
+                aria-label="Stop generating"
+                className="absolute right-2.5 bottom-2.5 p-1.5 rounded-xl transition duration-300 active:scale-95 text-white bg-ink hover:bg-body-strong"
+              >
+                <Square className="w-4 h-4 fill-current" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={!input.trim()}
+                aria-label="Send message"
+                className={`absolute right-2.5 bottom-2.5 p-1.5 rounded-xl transition duration-300 group-focus-within:scale-105 active:scale-95
+                  ${!input.trim()
+                    ? 'text-muted bg-surface-soft'
+                    : 'text-white bg-primary hover:bg-primary-active'}`}
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <p className="text-center text-xs text-muted mt-4 font-medium tracking-wide">
             {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "GEMINI PRO PREVIEW • AI RESEARCH ASSISTANT"}
           </p>
         </div>
       </div>
-      
+
       <style>{`
         .markdown-content ul { list-style-type: disc; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }
         .markdown-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem; }

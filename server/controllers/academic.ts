@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
-import { ai, fileToGenerativePart } from '../services/gemini.js';
+import { ai, fileToGenerativePart, AI_REQUEST_OPTIONS } from '../services/gemini.js';
 import { BadRequestError } from '../utils/errors.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../services/prisma.js';
@@ -114,7 +114,7 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
             responseMimeType: "application/json"
         },
         systemInstruction,
-    });
+    }, AI_REQUEST_OPTIONS);
 
     console.log(`[Academic] Generating for user ${userId}, session: ${currentSessionId}, taskType: ${taskType}`);
 

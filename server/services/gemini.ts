@@ -6,6 +6,10 @@ const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || '');
 
 export const ai = genAI;
 
+// Give up on a stuck Gemini call instead of leaving the request hanging forever.
+// Long generations (documents, image analysis) legitimately take a while.
+export const AI_REQUEST_OPTIONS = { timeout: 120_000 };
+
 export const fileToGenerativePart = (path: string, mimeType: string) => {
     return {
         inlineData: {
