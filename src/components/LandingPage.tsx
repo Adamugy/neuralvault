@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   BrainCircuit,
   ChevronRight,
@@ -20,7 +20,12 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import GeminiDemo from './GeminiDemo';
-import { motion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
+import { useGSAP } from '@gsap/react';
+
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
 interface Feature {
   icon: any;
@@ -30,14 +35,8 @@ interface Feature {
   details?: string;
 }
 
-// Hero entrance: plays once on load (never tied to scrolling)
-const enter = (delay: number) => ({
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as const },
-});
-
 const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Feature) => void }) => (
+  <div data-feature className="h-full">
   <button
     type="button"
     onClick={() => onOpen(feature)}
@@ -55,6 +54,7 @@ const FeatureCard = ({ feature, onOpen }: { feature: Feature, onOpen: (f: Featur
       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
     </span>
   </button>
+  </div>
 );
 
 const NavLink = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
@@ -77,6 +77,77 @@ const LandingPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('hero');
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   const [isSystemActive, setIsSystemActive] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // GSAP: hero timeline on load + scroll reveals. Everything is skipped when the
+  // user prefers reduced motion (gsap.matchMedia reverts it automatically).
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', () => {
+      const q = gsap.utils.selector(rootRef);
+
+      // Hero
+      const split = SplitText.create(q('[data-hero-title]'), { type: 'lines,words', mask: 'lines' });
+      const load = { value: 0 };
+      const loadLabel = q('[data-load-label]')[0] as HTMLElement | undefined;
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+      tl.from(q('[data-hero-badge]'), { y: 12, autoAlpha: 0, duration: 0.5 })
+        .from(split.words, { yPercent: 110, duration: 0.9, stagger: 0.06 }, '-=0.15')
+        .from(q('[data-hero-copy]'), { y: 16, autoAlpha: 0, duration: 0.6 }, '-=0.55')
+        .from(q('[data-hero-cta]'), { y: 14, autoAlpha: 0, duration: 0.55 }, '-=0.4')
+        .from(q('[data-hero-window]'), { y: 48, autoAlpha: 0, scale: 0.97, duration: 1.1 }, '-=0.8')
+        .from(q('[data-node]'), { scale: 0.6, autoAlpha: 0, duration: 0.55, stagger: 0.12, ease: 'back.out(1.8)' }, '-=0.55')
+        .from(q('[data-circuit]'), { autoAlpha: 0, duration: 0.4 }, '-=0.2')
+        .from(q('[data-load-bar]'), { scaleX: 0, transformOrigin: 'left center', duration: 1.3, ease: 'power2.inOut' }, '-=0.1')
+        .to(load, {
+          value: 88, duration: 1.3, ease: 'power2.inOut',
+          onUpdate: () => { if (loadLabel) loadLabel.textContent = Math.round(load.value) + '% LOAD'; },
+        }, '<');
+
+      // Section headings and intros
+      q('[data-reveal]').forEach((el) => {
+        gsap.from(el, { y: 28, autoAlpha: 0, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 85%', once: true } });
+      });
+
+      // Feature cards: one staggered moment per batch
+      gsap.set(q('[data-feature]'), { y: 32, autoAlpha: 0 });
+      ScrollTrigger.batch(q('[data-feature]'), {
+        start: 'top 88%',
+        once: true,
+        onEnter: (batch) => gsap.to(batch, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.1, ease: 'power3.out', overwrite: true }),
+      });
+
+      // Demo window drifts against the scroll
+      gsap.fromTo(q('[data-demo]'), { y: 60 }, {
+        y: -20, ease: 'none',
+        scrollTrigger: { trigger: q('#demo')[0], start: 'top bottom', end: 'bottom top', scrub: 1 },
+      });
+
+      // Stats: uptime counts up once
+      const uptime = q('[data-count]')[0] as HTMLElement | undefined;
+      if (uptime) {
+        const target = parseFloat(uptime.dataset.count || '0');
+        const n = { value: 0 };
+        gsap.to(n, {
+          value: target, duration: 1.6, ease: 'power2.out',
+          scrollTrigger: { trigger: uptime, start: 'top 85%', once: true },
+          onUpdate: () => { uptime.textContent = n.value.toFixed(1) + '%'; },
+        });
+      }
+      gsap.from(q('[data-stat]'), {
+        y: 20, autoAlpha: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out',
+        scrollTrigger: { trigger: q('#stats')[0], start: 'top 80%', once: true },
+      });
+
+      // CTA band grows into place
+      gsap.fromTo(q('[data-cta]'), { scale: 0.94 }, {
+        scale: 1, ease: 'none',
+        scrollTrigger: { trigger: q('[data-cta]')[0], start: 'top 95%', end: 'top 45%', scrub: 1 },
+      });
+
+      return () => split.revert();
+    });
+  }, { scope: rootRef });
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -166,7 +237,7 @@ const LandingPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-canvas text-body font-sans overflow-x-hidden">
+    <div ref={rootRef} className="min-h-screen bg-canvas text-body font-sans overflow-x-hidden">
       <a href="#main" className="skip-link">Skip to content</a>
 
       {/* Navbar */}
@@ -264,33 +335,33 @@ const LandingPage: React.FC = () => {
         <section id="hero" className="relative pt-28 pb-20 lg:pt-36 lg:pb-28 px-6 min-h-[100svh] flex items-center">
           <div className="max-w-[1200px] w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 items-center">
             <div className="min-w-0 text-center lg:text-left">
-              <motion.div
-                {...enter(0)}
+              <div
+                data-hero-badge
                 className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-card text-[13px] font-medium text-ink mb-8"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-teal-ink" aria-hidden="true"></span>
                 <span>Reasoning Engine Powered</span>
                 <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-              </motion.div>
+              </div>
 
-              <motion.h1
-                {...enter(0.08)}
+              <h1
+                data-hero-title
                 className="font-display text-[56px] sm:text-[72px] lg:text-[88px] text-ink leading-[0.98] tracking-[-0.03em] mb-8"
               >
                 Thinking <br />
                 <span className="text-coral italic">Beyond Sync.</span>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                {...enter(0.16)}
+              <p
+                data-hero-copy
                 className="text-lg md:text-xl text-body mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed"
               >
                 A second brain that doesn't just store files, it <span className="text-ink font-medium underline decoration-coral decoration-2 underline-offset-4">synthesizes insights</span>.
                 Experience the next era of academic work.
-              </motion.p>
+              </p>
 
-              <motion.div
-                {...enter(0.24)}
+              <div
+                data-hero-cta
                 className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3"
               >
                 <button
@@ -305,16 +376,11 @@ const LandingPage: React.FC = () => {
                 >
                   Watch Demo
                 </button>
-              </motion.div>
+              </div>
             </div>
 
             {/* Product window: knowledge -> reasoning -> synthesis */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="relative"
-            >
+            <div data-hero-window className="relative">
               <div className="rounded-xl overflow-hidden bg-surface-dark text-on-dark shadow-lift">
                 {/* Window Top Bar */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10">
@@ -336,7 +402,7 @@ const LandingPage: React.FC = () => {
 
                 {/* Device Screen Content */}
                 <div className="aspect-[4/3] sm:aspect-video flex flex-col items-center justify-center relative overflow-hidden px-6">
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 450" preserveAspectRatio="none" aria-hidden="true">
+                  <svg data-circuit className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 450" preserveAspectRatio="none" aria-hidden="true">
                     <path d="M250 190 L400 190" stroke="#cc785c" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
                     <path d="M550 190 L400 190" stroke="#cc785c" strokeOpacity="0.6" strokeWidth="1.5" fill="none" className="animate-circuit-flow" strokeDasharray="6 8" />
                   </svg>
@@ -348,7 +414,7 @@ const LandingPage: React.FC = () => {
                         { Icon: Cpu, label: 'Reasoning', ring: true },
                         { Icon: Layers, label: 'Synthesis', ring: false },
                       ].map(({ Icon, label, ring }) => (
-                        <div key={label} className="flex flex-col items-center gap-3">
+                        <div key={label} data-node className="flex flex-col items-center gap-3">
                           <div className={`w-14 h-14 sm:w-[72px] sm:h-[72px] flex items-center justify-center ${ring ? 'rounded-full bg-coral/15 ring-1 ring-coral/60 animate-float' : 'rounded-lg bg-surface-dark-elevated'}`}>
                             <Icon className={`w-6 h-6 sm:w-8 sm:h-8 ${ring ? 'text-coral' : 'text-on-dark'}`} aria-hidden="true" />
                           </div>
@@ -364,23 +430,23 @@ const LandingPage: React.FC = () => {
                           <span className="w-1.5 h-1.5 rounded-full bg-success" aria-hidden="true"></span>
                           Processing
                         </div>
-                        <div className="text-coral tabular-nums">88% LOAD</div>
+                        <div data-load-label className="text-coral tabular-nums">88% LOAD</div>
                       </div>
                       <div className="w-full h-1.5 bg-surface-dark-elevated rounded-full overflow-hidden">
-                        <div className="h-full bg-coral w-[88%] rounded-full"></div>
+                        <div data-load-bar className="h-full bg-coral w-[88%] rounded-full"></div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </section>
 
         {/* Features Grid */}
         <section id="features" className="py-24 md:py-32 bg-surface-soft">
           <div className="max-w-[1200px] mx-auto px-6">
-            <div className="max-w-2xl mb-14 md:mb-20">
+            <div data-reveal className="max-w-2xl mb-14 md:mb-20">
               <div className="text-xs text-primary font-medium uppercase tracking-[0.14em] mb-4">Core Ecosystem</div>
               <h2 className="font-display text-[40px] md:text-[56px] text-ink leading-[1.05] tracking-[-0.02em]">Architected for Modern Minds</h2>
             </div>
@@ -396,7 +462,7 @@ const LandingPage: React.FC = () => {
         {/* Interactive Demo Section */}
         <section id="demo" className="py-24 md:py-32">
           <div className="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            <div className="min-w-0 space-y-6 text-center lg:text-left">
+            <div data-reveal className="min-w-0 space-y-6 text-center lg:text-left">
               <div className="inline-block px-3 py-1 rounded-full bg-primary-soft text-primary-active text-xs font-medium uppercase tracking-[0.12em]">
                 Real-Time Interaction
               </div>
@@ -418,7 +484,7 @@ const LandingPage: React.FC = () => {
                 </li>
               </ul>
             </div>
-            <div className="w-full min-w-0">
+            <div data-demo className="w-full min-w-0">
               <GeminiDemo />
             </div>
           </div>
@@ -435,8 +501,8 @@ const LandingPage: React.FC = () => {
                   { label: 'Researchers', value: 'Explore' },
                   { label: 'System Uptime', value: '99.9%' }
                 ].map((stat, i) => (
-                  <div key={i} className="md:border-l md:border-white/10 md:pl-6 first:border-l-0 first:pl-0">
-                    <div className="font-display text-4xl md:text-5xl text-on-dark mb-2 tabular-nums">{stat.value}</div>
+                  <div key={i} data-stat className="md:border-l md:border-white/10 md:pl-6 first:border-l-0 first:pl-0">
+                    <div className="font-display text-4xl md:text-5xl text-on-dark mb-2 tabular-nums" data-count={stat.value === '99.9%' ? '99.9' : undefined}>{stat.value}</div>
                     <div className="text-xs text-on-dark-soft font-medium uppercase tracking-[0.12em]">{stat.label}</div>
                   </div>
                 ))}
@@ -474,7 +540,7 @@ const LandingPage: React.FC = () => {
 
         {/* CTA Section */}
         <section className="pb-24 md:pb-32 px-6">
-          <div className="max-w-[1200px] mx-auto bg-primary rounded-xl px-8 py-16 md:p-20 text-center">
+          <div data-cta className="max-w-[1200px] mx-auto bg-primary rounded-xl px-8 py-16 md:p-20 text-center will-change-transform">
             <h2 className="font-display text-[44px] md:text-[64px] text-white mb-10 leading-[1.05] tracking-[-0.02em]">
               Ready to evolve your <br /><span className="italic">workflow?</span>
             </h2>

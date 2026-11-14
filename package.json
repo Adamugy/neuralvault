@@ -20,6 +20,7 @@
   "dependencies": {
     "@google-cloud/secret-manager": "^6.1.1",
     "@google/generative-ai": "^0.21.0",
+    "@gsap/react": "^2.1.2",
     "@prisma/client": "^6.6.0",
     "@simplewebauthn/browser": "^13.2.2",
     "@simplewebauthn/server": "^13.2.2",
@@ -36,6 +37,7 @@
     "express-rate-limit": "^8.2.1",
     "file-type": "^21.3.0",
     "framer-motion": "^12.34.3",
+    "gsap": "^3.13.0",
     "helmet": "^8.0.4",
     "jsdom": "^27.4.0",
     "jsonwebtoken": "^9.0.2",
