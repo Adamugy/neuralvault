@@ -115,15 +115,15 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
   return (
     <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
       {/* Uniform Header */}
-      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-white/5 bg-[#0a0a0c]/80 backdrop-blur-xl flex justify-between items-center bg-noise">
+      <div className="sticky top-0 z-20 px-6 py-2.5 border-b border-hairline bg-canvas/95 flex justify-between items-center">
         <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+          <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center">
             <ScanEye className="w-4 h-4 text-white" />
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-sm font-bold text-white tracking-tight">Image Analysis</h1>
-            <div className="flex items-center gap-2 text-[10px] text-slate-500">
-               <Sparkles className="w-3 h-3 text-amber-500" />
+            <h1 className="text-sm font-bold text-ink tracking-tight">Image Analysis</h1>
+            <div className="flex items-center gap-2 text-xs text-muted">
+               <Sparkles className="w-3 h-3 text-amber-ink" />
                <span>Visual AI Insights</span>
             </div>
           </div>
@@ -138,7 +138,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
 
         <div className="flex items-center gap-2 flex-shrink-0">
             {!isPremium && (
-                <button onClick={onOpenUpgrade} className="text-[10px] bg-gradient-to-r from-teal-500 to-emerald-600 text-white px-3 py-1 rounded-full font-bold animate-pulse shadow-lg">
+                <button onClick={onOpenUpgrade} className="text-xs bg-teal-ink text-white px-3 py-1 rounded-full font-medium hover:bg-success-ink transition-colors">
                 PRO
                 </button>
             )}
@@ -155,10 +155,10 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             className={`
-                relative border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300
+                relative border-2 border-dashed rounded-xl p-8 text-center transition duration-300
                 ${isDragging 
-                    ? 'border-[var(--neon-primary)] bg-[var(--neon-primary)]/10 shadow-[0_0_30px_-10px_var(--neon-primary)]' 
-                    : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'}
+                    ? 'border-[var(--neon-primary)] bg-[var(--neon-primary)]/10' 
+                    : 'border-hairline bg-surface-soft hover:border-hairline-strong hover:bg-surface-card'}
             `}
         >
             <input
@@ -174,35 +174,35 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                     <img 
                       src={imagePreview} 
                       alt="Preview" 
-                      className="max-h-80 rounded-lg shadow-2xl border border-white/20" 
+                      className="max-h-80 rounded-lg shadow-lift border border-hairline-strong" 
                     />
                     <button 
                       onClick={clearImage}
-                      className="absolute -top-2 -right-2 p-1.5 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                      className="absolute -top-2 -right-2 p-1.5 bg-error text-ink rounded-full shadow-lg hover:bg-error transition-colors"
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
                     {!result && !isAnalyzing && (
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                             <p className="text-white font-medium">Ready to Analyze</p>
+                        <div className="absolute inset-0 bg-ink/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
+                             <p className="text-ink font-medium">Ready to Analyze</p>
                         </div>
                     )}
                 </div>
             ) : (
                 <div className="space-y-4 pointer-events-none">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-slate-800/50 flex items-center justify-center border border-white/10">
-                        <Upload className="w-10 h-10 text-slate-400" />
+                    <div className="w-20 h-20 mx-auto rounded-full bg-surface-card flex items-center justify-center border border-hairline">
+                        <Upload className="w-10 h-10 text-muted" />
                     </div>
                     <div>
-                        <p className="text-xl font-medium text-white">
+                        <p className="text-xl font-medium text-ink">
                             Drag & drop your image here
                         </p>
-                        <p className="text-slate-500 mt-1">or click to browse files</p>
+                        <p className="text-muted mt-1">or click to browse files</p>
                     </div>
                     <div className="flex gap-4 justify-center mt-6">
-                        <span className="text-xs px-3 py-1 bg-white/5 rounded-full text-slate-400 border border-white/10">JPG</span>
-                        <span className="text-xs px-3 py-1 bg-white/5 rounded-full text-slate-400 border border-white/10">PNG</span>
-                        <span className="text-xs px-3 py-1 bg-white/5 rounded-full text-slate-400 border border-white/10">WEBP</span>
+                        <span className="text-xs px-3 py-1 bg-surface-soft rounded-full text-muted border border-hairline">JPG</span>
+                        <span className="text-xs px-3 py-1 bg-surface-soft rounded-full text-muted border border-hairline">PNG</span>
+                        <span className="text-xs px-3 py-1 bg-surface-soft rounded-full text-muted border border-hairline">WEBP</span>
                     </div>
                 </div>
             )}
@@ -220,7 +220,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
             <div className="flex justify-center gap-4 animate-in fade-in slide-in-from-bottom-2">
                 <button
                     onClick={handleAnalyze}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-[var(--neon-primary)]/90 text-white rounded-xl font-bold shadow-[0_0_15px_-5px_var(--neon-primary)] transition-all transform hover:scale-105 text-sm"
+                    className="flex items-center gap-2 px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-primary-active text-white rounded-xl font-bold transition transform hover:scale-105 text-sm"
                 >
                     <Sparkles className="w-4 h-4" />
                     Analyze Image
@@ -230,46 +230,46 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
 
         {/* Loading State */}
         {isAnalyzing && (
-             <div className="glass-panel border border-white/10 rounded-2xl p-8 text-center animate-in fade-in">
+             <div className="glass-panel rounded-xl p-8 text-center animate-in fade-in">
                  <div className="w-12 h-12 mx-auto mb-4 relative">
-                     <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+                     <div className="absolute inset-0 rounded-full border-4 border-hairline"></div>
                      <div className="absolute inset-0 rounded-full border-4 border-t-[var(--neon-primary)] animate-spin"></div>
-                     <Brain className="absolute inset-0 m-auto w-5 h-5 text-white animate-pulse" />
+                     <Brain className="absolute inset-0 m-auto w-5 h-5 text-ink animate-pulse" />
                  </div>
-                 <h3 className="text-xl font-bold text-white mb-2">Analyzing Visual Content</h3>
-                 <p className="text-slate-400">Extracting text, identifying diagrams, and generating insights...</p>
+                 <h3 className="text-xl font-bold text-ink mb-2">Analyzing Visual Content</h3>
+                 <p className="text-muted">Extracting text, identifying diagrams, and generating insights...</p>
              </div>
         )}
 
         {/* Results */}
         {result && (
-            <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-                <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <div className="glass-panel rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                <div className="px-6 py-4 border-b border-hairline bg-surface-soft flex justify-between items-center">
+                    <h3 className="text-base font-bold text-ink flex items-center gap-2">
                         <Bot className="w-4 h-4 text-[var(--neon-primary)]" />
                         Analysis Result
                     </h3>
                     <div className="flex gap-2">
-                        <button onClick={handleCopy} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                        <button onClick={handleCopy} className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
                             <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={handleDownload} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
+                        <button onClick={handleDownload} className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
                             <Download className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
-                <div className="p-8 prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/30 prose-pre:border prose-pre:border-white/10">
+                <div className="p-8 prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-surface-soft prose-pre:border prose-pre:border-hairline">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {result}
                     </ReactMarkdown>
                 </div>
-                <div className="px-6 py-4 bg-white/5 border-t border-white/10 flex justify-end">
+                <div className="px-6 py-4 bg-surface-soft border-t border-hairline flex justify-end">
                     <button 
                         onClick={() => {
                             setResult(null);
                             clearImage();
                         }}
-                        className="text-sm text-slate-400 hover:text-white transition-colors"
+                        className="text-sm text-muted hover:text-ink transition-colors"
                     >
                         Analyze Another Image
                     </button>
