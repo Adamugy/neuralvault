@@ -7,13 +7,15 @@ interface SearchBarProps {
     setSearchTerm: (term: string) => void;
     resources: Resource[];
     placeholder?: string;
+    className?: string;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
     searchTerm, 
     setSearchTerm, 
     resources,
-    placeholder = "Search resources, tags, or notes…"
+    placeholder = "Search resources, tags, or notes…",
+    className = "flex-1 max-w-xl mx-4"
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [filteredResults, setFilteredResults] = useState<Resource[]>([]);
@@ -33,7 +35,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }, [searchTerm, resources]);
 
     return (
-        <div className="flex-1 max-w-xl mx-4 relative group">
+        <div className={`${className} relative group`}>
             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${
                 isFocused ? 'text-primary' : 'text-muted'
             }`} />

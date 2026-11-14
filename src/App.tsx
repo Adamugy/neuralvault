@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BrainCircuit } from 'lucide-react';
+import { BrainCircuit, ChevronRight } from 'lucide-react';
 import { Sidebar } from './components/Sidebar';
 import { ResourceBoard } from './components/ResourceBoard';
 import { ChatInterface } from './components/ChatInterface';
@@ -32,6 +32,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
   
   return <>{children}</>;
+};
+
+const VIEW_LABELS: Record<ViewState, string> = {
+  [ViewState.DASHBOARD]: 'Resources',
+  [ViewState.CHAT]: 'AI Tutor',
+  [ViewState.IMAGE_ANALYSIS]: 'Image Analysis',
+  [ViewState.ACADEMIC_HELPER]: 'Academic Helper',
+  [ViewState.SETTINGS]: 'Settings',
 };
 
 const AppContent: React.FC = () => {
@@ -100,7 +108,7 @@ const AppContent: React.FC = () => {
 
   const [appSettings, setAppSettings] = useState<AppSettings>({
     theme: 'dark',
-    resourceLayout: 'grid',
+    resourceLayout: 'list',
     compactMode: false,
     notifications: true,
     twoFactorEnabled: false
@@ -226,6 +234,31 @@ const AppContent: React.FC = () => {
             </button>
         </header>
         
+        {/* Desktop top bar */}
+        <header className="hidden lg:flex h-16 flex-shrink-0 items-center justify-between px-8 border-b border-hairline bg-canvas">
+          <nav aria-label="Breadcrumb">
+            <ol className="flex items-center gap-1.5 text-sm">
+              <li className="text-muted">Workspace</li>
+              <li aria-hidden="true"><ChevronRight className="w-3.5 h-3.5 text-muted-soft" /></li>
+              <li className="text-ink font-medium" aria-current="page">{VIEW_LABELS[currentView]}</li>
+            </ol>
+          </nav>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCurrentView(ViewState.SETTINGS)}
+              className="flex items-center gap-2 h-9 pl-1 pr-3 rounded-full border border-hairline-strong bg-card hover:border-ink transition-colors"
+            >
+              <span className="w-7 h-7 rounded-full bg-primary text-white text-xs font-medium flex items-center justify-center overflow-hidden" aria-hidden="true">
+                {userProfile.avatarUrl
+                  ? <img src={userProfile.avatarUrl} alt="" width={28} height={28} className="w-full h-full object-cover" />
+                  : (userProfile.name || userProfile.email || 'U').charAt(0).toUpperCase()}
+              </span>
+              <span className="text-sm text-ink max-w-[160px] truncate">{userProfile.name || userProfile.email || 'Account'}</span>
+            </button>
+          </div>
+        </header>
+
         <div id="workspace" tabIndex={-1} className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 focus:outline-none">
            {renderContent()}
         </div>

@@ -22,6 +22,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
   
   // Folder State
   const [folders, setFolders] = useState<FolderType[]>([{ id: 'general', name: 'General' }]);
@@ -283,7 +284,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const renderResourceCard = (resource: Resource) => (
     <div 
       key={resource.id} 
-      className={`bg-canvas border border-hairline rounded-lg transition duration-200 group relative
+      className={`bg-card border border-hairline rounded-xl transition duration-200 group relative
         ${resource.completed ? 'opacity-60 hover:opacity-100' : 'hover:border-hairline-strong hover:shadow-lift hover:-translate-y-px'}
         ${layout === 'grid' ? 'p-4 flex flex-col h-full' : 'p-3 flex items-center gap-3'}
       `}
@@ -380,120 +381,274 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
     </div>
   );
 
-  return (
-    <div className="h-full flex flex-col bg-transparent">
-      <div className={`${isCompact ? 'py-2 px-4' : 'py-3 px-6'} border-b border-hairline flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition z-30`}>
-        <div className="flex-shrink-0">
-          <h1 className={`${isCompact ? 'text-2xl' : 'text-3xl md:text-[34px]'} leading-tight font-display text-ink`}>Learning Resources</h1>
-          <p className="text-muted text-xs hidden sm:block">Organize your papers, datasets, and tutorials.</p>
-        </div>
+  // ---- Dashboard summary (derived from the loaded resources, no extra requests) ----
+  const totalCount = resources.length;
+  const completedCount = resources.filter(r => r.completed).length;
+  const completedPct = totalCount ? Math.round((completedCount / totalCount) * 100) : 0;
+  const linkCount = resources.filter(r => r.type === 'link').length;
+  const fileCount = resources.filter(r => r.type === 'file').length;
+  const tagCounts = Object.entries(
+    resources.reduce<Record<string, number>>((acc, r) => {
+      r.tags.forEach(t => { acc[t] = (acc[t] || 0) + 1; });
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1] - a[1]);
+  const topTags = tagCounts.slice(0, 5);
+  const tagTotal = topTags.reduce((sum, [, n]) => sum + n, 0);
+  const TAG_COLORS = ['bg-primary', 'bg-teal-ink', 'bg-amber', 'bg-coral', 'bg-muted-soft'];
+  const folderName = (id?: string) => folders.find(f => f.id === (id || 'general'))?.name || 'General';
+  const hostOf = (url?: string) => { try { return url ? new URL(url).hostname.replace(/^www\./, '') : ''; } catch { return ''; } };
+  const dateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
-        {/* Uniform Search Bar */}
-        <SearchBar 
-            searchTerm={searchTerm} 
-            setSearchTerm={setSearchTerm} 
-            resources={resources} 
-        />
+  const statusTabs = [
+    { id: 'all' as const, label: 'All', count: filteredResources.length },
+    { id: 'active' as const, label: 'Active', count: activeResources.length },
+    { id: 'completed' as const, label: 'Completed', count: completedResources.length },
+  ];
+  const visibleResources = statusFilter === 'active' ? activeResources
+    : statusFilter === 'completed' ? completedResources
+    : [...activeResources, ...completedResources];
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white h-10 px-4 rounded-md font-medium transition active:scale-[0.99] text-sm flex-shrink-0 w-full sm:w-auto"
+  const ResourceActions = ({ resource }: { resource: Resource }) => (
+    <div className="flex items-center justify-end gap-1">
+      {resource.type === 'link' && resource.url && (
+        <a
+          href={resource.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Visit "${resource.title}"`}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-primary hover:bg-surface-soft transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          <span>Add Resource</span>
+          <ExternalLink className="w-4 h-4" aria-hidden="true" />
+        </a>
+      )}
+      {resource.type === 'file' && resource.url && (
+        <button
+          onClick={() => handleDownloadFile(resource)}
+          aria-label={`Download ${resource.fileName || resource.title}`}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-primary hover:bg-surface-soft transition-colors"
+        >
+          <Download className="w-4 h-4" aria-hidden="true" />
         </button>
-      </div>
+      )}
+      <button
+        onClick={() => handleDelete(resource.id)}
+        aria-label={`Delete "${resource.title}"`}
+        className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-error hover:bg-error-soft transition-colors"
+      >
+        <Trash2 className="w-4 h-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
 
-      <div className="border-b border-hairline">
-        <div className={`${isCompact ? 'p-2' : 'p-3'} flex flex-col gap-3`}>
+  const StatusBadge = ({ done }: { done: boolean }) => (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${done ? 'text-muted' : 'text-success-ink'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-muted-soft' : 'bg-success'}`} aria-hidden="true" />
+      {done ? 'Completed' : 'Active'}
+    </span>
+  );
 
-            <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-                {/* Folder Tabs */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setActiveFolderId('all')}
-                        className={`flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium transition
-                        ${activeFolderId === 'all' 
-                            ? 'bg-[var(--neon-primary)] text-white' 
-                            : 'text-muted hover:text-ink hover:bg-surface-soft border border-transparent hover:border-hairline'}`}
-                    >
-                        <Folder className="w-3.5 h-3.5" />
-                        All
-                    </button>
-                    {folders.map(folder => (
-                        <button
-                            key={folder.id}
-                            onClick={() => setActiveFolderId(folder.id)}
-                            className={`flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium transition whitespace-nowrap
-                            ${activeFolderId === folder.id 
-                                ? 'bg-[var(--neon-primary)] text-white' 
-                                : 'text-muted hover:text-ink hover:bg-surface-soft border border-transparent hover:border-hairline'}`}
-                        >
-                            <Folder className="w-3.5 h-3.5" />
-                            {folder.name}
-                        </button>
-                    ))}
-                    <button
-                        onClick={handleAddFolder}
-                        className="flex items-center gap-2 h-9 px-3 rounded-md text-[13px] font-medium text-muted hover:text-primary hover:bg-surface-soft border border-dashed border-hairline-strong hover:border-[var(--neon-primary)]/50 transition"
-                    >
-                        <FolderPlus className="w-3.5 h-3.5" />
-                        New Folder
-                    </button>
+  const renderTable = (items: Resource[]) => (
+    <div className="bg-card border border-hairline rounded-xl overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs text-muted border-b border-hairline">
+            <th scope="col" className="w-10 pl-4 py-3 font-medium"><span className="sr-only">Completed</span></th>
+            <th scope="col" className="py-3 pr-4 font-medium">Resource</th>
+            <th scope="col" className="py-3 pr-4 font-medium hidden lg:table-cell">Folder</th>
+            <th scope="col" className="py-3 pr-4 font-medium hidden xl:table-cell">Tags</th>
+            <th scope="col" className="py-3 pr-4 font-medium whitespace-nowrap">Added</th>
+            <th scope="col" className="py-3 pr-4 font-medium">Status</th>
+            <th scope="col" className="py-3 pr-4 font-medium text-right"><span className="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(resource => (
+            <tr key={resource.id} data-row className="border-b border-hairline last:border-b-0 hover:bg-surface-soft/60 transition-colors">
+              <td className="pl-4 py-3 align-middle">
+                <input
+                  type="checkbox"
+                  checked={resource.completed}
+                  onChange={() => handleToggleComplete(resource.id)}
+                  aria-label={resource.completed ? `Mark "${resource.title}" as not completed` : `Mark "${resource.title}" as completed`}
+                  className="w-4 h-4 rounded cursor-pointer accent-[var(--neon-primary)]"
+                />
+              </td>
+              <td className="py-3 pr-4 min-w-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${resource.type === 'link' ? 'bg-teal/15 text-teal-ink' : 'bg-primary-soft text-primary'}`} aria-hidden="true">
+                    {resource.type === 'link' ? <LinkIcon className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                  </span>
+                  <div className="min-w-0">
+                    <div className={`font-medium truncate max-w-[340px] ${resource.completed ? 'text-muted line-through' : 'text-ink'}`}>{resource.title}</div>
+                    <div className="text-xs text-muted truncate max-w-[340px]">
+                      {resource.type === 'link' ? (hostOf(resource.url) || 'Link') : (resource.fileName || 'File')}
+                      {resource.notes ? ` · ${resource.notes}` : ''}
+                    </div>
+                  </div>
                 </div>
-            </div>
-            
-            {/* Tag Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <button
-                    onClick={() => setFilterTag(null)}
-                    className={`h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors
-                    ${!filterTag ? 'bg-primary-soft border-primary/40 text-primary-active' : 'bg-canvas border-hairline-strong text-body hover:border-ink hover:text-ink'}`}
-                >
-                    All Tags
-                </button>
-                {allTags.map(tag => (
-                    <button
-                    key={tag}
-                    onClick={() => setFilterTag(tag === filterTag ? null : tag)}
-                    className={`h-8 px-3 rounded-full text-[13px] font-medium whitespace-nowrap border transition-colors
-                        ${filterTag === tag ? 'bg-primary-soft border-primary/40 text-primary-active' : 'bg-canvas border-hairline-strong text-body hover:border-ink hover:text-ink'}`}
-                    >
-                    {tag}
-                    </button>
-                ))}
-            </div>
-        </div>
-      </div>
+              </td>
+              <td className="py-3 pr-4 hidden lg:table-cell text-body whitespace-nowrap">{folderName(resource.folderId)}</td>
+              <td className="py-3 pr-4 hidden xl:table-cell">
+                <div className="flex gap-1.5">
+                  {resource.tags.slice(0, 2).map(tag => (
+                    <span key={tag} className="text-xs px-2 py-0.5 bg-surface-soft border border-hairline rounded-full text-body whitespace-nowrap">{tag}</span>
+                  ))}
+                  {resource.tags.length > 2 && <span className="text-xs text-muted">+{resource.tags.length - 2}</span>}
+                </div>
+              </td>
+              <td className="py-3 pr-4 text-muted whitespace-nowrap tabular-nums">{dateFmt.format(new Date(resource.dateAdded))}</td>
+              <td className="py-3 pr-4"><StatusBadge done={resource.completed} /></td>
+              <td className="py-3 pr-3"><ResourceActions resource={resource} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
-      {/* Grid */}
-      <div className={`flex-1 overflow-y-auto ${isCompact ? 'p-4' : 'p-6'} scrollbar-hide`}>
-        {activeResources.length === 0 && completedResources.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-muted">
-            <Folder className="w-12 h-12 mb-4 opacity-20" />
+  const selectCls = "h-9 pl-3 pr-8 bg-card border border-hairline-strong rounded-md text-[13px] text-ink hover:border-ink focus:border-primary transition-colors";
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className={`flex-1 overflow-y-auto ${isCompact ? 'space-y-4' : 'space-y-6'}`}>
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className={`${isCompact ? 'text-2xl' : 'text-3xl md:text-[34px]'} leading-tight font-display text-ink`}>Learning Resources</h1>
+            <p className="text-muted text-sm mt-1">Organize your papers, datasets, and tutorials.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleAddFolder}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 h-10 px-4 rounded-md text-sm font-medium text-ink bg-card border border-hairline-strong hover:border-ink transition-colors"
+            >
+              <FolderPlus className="w-4 h-4" aria-hidden="true" />
+              New Folder
+            </button>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white h-10 px-4 rounded-md font-medium transition active:scale-[0.99] text-sm"
+            >
+              <Plus className="w-4 h-4" aria-hidden="true" />
+              <span>Add Resource</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div data-summary className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-4">
+          <section aria-label="Library overview" className="bg-card border border-hairline rounded-xl p-5">
+            <div className="text-xs font-medium text-muted">Library size</div>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="font-display text-5xl leading-none text-ink tabular-nums">{totalCount}</span>
+              <span className="text-sm text-muted">resources</span>
+            </div>
+            <div className="mt-4 h-1.5 rounded-full bg-surface-card overflow-hidden" role="progressbar" aria-valuenow={completedPct} aria-valuemin={0} aria-valuemax={100} aria-label="Completed">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${completedPct}%` }} />
+            </div>
+            <div className="mt-2 text-xs text-muted tabular-nums">{completedPct}% completed · {completedCount} of {totalCount}</div>
+            <dl className="mt-5 grid grid-cols-3 gap-3 pt-4 border-t border-hairline">
+              {[
+                { label: 'Links', value: linkCount },
+                { label: 'Files', value: fileCount },
+                { label: 'Folders', value: folders.length },
+              ].map(s => (
+                <div key={s.label}>
+                  <dt className="text-xs text-muted">{s.label}</dt>
+                  <dd className="text-lg font-medium text-ink tabular-nums">{s.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <section aria-label="Topics" className="bg-card border border-hairline rounded-xl p-5 flex flex-col">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs font-medium text-muted">Topics across your library</div>
+              <div className="text-xs text-muted tabular-nums">{tagCounts.length} tags</div>
+            </div>
+            {topTags.length ? (
+              <>
+                <div className="mt-5 flex h-2.5 rounded-full overflow-hidden gap-0.5" aria-hidden="true">
+                  {topTags.map(([tag, n], i) => (
+                    <div key={tag} className={`${TAG_COLORS[i]} h-full first:rounded-l-full last:rounded-r-full`} style={{ width: `${(n / tagTotal) * 100}%` }} />
+                  ))}
+                </div>
+                <ul className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+                  {topTags.map(([tag, n], i) => (
+                    <li key={tag}>
+                      <button
+                        onClick={() => setFilterTag(tag === filterTag ? null : tag)}
+                        aria-pressed={filterTag === tag}
+                        className={`w-full flex items-center gap-2.5 text-sm rounded-md -mx-1.5 px-1.5 py-1 transition-colors ${filterTag === tag ? 'bg-primary-soft' : 'hover:bg-surface-soft'}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${TAG_COLORS[i]}`} aria-hidden="true" />
+                        <span className="text-body truncate">{tag}</span>
+                        <span className="ml-auto text-muted tabular-nums">{n}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="mt-6 text-sm text-muted">Tag resources to see how your library is distributed.</p>
+            )}
+          </section>
+        </div>
+
+        {/* Toolbar */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div role="tablist" aria-label="Status" className="inline-flex p-1 bg-surface-card rounded-lg self-start">
+            {statusTabs.map(t => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={statusFilter === t.id}
+                onClick={() => setStatusFilter(t.id)}
+                className={`h-8 px-3 rounded-md text-[13px] font-medium inline-flex items-center gap-1.5 transition-colors ${statusFilter === t.id ? 'bg-card text-ink shadow-soft' : 'text-muted hover:text-ink'}`}
+              >
+                {t.label}
+                <span className="text-xs text-muted tabular-nums">{t.count}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <SearchBar
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              resources={resources}
+              className="w-full sm:w-72"
+            />
+            <div className="grid grid-cols-2 sm:flex gap-2">
+              <label className="sr-only" htmlFor="rb-folder-filter">Folder</label>
+              <select id="rb-folder-filter" value={activeFolderId} onChange={(e) => setActiveFolderId(e.target.value)} className={selectCls}>
+                <option value="all">All folders</option>
+                {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+              <label className="sr-only" htmlFor="rb-tag-filter">Tag</label>
+              <select id="rb-tag-filter" value={filterTag || ''} onChange={(e) => setFilterTag(e.target.value || null)} className={selectCls}>
+                <option value="">All tags</option>
+                {allTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Results */}
+        {visibleResources.length === 0 ? (
+          <div className="bg-card border border-dashed border-hairline-strong rounded-xl h-56 flex flex-col items-center justify-center text-muted">
+            <Folder className="w-10 h-10 mb-3 text-muted-soft" aria-hidden="true" />
             <p>No resources found in this folder.</p>
+          </div>
+        ) : layout === 'grid' ? (
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {visibleResources.map(renderResourceCard)}
           </div>
         ) : (
           <>
-            <div className={`grid gap-3 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-1'}`}>
-              {activeResources.map(renderResourceCard)}
-            </div>
-
-            {completedResources.length > 0 && (
-              <div className="mt-12">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-px bg-surface-card flex-1" />
-                  <div className="flex items-center gap-2 text-muted text-sm font-medium px-2 py-1 rounded-full bg-surface-soft border border-hairline">
-                    <CheckCircle2 className="w-4 h-4" />
-                    Completed
-                  </div>
-                  <div className="h-px bg-surface-card flex-1" />
-                </div>
-                <div className={`grid gap-3 ${layout === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : 'grid-cols-1'}`}>
-                  {completedResources.map(renderResourceCard)}
-                </div>
-              </div>
-            )}
+            <div className="hidden md:block">{renderTable(visibleResources)}</div>
+            <div className="md:hidden grid gap-3">{visibleResources.map(renderResourceCard)}</div>
           </>
         )}
       </div>

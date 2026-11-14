@@ -101,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
             </div>
 
             <nav aria-label="Workspace" className="mt-5 flex flex-col gap-1 px-3">
+              <div className={`px-3 mb-1.5 text-xs font-medium text-muted ${compact ? 'lg:hidden' : ''}`}>Workspace</div>
               {navItems.map((item) => (
                 <NavButton key={item.id} id={item.id} label={item.label} Icon={item.icon} />
               ))}
@@ -108,6 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
           </div>
 
           <div className="p-3 border-t border-hairline space-y-2">
+            <div className={`px-3 mb-1.5 text-xs font-medium text-muted ${compact ? 'lg:hidden' : ''}`}>Account</div>
             <NavButton id={ViewState.SETTINGS} label="Settings" Icon={Settings} />
 
             <div className={`flex items-center py-2 rounded-md ${compact ? 'lg:justify-center px-2 lg:px-0 gap-3 lg:gap-0' : 'px-2 gap-3'}`}>
