@@ -20,8 +20,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-canvas">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -192,7 +192,8 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500/30 ${appSettings.compactMode ? 'text-sm' : ''} overflow-hidden`}>
+    <div className={`flex h-screen bg-canvas text-body font-sans ${appSettings.compactMode ? 'text-sm' : ''} overflow-hidden`}>
+      <a href="#workspace" className="skip-link">Skip to content</a>
       <Sidebar 
         currentView={currentView} 
         onNavigate={(view) => {
@@ -207,26 +208,24 @@ const AppContent: React.FC = () => {
       
       <main className="flex-1 overflow-hidden relative flex flex-col h-full w-full">
         {/* Mobile Header */}
-        <div className="lg:hidden h-16 border-b border-white/10 flex items-center justify-between px-4 bg-slate-900/50 backdrop-blur-md z-40 flex-shrink-0">
+        <header className="lg:hidden h-16 border-b border-hairline flex items-center justify-between px-4 bg-canvas z-40 flex-shrink-0">
             <div className="flex items-center gap-2">
-                <div className="text-[var(--neon-primary)]">
+                <div className="text-primary" aria-hidden="true">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-brain-circuit"><path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 3 2.5 2.5 0 0 0-.02 3 2.5 2.5 0 0 0 1.2 3 2.5 2.5 0 0 0 2.02 3 2.5 2.5 0 0 0 4.96.46 2.5 2.5 0 0 0 1.98-3 2.5 2.5 0 0 0 1.32-3 2.5 2.5 0 0 0 .02-3 2.5 2.5 0 0 0-1.2-3 2.5 2.5 0 0 0-2.02-3"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="M12 12h.01"/></svg>
                 </div>
-                <span className="font-bold text-lg text-white">NeuralVault</span>
+                <span translate="no" className="font-display text-2xl leading-none text-ink">NeuralVault</span>
             </div>
             <button 
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 text-slate-400 hover:text-white"
+                aria-label="Open menu"
+                aria-expanded={isMobileMenuOpen}
+                className="w-10 h-10 -mr-2 flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-surface-soft"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
             </button>
-        </div>
-
-        {/* Ambient Glow Effects */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-600/5 rounded-full blur-[100px] pointer-events-none -z-10" />
+        </header>
         
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8">
+        <div id="workspace" tabIndex={-1} className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 focus:outline-none">
            {renderContent()}
         </div>
       </main>

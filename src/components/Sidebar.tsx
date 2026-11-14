@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, MessageSquareText, ScanEye, BrainCircuit, Github, GraduationCap, Settings, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { LayoutDashboard, MessageSquareText, ScanEye, BrainCircuit, GraduationCap, Settings, ChevronLeft, ChevronRight, X, LogOut } from 'lucide-react';
 import { ViewState } from '../types';
-import { useAuth, useUser } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -17,6 +17,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCollapsed, onToggleCollapse, isMobileOpen = false, onMobileClose = () => {} }) => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const compact = isCollapsed && !isMobileOpen;
 
   const navItems = [
     { id: ViewState.DASHBOARD, label: 'Resources', icon: LayoutDashboard },
@@ -25,108 +26,103 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
     { id: ViewState.ACADEMIC_HELPER, label: 'Academic Helper', icon: GraduationCap },
   ];
 
+  const hideWhenCompact = compact ? 'lg:sr-only' : '';
+
+  const NavButton = ({ id, label, Icon }: { id: ViewState; label: string; Icon: React.ElementType }) => {
+    const isActive = currentView === id;
+    return (
+      <button
+        onClick={() => onNavigate(id)}
+        aria-current={isActive ? 'page' : undefined}
+        title={compact ? label : undefined}
+        className={`w-full flex items-center gap-3 h-10 rounded-md text-sm font-medium transition-colors
+          ${compact ? 'lg:justify-center lg:px-0 px-3' : 'px-3'}
+          ${isActive
+            ? 'bg-canvas text-ink shadow-soft'
+            : 'text-muted hover:bg-surface-strong/60 hover:text-ink'
+          }`}
+      >
+        <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-primary' : ''}`} aria-hidden="true" />
+        <span className={hideWhenCompact}>{label}</span>
+      </button>
+    );
+  };
+
   return (
     <>
         {/* Mobile Overlay */}
         {isMobileOpen && (
-            <div 
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            <div
+                className="fixed inset-0 bg-ink/40 z-40 lg:hidden"
                 onClick={onMobileClose}
+                aria-hidden="true"
             />
         )}
 
         {/* Sidebar Container */}
-        <div className={`
+        <aside
+          aria-label="Sidebar"
+          className={`
             fixed inset-y-0 left-0 z-50 h-full
             lg:relative lg:translate-x-0
-            transition-transform duration-300 ease-out
-            bg-slate-950/95 backdrop-blur-xl border-r border-white/10
-            flex flex-col justify-between
+            transition-[transform,width] duration-300 ease-out
+            bg-surface-soft border-r border-hairline
+            flex flex-col justify-between overscroll-contain
             ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'}
-            ${isCollapsed && !isMobileOpen ? 'lg:w-20' : 'w-64'}
+            ${compact ? 'lg:w-[72px]' : 'w-64'}
         `}>
           <div>
-            <div className="h-16 flex items-center justify-between px-6 border-b border-white/10 relative">
-              <div className="flex items-center gap-3">
-                 <BrainCircuit className="w-8 h-8 text-[var(--neon-primary)] animate-pulse-glow flex-shrink-0" />
-                 <span className={`font-bold text-xl neon-gradient-text transition-all duration-300 ${isCollapsed && !isMobileOpen ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0' : 'opacity-100'}`}>
+            <div className={`h-16 flex items-center justify-between border-b border-hairline relative ${compact ? 'lg:justify-center px-5 lg:px-0' : 'px-5'}`}>
+              <div className="flex items-center gap-2.5 min-w-0">
+                 <BrainCircuit className="w-7 h-7 text-primary flex-shrink-0" aria-hidden="true" />
+                 <span translate="no" className={`font-display text-2xl leading-none text-ink ${hideWhenCompact}`}>
                     NeuralVault
                  </span>
               </div>
-              
+
               {/* Close Button Mobile */}
-              <button onClick={onMobileClose} className="lg:hidden text-slate-400 hover:text-white">
-                  <X className="w-6 h-6" />
-              </button>
-              
-              {/* Toggle Button Desktop */}
-              <button 
-                onClick={onToggleCollapse}
-                className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[var(--neon-primary)] rounded-full items-center justify-center text-white hidden lg:flex shadow-[0_0_10px_var(--neon-primary)] z-50 hover:scale-110 transition-transform"
+              <button
+                onClick={onMobileClose}
+                aria-label="Close menu"
+                className="lg:hidden w-10 h-10 -mr-2 flex items-center justify-center rounded-md text-muted hover:text-ink hover:bg-surface-strong/60"
               >
-                {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+
+              {/* Toggle Button Desktop */}
+              <button
+                onClick={onToggleCollapse}
+                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-expanded={!isCollapsed}
+                className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-canvas border border-hairline-strong rounded-full items-center justify-center text-muted hover:text-ink hover:border-ink hidden lg:flex z-50 transition-colors"
+              >
+                {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />}
               </button>
             </div>
 
-            <nav className="mt-6 flex flex-col gap-2 px-2">
-              {navItems.map((item) => {
-                const isActive = currentView === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onNavigate(item.id)}
-                    className={`flex items-center py-2 px-3 rounded-xl transition-all duration-200 group relative overflow-hidden
-                      ${(isCollapsed && !isMobileOpen) ? 'justify-center' : 'px-4'}
-                      ${isActive 
-                        ? 'bg-[var(--neon-primary)]/10 text-[var(--neon-primary)] border border-[var(--neon-primary)]/20 shadow-[0_0_15px_-10px_var(--neon-primary)]' 
-                        : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
-                      }`}
-                  >
-                    <item.icon className={`w-5 h-5 z-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-[var(--neon-primary)]' : 'group-hover:text-white'}`} />
-                    <span className={`text-[13px] font-medium transition-all duration-300 z-10 ${isActive ? 'text-[var(--neon-primary)]' : ''} ${(isCollapsed && !isMobileOpen) ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0' : 'opacity-100 ml-3'}`}>
-                      {item.label}
-                    </span>
-                    {isActive && (
-                      <div className="absolute inset-y-0 left-0 w-1 bg-[var(--neon-primary)] shadow-[0_0_10px_var(--neon-primary)]" />
-                    )}
-                  </button>
-                );
-              })}
+            <nav aria-label="Workspace" className="mt-5 flex flex-col gap-1 px-3">
+              {navItems.map((item) => (
+                <NavButton key={item.id} id={item.id} label={item.label} Icon={item.icon} />
+              ))}
             </nav>
           </div>
 
-          <div className="p-4 border-t border-white/10">
-            <button
-                onClick={() => onNavigate(ViewState.SETTINGS)}
-                className={`w-full flex items-center py-2 px-3 rounded-xl transition-all duration-200 group mb-4 relative overflow-hidden
-                ${(isCollapsed && !isMobileOpen) ? 'justify-center' : 'px-4'}
-                ${currentView === ViewState.SETTINGS
-                    ? 'bg-[var(--neon-primary)]/10 text-[var(--neon-primary)] border border-[var(--neon-primary)]/20 shadow-[0_0_15px_-10px_var(--neon-primary)]' 
-                    : 'text-slate-500 hover:bg-white/5 hover:text-slate-200'
-                }`}
-            >
-                <Settings className={`w-5 h-5 z-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${currentView === ViewState.SETTINGS ? 'text-[var(--neon-primary)]' : 'group-hover:text-white'}`} />
-                <span className={`text-[13px] font-medium transition-all duration-300 z-10 ${currentView === ViewState.SETTINGS ? 'text-[var(--neon-primary)]' : ''} ${(isCollapsed && !isMobileOpen) ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0' : 'opacity-100 ml-3'}`}>
-                    Settings
-                </span>
-                {currentView === ViewState.SETTINGS && (
-                  <div className="absolute inset-y-0 left-0 w-1 bg-[var(--neon-primary)] shadow-[0_0_10px_var(--neon-primary)]" />
-                )}
-            </button>
+          <div className="p-3 border-t border-hairline space-y-2">
+            <NavButton id={ViewState.SETTINGS} label="Settings" Icon={Settings} />
 
-            <div className={`flex items-center mb-3 py-2 rounded-xl bg-white/5 border border-white/10 transition-all duration-300 ${(isCollapsed && !isMobileOpen) ? 'lg:px-0 lg:justify-center' : 'px-3 gap-3'}`}>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm border border-[var(--neon-primary)]/30 flex-shrink-0 overflow-hidden">
+            <div className={`flex items-center py-2 rounded-md ${compact ? 'lg:justify-center px-2 lg:px-0 gap-3 lg:gap-0' : 'px-2 gap-3'}`}>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-medium text-sm flex-shrink-0 overflow-hidden">
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                  <img src={user.avatarUrl} alt={user.name || 'User'} width={32} height={32} className="w-full h-full object-cover" />
                 ) : (
-                  user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'
+                  <span aria-hidden="true">{user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}</span>
                 )}
               </div>
-              <div className={`min-w-0 transition-all duration-300 ${(isCollapsed && !isMobileOpen) ? 'lg:opacity-0 lg:w-0 lg:overflow-hidden lg:ml-0' : 'opacity-100'}`}>
-                <div className="text-sm font-medium text-slate-200 truncate">
+              <div className={`min-w-0 ${hideWhenCompact}`}>
+                <div className="text-sm font-medium text-ink truncate">
                   {user?.name || 'Account'}
                 </div>
-                <div className="text-xs text-slate-500 truncate">
+                <div className="text-xs text-muted truncate">
                   {user?.email || ''}
                 </div>
               </div>
@@ -134,12 +130,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
 
             <button
               onClick={async () => { await signOut(); navigate('/'); }}
-              className={`flex w-full items-center justify-center py-2 rounded-xl bg-white/5 border border-white/10 text-slate-500 hover:bg-white/10 hover:text-slate-200 transition-all mb-4 text-xs font-medium ${(isCollapsed && !isMobileOpen) ? 'lg:flex px-0' : 'flex px-4'}`}
+              aria-label={compact ? 'Log Out' : undefined}
+              title={compact ? 'Log Out' : undefined}
+              className={`w-full flex items-center justify-center gap-2 h-10 rounded-md border border-hairline-strong text-sm font-medium text-body hover:text-ink hover:border-ink hover:bg-canvas transition-colors`}
             >
-              {(isCollapsed && !isMobileOpen) ? <ChevronLeft className="rotate-180 w-4 h-4" /> : 'Log Out'}
+              {compact ? <LogOut className="w-4 h-4" aria-hidden="true" /> : 'Log Out'}
             </button>
           </div>
-        </div>
+        </aside>
     </>
   );
 };
