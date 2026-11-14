@@ -117,8 +117,10 @@ function setupStaticServing(app: express.Express) {
         etag: true,
         lastModified: true,
         setHeaders: (res, filePath) => {
-            const isImmutable = filePath.endsWith('.js') || filePath.match(/\.(png|jpg|jpeg|gif|ico|webp|svg|woff|woff2|eot|ttf|otf)$/);
-            res.setHeader('Cache-Control', isImmutable ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate');
+            // Vite fingerprints everything in /assets (JS and CSS), so those never change.
+            // Other static files (favicon, icons) keep their name, so they get a short cache.
+            const isHashedAsset = filePath.includes(`${path.sep}assets${path.sep}`);
+            res.setHeader('Cache-Control', isHashedAsset ? 'public, max-age=31536000, immutable' : 'public, max-age=3600');
         },
     }));
 

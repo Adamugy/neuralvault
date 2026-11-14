@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService.js';
 import { UnauthorizedError } from '../utils/errors.js';
+import { getContextFingerprint } from './zeroTrust.js';
 
 // Extend Express Request to include userId
 declare global {
@@ -31,10 +32,10 @@ export const requireApiAuth = async (req: Request, res: Response, next: NextFunc
         const decoded = AuthService.verifyToken(token);
 
         // Capture context fingerprint for security verification
-        const { getContextFingerprint } = await import('./zeroTrust.js');
         const fingerprint = getContextFingerprint(req);
 
-        // Validate session exists, is not expired, and matches context fingerprint
+        // Validate session exists, is not expired, and matches context fingerprint.
+        // This also resets the inactivity timer (throttled to once a minute).
         const isValid = await AuthService.validateSession(token, fingerprint);
         if (!isValid) {
             console.log('[Auth] Invalid or expired session (or fingerprint mismatch)');
@@ -44,9 +45,6 @@ export const requireApiAuth = async (req: Request, res: Response, next: NextFunc
         // Attach user info to request
         req.userId = decoded.userId;
         req.userEmail = decoded.email;
-
-        // Reset inactivity timer
-        await AuthService.touchSession(token);
 
         console.log('[Auth] Authenticated user:', decoded.userId);
         next();

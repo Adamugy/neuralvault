@@ -82,8 +82,16 @@ export class AuthService {
             return false;
         }
 
+        // Reset the inactivity timer, but at most once a minute: writing on every
+        // request added a second database round trip to each API call.
+        if (Date.now() - session.updatedAt.getTime() > this.SESSION_TOUCH_INTERVAL_MS) {
+            await this.touchSession(token);
+        }
+
         return true;
     }
+
+    private static readonly SESSION_TOUCH_INTERVAL_MS = 60 * 1000;
 
     private static isFingerprintMismatched(stored?: string | null, provided?: string): boolean {
         return !!(stored && provided && stored !== provided);
