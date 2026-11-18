@@ -158,7 +158,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
           </div>
           <div className="hidden sm:block">
             <h2 className="font-semibold text-ink tracking-tight flex items-center gap-2 text-sm leading-tight">
-              Gemini Pro
+              Gemini 2.5 Flash
               <span className="text-xs uppercase font-bold tracking-widest bg-surface-soft border border-hairline px-2 py-0.5 rounded-full text-primary">Researcher</span>
             </h2>
             <div className="flex items-center gap-2 text-xs text-muted">
@@ -238,7 +238,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">
-                      {msg.role === 'user' ? 'You' : 'Gemini'}
+                      {msg.role === 'user' ? 'You' : 'Gerado por IA · Gemini'}
                     </span>
                     <span className="text-xs text-muted">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -363,7 +363,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             )}
           </div>
           <p className="text-center text-xs text-muted mt-4 font-medium tracking-wide">
-            {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "GEMINI PRO PREVIEW • AI RESEARCH ASSISTANT"}
+            {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "RESPOSTAS GERADAS POR IA (GOOGLE GEMINI) · PODEM CONTER ERROS"}
           </p>
         </div>
       </div>

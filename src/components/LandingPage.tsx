@@ -18,7 +18,8 @@ import {
   Activity,
   ChevronUp
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { LEGAL, missing } from '../legal/config';
 import GeminiDemo from './GeminiDemo';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -208,31 +209,31 @@ const LandingPage: React.FC = () => {
   const features: Feature[] = [
     {
       icon: MessageSquareText,
-      title: "Gemini Pro Tutor",
-      description: "Chat with an advanced AI that understands deep learning concepts, math, and code with multi-step reasoning.",
+      title: "AI Tutor",
+      description: "Ask questions about deep learning, math and code, and get explanations from Google's Gemini model.",
       color: "indigo-500",
-      details: "Our tutor isn't just a chatbot; it's a reasoning engine trained on vast academic datasets. It utilizes Chain-of-Thought processing to break down complex theorems."
+      details: "The tutor sends your question to Google Gemini (2.5 Flash) and streams the answer back. Answers are AI-generated and can contain mistakes, so check them before relying on them."
     },
     {
       icon: ScanEye,
       title: "Visual Intelligence",
-      description: "Upload diagrams or whiteboard photos. Our AI extracts formulas and explains complex architectures instantly.",
+      description: "Upload a diagram or a whiteboard photo and ask the AI to describe and explain it.",
       color: "cyan-400",
-      details: "Leveraging the multimodal capabilities of Gemini Pro, Visual Intelligence identifies handwritten LaTeX and research charts with high accuracy."
+      details: "Images are analysed by Google Gemini and deleted from our server right after the answer. Results are AI-generated and can contain mistakes."
     },
     {
       icon: LayoutDashboard,
       title: "Resource Manager",
-      description: "Organize arXiv papers, GitHub repos, and datasets in one board with semantic tagging and cross-linking.",
+      description: "Keep papers, repositories, datasets and files in one place, with folders, tags and progress tracking.",
       color: "fuchsia-500",
-      details: "Transform static PDFs into dynamic knowledge graphs. The manager automatically cross-references papers with codebases."
+      details: "Save links and upload files, group them in folders, tag them and mark what you have finished."
     },
     {
       icon: GraduationCap,
       title: "Academic Drafting",
-      description: "Generate outlines, refine messy drafts, and structure your thesis with context-aware academic assistance.",
+      description: "Generate outlines, expand points and refine drafts with AI assistance.",
       color: "emerald-400",
-      details: "NeuralVault maintains your unique academic voice while suggesting structural improvements based on top research papers."
+      details: "The academic assistant uses Google Gemini to suggest outlines and edits. You stay responsible for the final text and for your institution's academic-integrity rules."
     }
   ];
 
@@ -311,12 +312,12 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface-soft p-4 rounded-md">
-                  <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted mb-1">Compute Cost</div>
-                  <div className="text-ink font-mono text-sm">High Frequency</div>
+                  <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted mb-1">Price</div>
+                  <div className="text-ink font-mono text-sm">Free plan</div>
                 </div>
                 <div className="bg-surface-soft p-4 rounded-md">
                   <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted mb-1">Model Version</div>
-                  <div className="text-ink font-mono text-sm">Gemini Pro</div>
+                  <div className="text-ink font-mono text-sm">Gemini 2.5 Flash</div>
                 </div>
               </div>
               <button
@@ -394,10 +395,7 @@ const LandingPage: React.FC = () => {
                       NeuralVault-Core
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-on-dark-soft">
-                    <Activity className="w-3.5 h-3.5 text-teal" aria-hidden="true" />
-                    <span className="text-xs font-mono hidden sm:inline">STABLE</span>
-                  </div>
+                  <span className="text-xs font-mono text-on-dark-soft">Illustration</span>
                 </div>
 
                 {/* Device Screen Content */}
@@ -471,18 +469,8 @@ const LandingPage: React.FC = () => {
                 <span className="text-accent italic">Digital Brain</span>
               </h2>
               <p className="text-body text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Direct neural link to Gemini Pro. Experience querying logic, debugging code, or summarizing research articles instantly.
+                Try the tutor below. This demo uses pre-written answers; the real AI Tutor, inside the app, uses Google Gemini.
               </p>
-              <ul className="space-y-3 pt-2">
-                <li className="flex justify-center lg:justify-start items-center gap-3 text-sm text-muted">
-                  <Activity className="w-4 h-4 text-success-ink" aria-hidden="true" />
-                  Status API: 99.8ms Latency
-                </li>
-                <li className="flex justify-center lg:justify-start items-center gap-3 text-sm text-muted">
-                  <Database className="w-4 h-4 text-teal-ink" aria-hidden="true" />
-                  Densidade de Tokens: Ideal
-                </li>
-              </ul>
             </div>
             <div data-demo className="w-full min-w-0">
               <GeminiDemo />
@@ -496,43 +484,16 @@ const LandingPage: React.FC = () => {
             <div className="bg-surface-dark text-on-dark rounded-xl p-8 md:p-14">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-y-10 gap-x-6 text-center md:text-left">
                 {[
-                  { label: 'Papers Indexed', value: 'Global' },
-                  { label: 'Neural Connections', value: 'Unlimited' },
-                  { label: 'Researchers', value: 'Explore' },
-                  { label: 'System Uptime', value: '99.9%' }
+                  { label: 'Current plan', value: 'Free' },
+                  { label: 'AI tools', value: '3' },
+                  { label: 'Download your data', value: 'Any time' },
+                  { label: 'Minimum age', value: '13+' }
                 ].map((stat, i) => (
                   <div key={i} data-stat className="md:border-l md:border-white/10 md:pl-6 first:border-l-0 first:pl-0">
-                    <div className="font-display text-4xl md:text-5xl text-on-dark mb-2 tabular-nums" data-count={stat.value === '99.9%' ? '99.9' : undefined}>{stat.value}</div>
+                    <div className="font-display text-4xl md:text-5xl text-on-dark mb-2 tabular-nums">{stat.value}</div>
                     <div className="text-xs text-on-dark-soft font-medium uppercase tracking-[0.12em]">{stat.label}</div>
                   </div>
                 ))}
-              </div>
-
-              {isSystemActive && (
-                <div id="system-dashboard" className="mt-10 pt-10 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {[
-                    { dot: 'bg-success', text: 'Node Cluster #7: Healthy' },
-                    { dot: 'bg-accent', text: 'Memory Sync: Active' },
-                    { dot: 'bg-teal', text: 'Logic Core: Stable' },
-                  ].map(item => (
-                    <div key={item.text} className="flex items-center gap-3 bg-surface-dark-elevated px-4 py-3 rounded-md">
-                      <span className={`w-2 h-2 rounded-full ${item.dot}`} aria-hidden="true" />
-                      <span className="text-sm font-mono text-on-dark-soft">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="mt-10 flex justify-center">
-                <button
-                  onClick={() => setIsSystemActive(!isSystemActive)}
-                  aria-expanded={isSystemActive}
-                  aria-controls="system-dashboard"
-                  className="inline-flex items-center gap-2 h-10 px-4 rounded-md text-xs font-medium uppercase tracking-[0.12em] text-on-dark-soft hover:text-on-dark hover:bg-surface-dark-elevated transition"
-                >
-                  <span>Click to toggle system dashboard</span>
-                  <ChevronUp className={`w-4 h-4 transition-transform duration-300 ${isSystemActive ? 'rotate-180' : ''}`} aria-hidden="true" />
-                </button>
               </div>
             </div>
           </div>
@@ -545,11 +506,8 @@ const LandingPage: React.FC = () => {
               Ready to evolve your <br /><span className="italic">workflow?</span>
             </h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button className="w-full sm:w-auto h-12 px-8 bg-canvas text-ink rounded-md font-medium hover:bg-white transition active:scale-[0.99]">
-                Deploy Now
-              </button>
-              <button className="w-full sm:w-auto h-12 px-8 border border-white/60 text-white rounded-md font-medium hover:bg-white/10 transition active:scale-[0.99]">
-                Documentation
+              <button onClick={() => navigate('/sign-up')} className="w-full sm:w-auto h-12 px-8 bg-canvas text-ink rounded-md font-medium hover:bg-white transition active:scale-[0.99]">
+                Create a Free Account
               </button>
             </div>
           </div>
@@ -566,34 +524,32 @@ const LandingPage: React.FC = () => {
                 <span translate="no" className="font-display text-3xl text-on-dark">NeuralVault</span>
               </div>
               <p className="max-w-sm leading-relaxed">
-                Empowering researchers with semantic intelligence. Your academic life, logically synthesized.
+                A study workspace for students and researchers: organise your resources and use AI tools, with your data under your control.
               </p>
             </div>
             <div>
-              <h4 className="text-on-dark font-medium text-sm mb-5">Platform</h4>
+              <h4 className="text-on-dark font-medium text-sm mb-5">Legal</h4>
               <ul className="space-y-3 text-sm">
-                <li><a href="#" className="hover:text-on-dark transition-colors">Neural Search</a></li>
-                <li><a href="#" className="hover:text-on-dark transition-colors">Tutor v3.0</a></li>
-                <li><a href="#" className="hover:text-on-dark transition-colors">Vault SDK</a></li>
+                <li><Link to="/termos" className="hover:text-on-dark transition-colors">Termos de Utilização</Link></li>
+                <li><Link to="/privacidade" className="hover:text-on-dark transition-colors">Política de Privacidade</Link></li>
+                <li><Link to="/termos#denuncias" className="hover:text-on-dark transition-colors">Denunciar conteúdo</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="text-on-dark font-medium text-sm mb-5">Connect</h4>
-              <div className="flex gap-4 mb-6" aria-hidden="true">
-                <Shield className="w-5 h-5" />
-                <Globe className="w-5 h-5" />
-              </div>
-              <p className="text-xs font-mono">NODE_VERSION: 1.8.2-stable</p>
+              <h4 className="text-on-dark font-medium text-sm mb-5">Contacto</h4>
+              <p className="text-sm">
+                {LEGAL.controller.email ? <a href={`mailto:${LEGAL.controller.email}`} className="hover:text-on-dark underline underline-offset-2">{LEGAL.controller.email}</a> : '[por preencher]'}
+              </p>
+              <p className="text-xs mt-2">Responsável: {missing(LEGAL.controller.name)}</p>
             </div>
           </div>
           <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-xs">
             <div>
-              © {new Date().getFullYear()} NeuralVault Intelligence Systems.
+              © {new Date().getFullYear()} NeuralVault · {missing(LEGAL.controller.name)}
             </div>
             <div className="flex gap-8">
-              <a href="#" className="hover:text-on-dark transition-colors">Privacy</a>
-              <a href="#" className="hover:text-on-dark transition-colors">Security</a>
-              <a href="#" className="hover:text-on-dark transition-colors">Status</a>
+              <Link to="/privacidade" className="hover:text-on-dark transition-colors">Privacidade</Link>
+              <Link to="/termos" className="hover:text-on-dark transition-colors">Termos</Link>
             </div>
           </div>
         </div>

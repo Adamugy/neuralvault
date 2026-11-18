@@ -49,10 +49,10 @@ const GeminiDemo: React.FC = () => {
             <Bot className="w-5 h-5 text-accent" />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-on-dark">Gemini Pro Tutor</h4>
+            <h4 className="text-sm font-medium text-on-dark">AI Tutor · demonstração</h4>
             <p className="text-xs text-teal flex items-center gap-1.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-teal" aria-hidden="true"></span>
-              Live Reasoning Active
+              Respostas pré-escritas, sem IA real
             </p>
           </div>
         </div>

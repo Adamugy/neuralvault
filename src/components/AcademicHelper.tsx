@@ -60,13 +60,13 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
   const [isEditing, setIsEditing] = useState(false);
   const [editedResult, setEditedResult] = useState('');
   const [isManipulating, setIsManipulating] = useState(false);
-  
+
   // View State
   const [viewMode, setViewMode] = useState<'editor' | 'gallery'>('editor');
   const [mobileSubTab, setMobileSubTab] = useState<'tools' | 'preview'>('tools');
   const [showHistory, setShowHistory] = useState(false);
   const [historySessions, setHistorySessions] = useState<any[]>([]);
-  
+
 
 
   // Chat/Interaction State
@@ -118,8 +118,8 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     }
 
     setIsGenerating(true);
-    setResult(''); 
-    
+    setResult('');
+
     try {
         const token = await getToken();
         const formData = new FormData();
@@ -169,17 +169,17 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
         if (!res.ok) throw new Error('Generation failed');
         const data = await res.json();
-        
+
         // Handle New API Response Format
         setResult(data.result);
         setEditedResult(data.result);
         setIsEditing(false);
         setResearchFocus([]);
         if (data.sessionId) setSessionId(data.sessionId);
-        
+
         // On mobile, switch to preview tab after generation
         setMobileSubTab('preview');
-        
+
         // Initialize chat with the AI's "thought" or default
         setMessages([{
             id: crypto.randomUUID(),
@@ -197,7 +197,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
   const handleManipulate = async (type: 'summarize' | 'expand' | 'simplify') => {
     if (!result || isManipulating) return;
-    
+
     setIsManipulating(true);
     try {
         const promoPromptMap = {
@@ -266,7 +266,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
         if (!res.ok) throw new Error('Refinement failed');
         const data = await res.json();
-        
+
         // Update the document result only if it's a refinement/document task
         if (data.result) {
             setResult(data.result);
@@ -308,7 +308,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
             body: JSON.stringify({
                 title: topic.split('\n')[0] || "Academic Document",
                 content: result,
-                // We could extract formulas if we had a parsing step, 
+                // We could extract formulas if we had a parsing step,
                 // but for now we'll send the whole content.
             })
         });
@@ -343,25 +343,25 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
         onOpenUpgrade?.();
         return;
     }
-    
+
     if (!result) return;
 
-    const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office' 
-                          xmlns:w='urn:schemas-microsoft-com:office:word' 
+    const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+                          xmlns:w='urn:schemas-microsoft-com:office:word'
                           xmlns='http://www.w3.org/TR/REC-html40'>
                     <head><meta charset='utf-8'><title>Export HTML to Word Document with JavaScript</title></head><body>`;
     const footer = "</body></html>";
-    
-    const sourceHTML = header + 
-      `<h1>${topic || "Academic Document"}</h1>` + 
-      result.split('\n').map(p => `<p>${p}</p>`).join('') + 
+
+    const sourceHTML = header +
+      `<h1>${topic || "Academic Document"}</h1>` +
+      result.split('\n').map(p => `<p>${p}</p>`).join('') +
       footer;
-    
+
     const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
     const fileDownload = document.createElement("a");
     document.body.appendChild(fileDownload);
     fileDownload.href = source;
-    fileDownload.download = `${topic || 'document'}.doc`; 
+    fileDownload.download = `${topic || 'document'}.doc`;
     fileDownload.click();
     document.body.removeChild(fileDownload);
   };
@@ -433,7 +433,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
             {/* View Toggles */}
             <div className="flex bg-surface-soft p-1 rounded-lg border border-hairline mr-4">
-                <button 
+                <button
                     onClick={() => setViewMode('editor')}
                     className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition ${
                         viewMode === 'editor' ? 'bg-[var(--neon-primary)] text-white shadow-lg' : 'text-muted hover:text-ink'
@@ -441,7 +441,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                 >
                     Editor
                 </button>
-                <button 
+                <button
                     onClick={() => setViewMode('gallery')}
                     className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition ${
                         viewMode === 'gallery' ? 'bg-[var(--neon-primary)] text-white shadow-lg' : 'text-muted hover:text-ink'
@@ -453,7 +453,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
            {/* Uniform Search Bar - Hidden on small mobile to save space */}
            <div className="hidden md:block flex-1 max-w-md mx-4">
-               <SearchBar 
+               <SearchBar
                  searchTerm={searchTerm}
                  setSearchTerm={setSearchTerm}
                  resources={resources}
@@ -461,11 +461,6 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            </div>
 
            <div className="flex items-center gap-3 flex-shrink-0">
-               {!isPremium && (
-                 <button onClick={onOpenUpgrade} className="text-xs bg-amber-ink text-white px-3 py-1 rounded-full font-medium hover:bg-ink transition-colors">
-                    UPGRADE
-                 </button>
-               )}
            </div>
        </div>
 
@@ -474,7 +469,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            {viewMode === 'editor' && result && (
                <div className="lg:hidden flex items-center justify-center p-2 bg-surface-soft border-b border-hairline z-20">
                     <div className="flex bg-surface-soft p-1 rounded-lg border border-hairline w-full max-w-sm">
-                        <button 
+                        <button
                             onClick={() => setMobileSubTab('tools')}
                             className={`flex-1 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 ${
                                 mobileSubTab === 'tools' ? 'bg-primary text-white shadow-lg' : 'text-muted'
@@ -482,7 +477,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                         >
                             <Edit3 className="w-3 h-3" /> Tools
                         </button>
-                        <button 
+                        <button
                             onClick={() => setMobileSubTab('preview')}
                             className={`flex-1 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 ${
                                 mobileSubTab === 'preview' ? 'bg-primary text-white shadow-lg' : 'text-muted'
@@ -498,7 +493,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
            <div className={`w-full lg:w-[400px] flex-col border-r border-hairline glass-panel lg:flex shadow-lift z-10 overflow-y-auto scrollbar-hide ${
                (viewMode !== 'editor' || (result && mobileSubTab === 'preview')) ? 'hidden lg:flex' : 'flex'
            }`}>
-               
+
                {/* Task Selector */}
                 <div className="p-3 grid grid-cols-2 gap-2">
                     {tasks.map(task => (
@@ -522,8 +517,8 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
                     {/* Sidebar Content: Form or Chat */}
                <div className="flex-1 p-4 pt-0 space-y-4 overflow-y-auto">
-                    
-                    <button 
+
+                    <button
                         onClick={async () => {
                             if (!showHistory) {
                                 // Load History
@@ -577,13 +572,13 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                             </div>
 
                             <div className="flex gap-2">
-                                <button 
+                                <button
                                     onClick={() => setIsLibraryOpen(true)}
                                     className="flex-1 py-1.5 bg-surface-soft border border-hairline rounded-lg text-muted text-xs font-medium hover:bg-surface-card hover:text-ink transition-colors flex items-center justify-center gap-1.5"
                                 >
                                     <Library className="w-3.5 h-3.5" /> Browse Library
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isUploading}
                                     className="flex-1 py-1.5 bg-surface-soft border border-hairline rounded-lg text-muted text-xs font-medium hover:bg-surface-card hover:text-ink transition-colors flex items-center justify-center gap-1.5 relative overflow-hidden"
@@ -591,10 +586,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                                     {isUploading ? 'Reading...' : 'Upload PDF'}
                                 </button>
-                                <input 
-                                    type="file" 
+                                <input
+                                    type="file"
                                     ref={fileInputRef}
-                                    className="hidden" 
+                                    className="hidden"
                                     accept=".pdf,.txt,.doc,.docx"
                                     onChange={handleFileSelect}
                                     multiple
@@ -619,7 +614,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                                     {item.type === 'file' ? 'File' : 'Library'}
                                                 </span>
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={() => handleRemoveFocus(item.id)}
                                                 className="opacity-0 group-hover:opacity-100 p-1 bg-error-soft text-error rounded-md hover:bg-error-soft transition ml-0.5"
                                             >
@@ -653,14 +648,14 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     <p className="text-xs uppercase font-bold text-primary mb-1">Current Research Topic</p>
                                     <p className="text-xs text-ink line-clamp-2">{topic || "Custom Research"}</p>
                                 </div>
-                                
+
                                 {/* Chat Messages */}
                                 <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2 scrollbar-hide">
                                     {messages.map((msg) => (
                                         <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                                             <div className={`max-w-[90%] p-3 rounded-xl text-xs leading-relaxed ${
-                                                msg.role === 'user' 
-                                                ? 'bg-[var(--neon-primary)]/20 border border-[var(--neon-primary)]/30 text-ink rounded-tr-sm' 
+                                                msg.role === 'user'
+                                                ? 'bg-[var(--neon-primary)]/20 border border-[var(--neon-primary)]/30 text-ink rounded-tr-sm'
                                                 : 'bg-surface-soft border border-hairline text-body rounded-tl-sm'
                                             }`}>
                                                 {msg.content}
@@ -695,7 +690,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                         {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                     </button>
                                  </form>
-                                 <button 
+                                 <button
                                     onClick={() => {
                                         setResult('');
                                         setMessages([]);
@@ -731,10 +726,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                              <div className="border-b-2 border-hairline pb-6 mb-8 flex justify-between items-start">
                                 <div>
                                     <h2 className="text-3xl font-serif font-bold text-ink line-clamp-2">{topic.split('\n')[0] || "Untitled Document"}</h2>
-                                    <p className="text-muted mt-2 font-serif text-sm">Generated by NeuralVault AI</p>
+                                    <p className="text-muted mt-2 font-serif text-sm">Gerado por IA (Google Gemini). Revê o conteúdo antes de o usar.</p>
                                 </div>
                                 <div className="flex gap-2 print:hidden">
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             if (isEditing) {
                                                 handleSaveEdit();
@@ -748,14 +743,14 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     >
                                         {isEditing ? <Check className="w-5 h-5" /> : <Edit3 className="w-5 h-5" />}
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => navigator.clipboard.writeText(result)}
-                                        className="p-2 hover:bg-surface-soft rounded text-muted hover:text-ink transition-colors" 
+                                        className="p-2 hover:bg-surface-soft rounded text-muted hover:text-ink transition-colors"
                                         title="Copy text"
                                     >
                                         <Copy className="w-5 h-5" />
                                     </button>
-                                     <button 
+                                     <button
                                         onClick={handleExportPdf}
                                         className="p-2 hover:bg-surface-soft rounded text-muted hover:text-ink transition-colors"
                                         title="Download PDF (Quarto)"
@@ -771,21 +766,21 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     <span className="text-xs font-bold text-muted uppercase tracking-widest mr-2 flex items-center gap-1">
                                         <Wand2 className="w-3 h-3" /> AI Tools:
                                     </span>
-                                    <button 
+                                    <button
                                         onClick={() => handleManipulate('summarize')}
                                         disabled={isManipulating}
                                         className="text-xs px-3 py-1.5 rounded-full border border-hairline text-muted hover:bg-surface-soft hover:border-hairline transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
                                     >
                                         <Shrink className="w-3 h-3" /> Summarize
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleManipulate('expand')}
                                         disabled={isManipulating}
                                         className="text-xs px-3 py-1.5 rounded-full border border-hairline text-muted hover:bg-surface-soft hover:border-hairline transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
                                     >
                                         <Maximize2 className="w-3 h-3" /> Expand
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleManipulate('simplify')}
                                         disabled={isManipulating}
                                         className="text-xs px-3 py-1.5 rounded-full border border-hairline text-muted hover:bg-surface-soft hover:border-hairline transition flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
@@ -802,7 +797,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                                           {/* Content */}
                              <div className="prose prose-slate max-w-none font-serif leading-loose">
                                 {isEditing ? (
-                                    <textarea 
+                                    <textarea
                                         value={editedResult}
                                         aria-label="Edit generated document"
                                         onChange={(e) => setEditedResult(e.target.value)}
@@ -811,14 +806,14 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                     />
                                 ) : (
                                     <div className="markdown-content-doc">
-                                        <ReactMarkdown 
+                                        <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             components={{
                                                 code({ node, className, children, ...props }: any) {
                                                     const match = /language-(\w+)/.exec(className || '');
                                                     const codeText = String(children).replace(/\n$/, '');
                                                     const isInline = !match;
-                                                    
+
                                                     return !isInline ? (
                                                         <div className="relative group my-4 rounded-xl overflow-hidden border border-hairline bg-canvas">
                                                             <div className="flex items-center justify-between px-4 py-2 bg-surface-soft text-xs font-mono text-muted uppercase tracking-widest border-b border-hairline">
@@ -871,7 +866,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
        {isLibraryOpen && (
            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 sm:p-8">
                <div className="glass-panel rounded-xl w-full max-w-3xl h-[80vh] flex flex-col animate-in zoom-in-95 duration-300 overflow-hidden">
-                   
+
                    {/* Modal Header */}
                    <div className="p-6 border-b border-hairline flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-soft">
                        <div className="flex items-center gap-3">
@@ -883,11 +878,11 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                <p className="text-xs text-muted">Search and add resources to your workspace</p>
                            </div>
                        </div>
-                       
+
                        <div className="flex items-center gap-4">
                            <div className="relative">
                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                               <input 
+                               <input
                                    type="text"
                                    placeholder="Search resources…"
                                    aria-label="Search library resources"
@@ -896,7 +891,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                    className="bg-surface-soft border border-hairline rounded-xl pl-10 pr-4 py-2 text-sm text-ink focus:outline-none focus:border-[var(--neon-primary)] w-full md:w-64 transition"
                                />
                            </div>
-                           <button 
+                           <button
                                 onClick={() => setIsLibraryOpen(false)}
                                 className="p-2 hover:bg-surface-card rounded-xl text-muted hover:text-ink transition-colors"
                            >
@@ -912,8 +907,8 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                key={folder.id}
                                onClick={() => setLibActiveFolderId(folder.id)}
                                className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2
-                                   ${libActiveFolderId === folder.id 
-                                       ? 'bg-[var(--neon-primary)]/20 border border-[var(--neon-primary)]/50 text-[var(--neon-primary)]' 
+                                   ${libActiveFolderId === folder.id
+                                       ? 'bg-[var(--neon-primary)]/20 border border-[var(--neon-primary)]/50 text-[var(--neon-primary)]'
                                        : 'text-muted hover:text-body hover:bg-surface-soft border border-transparent'}
                                `}
                            >
@@ -926,7 +921,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                    {/* Resource Grid */}
                    <div className="flex-1 overflow-y-auto p-6 scrollbar-hide bg-surface-soft">
                        {resources.filter(r => {
-                           const matchesSearch = r.title.toLowerCase().includes(libSearchTerm.toLowerCase()) || 
+                           const matchesSearch = r.title.toLowerCase().includes(libSearchTerm.toLowerCase()) ||
                                                r.notes.toLowerCase().includes(libSearchTerm.toLowerCase());
                            const matchesFolder = libActiveFolderId === 'all' ? true : (r.folderId || 'general') === libActiveFolderId;
                            return matchesSearch && matchesFolder;
@@ -938,12 +933,12 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                        ) : (
                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                {resources.filter(r => {
-                                   const matchesSearch = r.title.toLowerCase().includes(libSearchTerm.toLowerCase()) || 
+                                   const matchesSearch = r.title.toLowerCase().includes(libSearchTerm.toLowerCase()) ||
                                                        r.notes.toLowerCase().includes(libSearchTerm.toLowerCase());
                                    const matchesFolder = libActiveFolderId === 'all' ? true : (r.folderId || 'general') === libActiveFolderId;
                                    return matchesSearch && matchesFolder;
                                }).map(res => (
-                                   <button 
+                                   <button
                                        key={res.id}
                                        onClick={() => handleSelectResource(res)}
                                        className="w-full text-left p-4 rounded-xl bg-surface-soft border border-hairline hover:border-[var(--neon-primary)]/50 transition group flex flex-col h-48 relative overflow-hidden"
@@ -954,7 +949,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                                            </div>
                                            <h4 className="font-bold text-ink text-sm line-clamp-1 group-hover:text-[var(--neon-primary)] transition-colors">{res.title}</h4>
                                        </div>
-                                       
+
                                        <p className="text-xs text-muted line-clamp-3 leading-relaxed mb-4 flex-1">
                                            {res.notes || "No additional notes provided for this resource."}
                                        </p>

@@ -30,7 +30,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedImage(file);
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -130,18 +130,13 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
         </div>
 
         {/* Uniform Search Bar */}
-        <SearchBar 
+        <SearchBar
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             resources={resources}
         />
 
         <div className="flex items-center gap-2 flex-shrink-0">
-            {!isPremium && (
-                <button onClick={onOpenUpgrade} className="text-xs bg-teal-ink text-white px-3 py-1 rounded-full font-medium hover:bg-success-ink transition-colors">
-                PRO
-                </button>
-            )}
         </div>
       </div>
 
@@ -156,8 +151,8 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
             onDrop={handleDrop}
             className={`
                 relative border-2 border-dashed rounded-xl p-8 text-center transition duration-300
-                ${isDragging 
-                    ? 'border-[var(--neon-primary)] bg-[var(--neon-primary)]/10' 
+                ${isDragging
+                    ? 'border-[var(--neon-primary)] bg-[var(--neon-primary)]/10'
                     : 'border-hairline bg-surface-soft hover:border-hairline-strong hover:bg-surface-card'}
             `}
         >
@@ -168,15 +163,15 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                 accept="image/*"
                 className="hidden"
             />
-            
+
             {imagePreview ? (
                 <div className="relative inline-block group">
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      className="max-h-80 rounded-lg shadow-lift border border-hairline-strong" 
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="max-h-80 rounded-lg shadow-lift border border-hairline-strong"
                     />
-                    <button 
+                    <button
                       onClick={clearImage}
                       aria-label="Remove image"
                       className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-error text-white rounded-full shadow-lift hover:bg-ink transition-colors"
@@ -209,7 +204,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
             )}
 
             {!imagePreview && (
-                 <button 
+                 <button
                     onClick={() => fileInputRef.current?.click()}
                     className="absolute inset-0 w-full h-full cursor-pointer"
                  />
@@ -248,7 +243,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                 <div className="px-6 py-4 border-b border-hairline bg-surface-soft flex justify-between items-center">
                     <h3 className="text-base font-bold text-ink flex items-center gap-2">
                         <Bot className="w-4 h-4 text-[var(--neon-primary)]" />
-                        Analysis Result
+                        Analysis Result <span className="text-xs font-medium text-muted">· Gerado por IA, pode conter erros</span>
                     </h3>
                     <div className="flex gap-2">
                         <button onClick={handleCopy} aria-label="Copy analysis" className="p-2 hover:bg-surface-card rounded-lg text-muted hover:text-ink transition-colors">
@@ -265,7 +260,7 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
                     </ReactMarkdown>
                 </div>
                 <div className="px-6 py-4 bg-surface-soft border-t border-hairline flex justify-end">
-                    <button 
+                    <button
                         onClick={() => {
                             setResult(null);
                             clearImage();
