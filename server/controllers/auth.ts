@@ -9,16 +9,26 @@ import { reprocessImageFromBuffer } from '../utils/security.js';
 import path from 'path';
 import crypto from 'crypto';
 import { getContextFingerprint } from '../middleware/zeroTrust.js';
+import { ConsentService } from '../services/consentService.js';
+import { PRIVACY_VERSION, TERMS_VERSION } from '../utils/legal.js';
 
 /**
  * POST /api/auth/signup
  * Register a new user
  */
 export const signup = asyncHandler(async (req: Request, res: Response) => {
-    const { email, password, name, role, lastName } = req.body;
+    const { email, password, name, acceptTerms, ageConfirmed, marketingOptIn } = req.body;
 
     if (!email || !password) {
         throw new BadRequestError('Email and password are required');
+    }
+
+    // Consent is checked on the server too: the form alone is not proof (RGPD art. 7.º, n.º 1)
+    if (acceptTerms !== true) {
+        throw new BadRequestError('É preciso aceitar os Termos de Utilização e a Política de Privacidade.');
+    }
+    if (ageConfirmed !== true) {
+        throw new BadRequestError('O NeuralVault é só para pessoas com 13 anos ou mais.');
     }
 
     // Validate email format
@@ -56,12 +66,18 @@ export const signup = asyncHandler(async (req: Request, res: Response) => {
             email: email.toLowerCase(),
             passwordHash,
             name: name || null,
-            lastName: lastName || null,
-            role: role || null,
             verificationToken,
             emailVerified: false
         } as any
     });
+
+    // Proof of what was accepted, with document versions and timestamp
+    await ConsentService.record(user.id, [
+        { type: 'terms', granted: true, version: TERMS_VERSION },
+        { type: 'privacy', granted: true, version: PRIVACY_VERSION },
+        { type: 'age_13', granted: true },
+        { type: 'marketing', granted: marketingOptIn === true },
+    ], 'signup');
 
     // Send verification email
     await MailService.sendVerificationEmail(user.email, verificationToken, user.name || undefined);

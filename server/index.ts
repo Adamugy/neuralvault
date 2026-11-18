@@ -1,6 +1,7 @@
 import { env } from './utils/env.js';
 import app from './app.js';
 import { checkDatabaseConnection } from './services/prisma.js';
+import { RetentionService } from './services/retentionService.js';
 
 const startServer = async () => {
     console.log(`[Config] NodeEnv: ${env.NODE_ENV}, Port: ${env.PORT}`);
@@ -13,6 +14,9 @@ const startServer = async () => {
     }
 
     if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+        // Daily deletion of data whose retention period ended
+        if (isDbConnected) RetentionService.start();
+
         app.listen(env.PORT, () => {
             console.log(`🚀 Servidor rodando em ambiente: ${env.NODE_ENV}`);
             console.log(`📡 Porta: ${env.PORT}`);

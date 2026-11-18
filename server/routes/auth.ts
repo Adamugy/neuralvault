@@ -3,6 +3,7 @@ import * as AuthController from '../controllers/auth.js';
 import { requireApiAuth } from '../middleware/auth.js';
 import multer from 'multer';
 import * as PasskeyController from '../controllers/passkey.js';
+import * as PrivacyController from '../controllers/privacy.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -19,6 +20,11 @@ router.post('/reset-password', AuthController.resetPassword);
 router.post('/signout', requireApiAuth, AuthController.signout);
 router.get('/me', requireApiAuth, AuthController.getMe);
 router.patch('/me', requireApiAuth, AuthController.updateMe);
+// Privacy: consents, data export and account deletion (RGPD arts. 7, 15, 17, 20)
+router.get('/consents', requireApiAuth, PrivacyController.getConsents);
+router.post('/consents', requireApiAuth, PrivacyController.updateConsent);
+router.get('/me/export', requireApiAuth, PrivacyController.exportMyData);
+router.delete('/me', requireApiAuth, PrivacyController.deleteMyAccount);
 router.post('/avatar', requireApiAuth, upload.single('avatar'), AuthController.uploadAvatar);
 
 // 2FA routes

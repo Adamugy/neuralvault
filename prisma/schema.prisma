@@ -32,6 +32,7 @@ model User {
   twoFactorSecret  String?
   academicSessions AcademicSession[]
   generatedDocs    GeneratedDocument[]
+  consents         ConsentRecord[]
 }
 
 model Authenticator {
@@ -131,6 +132,20 @@ model GeneratedDocument {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Append-only log of what each person accepted or refused, and when (proof of consent).
+model ConsentRecord {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // terms | privacy | age_13 | marketing | ai_processing
+  version   String?  // document version for terms/privacy
+  granted   Boolean
+  source    String   // signup | settings | reconsent | ai_notice
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, createdAt])
 }
 
 model PasskeyChallenge {
