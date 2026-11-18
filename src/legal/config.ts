@@ -14,7 +14,7 @@ export const LEGAL = {
     /** Morada (pode ser profissional / domicílio fiscal). */
     address: 'Avenida Cidade Orense, n.º 34, 4.º Esq., 5000-691 Vila Real, Portugal',
     /** Email que recebe pedidos de privacidade, denúncias e contactos. */
-    email: '',
+    email: 'desiagira@gmail.com',
   },
   termsVersion: '2026-11-18',
   privacyVersion: '2026-11-18',
