@@ -43,12 +43,12 @@ function setupSecurity(app: express.Express) {
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                "img-src": ["'self'", "data:", "blob:", "https://*.google.com", "https://*.nvaulty.online", "https://images.unsplash.com", "https://www.transparenttextures.com", "https://grainy-gradients.vercel.app"],
-                "script-src": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
-                "script-src-elem": ["'self'", "'unsafe-inline'", "https://esm.sh", "https://*.nvaulty.online", "https://challenges.cloudflare.com"],
-                "connect-src": ["'self'", "https://*.googleapis.com", "https://esm.sh", "https://*.nvaulty.online"],
+                "img-src": ["'self'", "data:", "blob:", "https://*.nvaulty.online"],
+                "script-src": ["'self'", "'unsafe-inline'", "https://*.nvaulty.online"],
+                "script-src-elem": ["'self'", "'unsafe-inline'", "https://*.nvaulty.online"],
+                "connect-src": ["'self'", "https://*.nvaulty.online"],
                 "worker-src": ["'self'", "blob:"],
-                "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://*.nvaulty.online"],
+                "frame-src": ["'self'", "https://*.nvaulty.online"],
             },
         },
     }));

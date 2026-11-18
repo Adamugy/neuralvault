@@ -38,8 +38,6 @@ export default defineConfig(({ mode }) => {
       }),
     ].filter(Boolean),
     define: {
-      'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
-      'import.meta.env.VITE_CLERK_PUBLISHABLE_KEY': JSON.stringify(env.VITE_CLERK_PUBLISHABLE_KEY),
       'process.env.NODE_ENV': JSON.stringify(mode),
     },
     resolve: {
