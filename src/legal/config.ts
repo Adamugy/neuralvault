@@ -8,11 +8,11 @@
 export const LEGAL = {
   controller: {
     /** Nome completo do responsável (pessoa singular). */
-    name: '',
+    name: 'Adamugy Agira Abudo Sarme Junior',
     /** NIF (Portugal) ou NUIT (Moçambique). */
-    taxId: '',
+    taxId: '335193188',
     /** Morada (pode ser profissional / domicílio fiscal). */
-    address: '',
+    address: 'Avenida Cidade Orense, n.º 34, 4.º Esq., 5000-691 Vila Real, Portugal',
     /** Email que recebe pedidos de privacidade, denúncias e contactos. */
     email: '',
   },
