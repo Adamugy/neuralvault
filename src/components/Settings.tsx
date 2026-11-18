@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, CreditCard, Shield, Layout, Bell, Check, Zap, Building, Lock, Loader2, Fingerprint, Mail, RefreshCcw } from 'lucide-react';
+import { PrivacySettings } from './PrivacySettings';
 import { UserProfile, AppSettings, PlanTier } from '../types';
 import { usePasskeys } from '../hooks/usePasskeys';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,21 +14,21 @@ interface SettingsProps {
   onSaveProfile?: (profile: UserProfile) => Promise<void>;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ 
-  userProfile, 
-  setUserProfile, 
-  appSettings, 
+export const Settings: React.FC<SettingsProps> = ({
+  userProfile,
+  setUserProfile,
+  appSettings,
   setAppSettings,
   onSaveProfile
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'appearance' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'billing' | 'appearance' | 'security' | 'privacy'>('profile');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
-  
+
   // 2FA states
   const [isSettingUp2FA, setIsSettingUp2FA] = useState(false);
   const [twoFactorQRCode, setTwoFactorQRCode] = useState('');
@@ -35,7 +36,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [twoFactorVerifyCode, setTwoFactorVerifyCode] = useState('');
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
   const [isDisabling2FA, setIsDisabling2FA] = useState(false);
-  
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { registerPasskey } = usePasskeys();
   const { refreshUser, getToken } = useAuth();
@@ -142,7 +143,7 @@ export const Settings: React.FC<SettingsProps> = ({
       const token = await getToken();
       const res = await fetch('/api/auth/2fa/enable', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -150,7 +151,7 @@ export const Settings: React.FC<SettingsProps> = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      
+
       setUserProfile(prev => ({ ...prev, twoFactorEnabled: true }));
       setAppSettings(prev => ({ ...prev, twoFactorEnabled: true }));
       setIsSettingUp2FA(false);
@@ -166,7 +167,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleDisable2FA = async () => {
     const confirmed = await confirm('Are you sure you want to disable two-factor authentication? Your account will be less secure.', 'Disable 2FA');
     if (!confirmed) return;
-    
+
     const code = await prompt('Enter your 6-digit code to disable:', '000000', 'Verify 2FA Code');
     if (!code) return;
 
@@ -175,7 +176,7 @@ export const Settings: React.FC<SettingsProps> = ({
       const token = await getToken();
       const res = await fetch('/api/auth/2fa/disable', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
@@ -183,7 +184,7 @@ export const Settings: React.FC<SettingsProps> = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-      
+
       setUserProfile(prev => ({ ...prev, twoFactorEnabled: false }));
       setAppSettings(prev => ({ ...prev, twoFactorEnabled: false }));
       showToast('2FA disabled.', 'info');
@@ -198,6 +199,7 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'appearance', label: 'Display & Layout', icon: Layout },
     { id: 'security', label: 'Security', icon: Shield },
+    { id: 'privacy', label: 'Privacidade', icon: Lock },
   ];
 
   return (
@@ -227,7 +229,7 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide">
         <div className="max-w-4xl mx-auto space-y-8">
-          
+
           {/* Profile Section */}
           {activeTab === 'profile' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -249,14 +251,14 @@ export const Settings: React.FC<SettingsProps> = ({
                   )}
                 </div>
                 <div>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleAvatarChange} 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleAvatarChange}
+                      className="hidden"
                       accept="image/*"
                     />
-                    <button 
+                    <button
                       onClick={handleAvatarSelect}
                       disabled={avatarLoading}
                       className="text-sm bg-surface-soft border border-hairline text-body px-3 py-1.5 rounded-lg hover:text-ink hover:bg-surface-card transition-colors flex items-center gap-2"
@@ -271,7 +273,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div>
                   <label htmlFor="set-first-name" className="block text-sm font-medium text-body-strong mb-1.5">First Name</label>
                   <input id="set-first-name" name="given-name" autoComplete="given-name"
-                    type="text" 
+                    type="text"
                     value={userProfile.name}
                     onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
                     className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
@@ -281,7 +283,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div>
                   <label htmlFor="set-last-name" className="block text-sm font-medium text-body-strong mb-1.5">Last Name</label>
                   <input id="set-last-name" name="family-name" autoComplete="family-name"
-                    type="text" 
+                    type="text"
                     value={userProfile.lastName || ''}
                     onChange={(e) => setUserProfile({...userProfile, lastName: e.target.value})}
                     className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
@@ -291,7 +293,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div>
                   <label htmlFor="set-email" className="block text-sm font-medium text-body-strong mb-1.5">Email Address</label>
                   <input id="set-email" name="email" autoComplete="email"
-                    type="email" 
+                    type="email"
                     value={userProfile.email}
                     onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
                     className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
@@ -300,7 +302,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div>
                   <label htmlFor="set-role" className="block text-sm font-medium text-body-strong mb-1.5">Role / Title</label>
                   <input id="set-role" name="organization-title" autoComplete="organization-title"
-                    type="text" 
+                    type="text"
                     value={userProfile.role}
                     onChange={(e) => setUserProfile({...userProfile, role: e.target.value})}
                     className="w-full h-11 bg-canvas border border-hairline-strong rounded-md px-3.5 text-ink placeholder:text-muted-soft focus:border-primary transition-colors"
@@ -324,7 +326,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                         onClick={async () => {
                             await refreshUser();
                         }}
@@ -333,7 +335,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     >
                         <RefreshCcw className="w-4 h-4" />
                     </button>
-                    <button 
+                    <button
                         onClick={async () => {
                         setIsResending(true);
                         setResendSuccess(false);
@@ -358,8 +360,8 @@ export const Settings: React.FC<SettingsProps> = ({
                         }}
                         disabled={isResending || resendSuccess}
                         className={`text-xs px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-2 ${
-                            resendSuccess 
-                            ? 'bg-success/15 text-success-ink border border-success/40' 
+                            resendSuccess
+                            ? 'bg-success/15 text-success-ink border border-success/40'
                             : 'bg-amber/15 hover:bg-amber/15 text-amber-ink border border-amber/40'
                         }`}
                     >
@@ -369,14 +371,14 @@ export const Settings: React.FC<SettingsProps> = ({
                   </div>
                 </div>
               )}
-              
+
               <div className="pt-6 border-t border-hairline flex justify-end gap-3 items-center">
                 {saveSuccess && (
                   <span className="text-success-ink text-sm flex items-center gap-1 animate-in fade-in zoom-in duration-300">
                     <Check className="w-4 h-4" /> Changes saved!
                   </span>
                 )}
-                <button 
+                <button
                   onClick={handleSave}
                   disabled={isSaving}
                   className="px-6 py-2.5 bg-[var(--neon-primary)] hover:bg-primary-active text-white rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
@@ -402,7 +404,7 @@ export const Settings: React.FC<SettingsProps> = ({
                             <p className="text-sm text-muted">Choose between a grid card view or a compact list view.</p>
                         </div>
                         <div className="flex bg-surface-soft p-1 rounded-lg border border-hairline">
-                            <button 
+                            <button
                                 onClick={() => setAppSettings({...appSettings, resourceLayout: 'grid'})}
                                 className={`p-2 rounded flex items-center gap-2 text-sm transition ${
                                     appSettings.resourceLayout === 'grid' ? 'bg-surface-card text-ink shadow-sm' : 'text-muted hover:text-ink'
@@ -410,7 +412,7 @@ export const Settings: React.FC<SettingsProps> = ({
                             >
                                 <Layout className="w-4 h-4" /> Grid
                             </button>
-                            <button 
+                            <button
                                 onClick={() => setAppSettings({...appSettings, resourceLayout: 'list'})}
                                 className={`p-2 rounded flex items-center gap-2 text-sm transition ${
                                     appSettings.resourceLayout === 'list' ? 'bg-surface-card text-ink shadow-sm' : 'text-muted hover:text-ink'
@@ -428,7 +430,7 @@ export const Settings: React.FC<SettingsProps> = ({
                             <h4 className="text-ink font-medium">Compact Density</h4>
                             <p className="text-sm text-muted">Reduce padding and font size for more information density.</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setAppSettings({...appSettings, compactMode: !appSettings.compactMode})}
                             className={`w-12 h-6 rounded-full transition-colors relative ${appSettings.compactMode ? 'bg-[var(--neon-primary)]' : 'bg-surface-card'}`}
                         >
@@ -438,6 +440,8 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
              </div>
           )}
+
+          {activeTab === 'privacy' && <PrivacySettings />}
 
           {/* Security Section */}
           {activeTab === 'security' && (
@@ -472,12 +476,12 @@ export const Settings: React.FC<SettingsProps> = ({
                                 </div>
                             </div>
                          </div>
-                        <button 
+                        <button
                             onClick={handleRegisterPasskey}
                             disabled={passkeyLoading || userProfile.hasPasskey}
                             className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
-                                userProfile.hasPasskey 
-                                ? 'bg-success/15 text-success-ink cursor-not-allowed border border-success/40' 
+                                userProfile.hasPasskey
+                                ? 'bg-success/15 text-success-ink cursor-not-allowed border border-success/40'
                                 : 'bg-[var(--neon-primary)] hover:bg-primary-active text-white'
                             }`}
                         >
@@ -501,12 +505,12 @@ export const Settings: React.FC<SettingsProps> = ({
                                 )}
                             </div>
                          </div>
-                        <button 
+                        <button
                             onClick={userProfile.twoFactorEnabled ? handleDisable2FA : handleGenerate2FA}
                             disabled={isVerifying2FA}
                             className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
-                                userProfile.twoFactorEnabled 
-                                ? 'bg-error-soft text-error border border-error/30 hover:bg-error-soft' 
+                                userProfile.twoFactorEnabled
+                                ? 'bg-error-soft text-error border border-error/30 hover:bg-error-soft'
                                 : 'bg-teal-ink hover:bg-teal-ink text-ink'
                             }`}
                         >
@@ -543,22 +547,22 @@ export const Settings: React.FC<SettingsProps> = ({
                                                 id="set-2fa-code"
                                                 name="one-time-code"
                                                 autoComplete="one-time-code"
-                                                inputMode="numeric" 
-                                                type="text" 
+                                                inputMode="numeric"
+                                                type="text"
                                                 value={twoFactorVerifyCode}
                                                 onChange={(e) => setTwoFactorVerifyCode(e.target.value)}
                                                 placeholder="000 000"
                                                 maxLength={6}
                                                 className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink text-lg tracking-widest outline-none focus:ring-1 focus:ring-teal-ink transition w-32"
                                             />
-                                            <button 
+                                            <button
                                                 onClick={handleEnable2FA}
                                                 disabled={isVerifying2FA || twoFactorVerifyCode.length < 6}
                                                 className="bg-teal-ink hover:bg-teal-ink text-ink px-4 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50"
                                             >
                                                 Confirm
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setIsSettingUp2FA(false)}
                                                 className="px-4 py-2 text-muted hover:text-ink text-sm transition-colors"
                                             >
@@ -575,13 +579,10 @@ export const Settings: React.FC<SettingsProps> = ({
 
                     <div>
                         <h4 className="text-ink font-medium mb-4">Change Password</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input type="password" aria-label="Current Password" name="current-password" autoComplete="current-password" placeholder="Current Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
-                            <input type="password" aria-label="New Password" name="new-password" autoComplete="new-password" placeholder="New Password" className="bg-surface-soft border border-hairline rounded-lg px-4 py-2 text-ink focus:ring-1 focus:ring-[var(--neon-primary)] outline-none" />
-                        </div>
-                        <button className="mt-4 px-4 py-2 bg-surface-soft hover:bg-surface-card text-ink rounded-lg text-sm font-medium border border-hairline transition-colors">
-                            Update Password
-                        </button>
+                        <p className="text-sm text-muted">Para mudar a palavra-passe, enviamos-te um link de redefinição por email.</p>
+                        <a href="/forgot-password" className="mt-4 inline-flex items-center h-10 px-4 bg-surface-soft hover:bg-surface-card text-ink rounded-lg text-sm font-medium border border-hairline transition-colors">
+                            Redefinir palavra-passe por email
+                        </a>
                     </div>
                 </div>
 

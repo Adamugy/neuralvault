@@ -5,6 +5,7 @@ import { ViewState, Resource, UserProfile, AppSettings } from './types';
 import { useAuth, useUser } from './contexts/AuthContext';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConsentProvider, AiConsentGate } from './contexts/ConsentContext';
 
 // Each page and dashboard view is its own chunk, downloaded only when opened.
 const LandingPage = lazy(() => import('./components/LandingPage'));
@@ -19,6 +20,8 @@ const ChatInterface = lazy(() => import('./components/ChatInterface').then(m => 
 const ImageAnalysis = lazy(() => import('./components/ImageAnalysis').then(m => ({ default: m.ImageAnalysis })));
 const AcademicHelper = lazy(() => import('./components/AcademicHelper').then(m => ({ default: m.AcademicHelper })));
 const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+const PrivacyPolicyPage = lazy(() => import('./pages/legal/LegalPages').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsPage = lazy(() => import('./pages/legal/LegalPages').then(m => ({ default: m.TermsPage })));
 
 const PageFallback: React.FC = () => (
   <div className="min-h-screen flex items-center justify-center bg-canvas" role="status" aria-label="Loading">
@@ -43,7 +46,7 @@ const INITIAL_RESOURCES: Resource[] = [];
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoaded, isSignedIn } = useAuth();
-  
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-canvas">
@@ -51,11 +54,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
       </div>
     );
   }
-  
+
   if (!isSignedIn) {
     return <Navigate to="/sign-in" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -75,7 +78,7 @@ const AppContent: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
   const [resources, setResources] = useState<Resource[]>([]);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  
+
 
   // Settings & User State
   const [userProfile, setUserProfile] = useState<UserProfile>({
@@ -211,25 +214,25 @@ const AppContent: React.FC = () => {
                 switch (currentView) {
                   case ViewState.DASHBOARD:
                     return (
-                      <ResourceBoard 
-                        resources={resources} 
-                        setResources={setResources} 
-                        appSettings={appSettings} 
+                      <ResourceBoard
+                        resources={resources}
+                        setResources={setResources}
+                        appSettings={appSettings}
                         userProfile={userProfile}
                       />
                     );
                   case ViewState.CHAT:
-                    return <ChatInterface userProfile={userProfile} resources={resources} />;
+                    return <AiConsentGate><ChatInterface userProfile={userProfile} resources={resources} /></AiConsentGate>;
                   case ViewState.IMAGE_ANALYSIS:
-                    return <ImageAnalysis userProfile={userProfile} resources={resources} />;
+                    return <AiConsentGate><ImageAnalysis userProfile={userProfile} resources={resources} /></AiConsentGate>;
                   case ViewState.ACADEMIC_HELPER:
-                    return <AcademicHelper resources={resources} userProfile={userProfile} />;
+                    return <AiConsentGate><AcademicHelper resources={resources} userProfile={userProfile} /></AiConsentGate>;
                   case ViewState.SETTINGS:
                     return (
-                      <Settings 
-                        userProfile={userProfile} 
-                        setUserProfile={setUserProfile} 
-                        appSettings={appSettings} 
+                      <Settings
+                        userProfile={userProfile}
+                        setUserProfile={setUserProfile}
+                        appSettings={appSettings}
                         setAppSettings={setAppSettings}
                         onSaveProfile={handleSaveProfile}
                       />
@@ -247,8 +250,8 @@ const AppContent: React.FC = () => {
   return (
     <div className={`flex h-screen bg-canvas text-body font-sans ${appSettings.compactMode ? 'text-sm' : ''} overflow-hidden`}>
       <a href="#workspace" className="skip-link">Skip to content</a>
-      <Sidebar 
-        currentView={currentView} 
+      <Sidebar
+        currentView={currentView}
         onNavigate={(view) => {
           setCurrentView(view);
           setIsMobileMenuOpen(false);
@@ -258,7 +261,7 @@ const AppContent: React.FC = () => {
         isMobileOpen={isMobileMenuOpen}
         onMobileClose={() => setIsMobileMenuOpen(false)}
       />
-      
+
       <main className="flex-1 overflow-hidden relative flex flex-col h-full w-full">
         {/* Mobile Header */}
         <header className="lg:hidden h-16 border-b border-hairline flex items-center justify-between px-4 bg-canvas z-40 flex-shrink-0">
@@ -268,7 +271,7 @@ const AppContent: React.FC = () => {
                 </div>
                 <span translate="no" className="font-display text-2xl leading-none text-ink">NeuralVault</span>
             </div>
-            <button 
+            <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 aria-label="Open menu"
                 aria-expanded={isMobileMenuOpen}
@@ -277,7 +280,7 @@ const AppContent: React.FC = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
             </button>
         </header>
-        
+
         {/* Desktop top bar */}
         <header className="hidden lg:flex h-16 flex-shrink-0 items-center justify-between px-8 border-b border-hairline bg-canvas">
           <nav aria-label="Breadcrumb">
@@ -314,7 +317,7 @@ const AppContent: React.FC = () => {
 function App() {
   const { isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
-  
+
   return (
     <Suspense fallback={<PageFallback />}>
     <AnimatePresence mode="wait">
@@ -433,10 +436,15 @@ function App() {
           path="/dashboard/*"
           element={
             <ProtectedRoute>
-              <AppContent />
+              <ConsentProvider>
+                <AppContent />
+              </ConsentProvider>
             </ProtectedRoute>
           }
         />
+        {/* Legal pages (public, Portuguese) */}
+        <Route path="/privacidade" element={<PrivacyPolicyPage />} />
+        <Route path="/termos" element={<TermsPage />} />
         {/* Redirect to initial page */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

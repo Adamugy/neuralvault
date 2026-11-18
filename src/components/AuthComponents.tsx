@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { useAuth, useUser } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { BrainCircuit, ChevronLeft, Loader2, Mail, Lock, User as UserIcon, Fingerprint, Building, Check } from 'lucide-react';
+import { BrainCircuit, ChevronLeft, Loader2, Mail, Lock, User as UserIcon, Fingerprint, Check } from 'lucide-react';
 import { usePasskeys } from '../hooks/usePasskeys';
 import { useNotification } from '../contexts/NotificationContext';
+import { Link } from 'react-router-dom';
+import { LegalFooter } from '../pages/legal/LegalPages';
 
 // Shared form styles (warm editorial system)
 const inputCls = "w-full h-11 bg-canvas border border-hairline-strong text-ink px-3.5 rounded-md placeholder:text-muted-soft focus:border-primary transition-colors";
@@ -15,8 +17,8 @@ const primaryBtn = "w-full h-11 bg-primary hover:bg-primary-active text-white ro
 const errorBox = "bg-error-soft border border-error/30 text-error px-4 py-3 rounded-md text-sm";
 const linkBtn = "text-primary hover:text-primary-active font-medium underline-offset-4 hover:underline";
 
-const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowClass2 }: { 
-  children: React.ReactNode, 
+const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowClass2 }: {
+  children: React.ReactNode,
   title: string,
   subtitle?: string,
   accentGlowClass1?: string,
@@ -26,7 +28,7 @@ const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowCla
   return (
     <div className="min-h-screen flex items-center justify-center bg-canvas px-4 py-10">
       <main className="w-full max-w-[420px]">
-        <button 
+        <button
           onClick={() => navigate('/')}
           className="mb-10 -ml-2 h-10 px-2 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink rounded-md transition-colors group"
         >
@@ -43,6 +45,7 @@ const AuthLayout = ({ children, title, subtitle, accentGlowClass1, accentGlowCla
         <div className="bg-canvas border border-hairline rounded-xl p-6 sm:p-8 shadow-soft">
           {children}
         </div>
+        <LegalFooter />
       </main>
     </div>
   );
@@ -56,7 +59,7 @@ export const SignInPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [passkeyLoading, setPasskeyLoading] = useState(false);
-  
+
   // 2FA States
   const [requires2FA, setRequires2FA] = useState(false);
   const [tempToken, setTempToken] = useState('');
@@ -95,7 +98,7 @@ export const SignInPage = () => {
     try {
       console.log(`[Passkey] Starting login for: ${email || 'discoverable'}`);
       const result = await loginWithPasskey(email);
-      
+
       if (result.status === '2fa_required') {
         setRequires2FA(true);
         setTempToken(result.tempToken || '');
@@ -113,8 +116,8 @@ export const SignInPage = () => {
   };
 
   return (
-    <AuthLayout 
-      title="Welcome Back" 
+    <AuthLayout
+      title="Welcome Back"
       subtitle="Access your neural workspace"
       accentGlowClass1="bg-primary-soft"
       accentGlowClass2="bg-primary-soft"
@@ -191,7 +194,7 @@ export const SignInPage = () => {
           <div>
             <div className="flex justify-between items-center mb-2">
               <label htmlFor="signin-password" className={labelCls + " mb-0"}>Password</label>
-              <button 
+              <button
                 type="button"
                 onClick={() => navigate('/forgot-password')}
                 className={"text-xs " + linkBtn}
@@ -237,7 +240,7 @@ export const SignInPage = () => {
             disabled={loading || passkeyLoading}
             className="w-full h-11 bg-canvas hover:bg-surface-soft text-ink border border-hairline-strong hover:border-ink rounded-md text-sm font-medium flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
           >
-            
+
             {passkeyLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
             ) : (
@@ -248,7 +251,7 @@ export const SignInPage = () => {
 
           <p className="text-center text-muted text-sm mt-4">
             Don't have an account?{' '}
-            <button 
+            <button
               type="button"
               onClick={() => navigate('/sign-up')}
               className={linkBtn}
@@ -267,9 +270,11 @@ export const SignUpPage = () => {
   const { showToast } = useNotification();
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState('');
   const [email, setEmail] = useState('');
+  // Consent boxes: all unchecked by default (RGPD art. 7.º; marketing is separate and optional)
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -277,7 +282,9 @@ export const SignUpPage = () => {
     e.preventDefault();
     setError('');
     try {
-      await signUp(email, password, name, role, lastName);
+      if (!ageConfirmed) throw new Error('O NeuralVault é só para pessoas com 13 anos ou mais.');
+      if (!acceptTerms) throw new Error('Para criar conta, aceita os Termos de Utilização e a Política de Privacidade.');
+      await signUp(email, password, name, { acceptTerms, ageConfirmed, marketingOptIn });
       // We don't auto-login anymore. Show success message and navigate to verify.
       showToast('Sign up successful! Please check your email to activate your account.', 'success');
       navigate('/verify-email');
@@ -287,8 +294,8 @@ export const SignUpPage = () => {
   };
 
   return (
-    <AuthLayout 
-      title="Join NeuralVault" 
+    <AuthLayout
+      title="Join NeuralVault"
       subtitle="Start your augmented research journey"
       accentGlowClass1="bg-success/15"
       accentGlowClass2="bg-teal/15"
@@ -310,34 +317,6 @@ export const SignUpPage = () => {
               onChange={(e) => setName(e.target.value)}
               className={inputIconCls}
               placeholder="Your Name"
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="f-last-name-3" className={labelCls}>Last Name</label>
-          <div className="relative">
-            <UserIcon className={iconCls} aria-hidden="true" />
-            <input
-                id="f-last-name-3" name="family-name" autoComplete="family-name"
-              type="text"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className={inputIconCls}
-              placeholder="Your Last Name"
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="f-role-title-4" className={labelCls}>Role / Title</label>
-          <div className="relative">
-            <Building className={iconCls} aria-hidden="true" />
-            <input
-                id="f-role-title-4" name="role" autoComplete="organization-title"
-              type="text"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className={inputIconCls}
-              placeholder="e.g. Researcher, Student"
             />
           </div>
         </div>
@@ -372,6 +351,28 @@ export const SignUpPage = () => {
             />
           </div>
         </div>
+
+        <fieldset className="space-y-3 pt-1">
+          <legend className="sr-only">Consentimentos</legend>
+          <label className="flex items-start gap-3 text-sm text-body-strong cursor-pointer">
+            <input type="checkbox" name="age" checked={ageConfirmed} onChange={e => setAgeConfirmed(e.target.checked)} required
+              className="mt-0.5 w-4 h-4 shrink-0 accent-[var(--color-primary)]" />
+            <span>Tenho 13 anos ou mais.</span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-body-strong cursor-pointer">
+            <input type="checkbox" name="terms" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)} required
+              className="mt-0.5 w-4 h-4 shrink-0 accent-[var(--color-primary)]" />
+            <span>
+              Li e aceito os <Link to="/termos" target="_blank" className="text-primary underline underline-offset-2">Termos de Utilização</Link> e
+              a <Link to="/privacidade" target="_blank" className="text-primary underline underline-offset-2">Política de Privacidade</Link>.
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-body cursor-pointer">
+            <input type="checkbox" name="marketing" checked={marketingOptIn} onChange={e => setMarketingOptIn(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-[var(--color-primary)]" />
+            <span>Quero receber novidades e dicas do NeuralVault por email (opcional).</span>
+          </label>
+        </fieldset>
         <button
           type="submit"
           disabled={loading}
@@ -382,7 +383,7 @@ export const SignUpPage = () => {
 
         <p className="text-center text-muted text-sm mt-4">
           Already have an account?{' '}
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/sign-in')}
             className={linkBtn}
@@ -477,8 +478,8 @@ export const VerifyEmailPage = () => {
     };
 
     return (
-        <AuthLayout 
-            title="Verify your Email" 
+        <AuthLayout
+            title="Verify your Email"
             subtitle="A verification link has been generated. Enter the token received below to confirm your account."
             accentGlowClass1="bg-surface-card"
             accentGlowClass2="bg-surface-card"
@@ -489,8 +490,8 @@ export const VerifyEmailPage = () => {
                         <Check className="w-8 h-8 text-success-ink" />
                     </div>
                     <p className="text-ink font-medium">{message}</p>
-                    <button 
-                        onClick={() => navigate('/sign-in')} 
+                    <button
+                        onClick={() => navigate('/sign-in')}
                         className={primaryBtn}
                     >
                         Sign In
@@ -503,7 +504,7 @@ export const VerifyEmailPage = () => {
                             {message}
                         </div>
                     )}
-                    
+
                     <div className="text-center px-4 py-3 bg-surface-soft rounded-md">
                         <p className="text-muted text-sm">
                             Tip: In a development environment, check the server logs to obtain the 32-character token.
@@ -513,11 +514,11 @@ export const VerifyEmailPage = () => {
                     <div>
                         <label htmlFor="f-your-email-for-resending-7" className={labelCls}>Your Email (for resending)</label>
                         <input
-                id="f-your-email-for-resending-7" name="email" autoComplete="email" spellCheck={false} 
-                            type="email" 
-                            value={email} 
-                            onChange={e => setEmail(e.target.value)} 
-                            placeholder="you@email.com" 
+                id="f-your-email-for-resending-7" name="email" autoComplete="email" spellCheck={false}
+                            type="email"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                            placeholder="you@email.com"
                             className={inputCls}
                         />
                     </div>
@@ -525,24 +526,24 @@ export const VerifyEmailPage = () => {
                     <div>
                         <label htmlFor="f-verification-token-8" className={labelCls}>Verification Token</label>
                         <input
-                id="f-verification-token-8" name="token" autoComplete="off" spellCheck={false} 
-                            type="text" 
-                            value={token} 
-                            onChange={e => setToken(e.target.value)} 
-                            placeholder="Paste your token here…" 
+                id="f-verification-token-8" name="token" autoComplete="off" spellCheck={false}
+                            type="text"
+                            value={token}
+                            onChange={e => setToken(e.target.value)}
+                            placeholder="Paste your token here…"
                             className={inputCls}
                             required
                         />
                     </div>
-                    
-                    <button 
-                        type="submit" 
-                        disabled={status === 'loading'} 
+
+                    <button
+                        type="submit"
+                        disabled={status === 'loading'}
                         className={primaryBtn}
                     >
                         {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Confirm Email'}
                     </button>
-                    
+
                     <p className="text-center text-muted text-sm">
                         Didn't receive it? <button type="button" onClick={handleResend} className={linkBtn}>Resend link</button>
                     </p>
@@ -563,7 +564,7 @@ export const UserButton = () => {
   if (isSignedIn && user) {
     return (
       <div className="relative group">
-        <button 
+        <button
           className="flex items-center space-x-2 rounded-full" aria-label="Account menu"
           onClick={() => {
             const dropdown = document.getElementById('user-dropdown');
@@ -574,9 +575,9 @@ export const UserButton = () => {
             {user.name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
           </div>
         </button>
-        
-        <div 
-          id="user-dropdown" 
+
+        <div
+          id="user-dropdown"
           className="hidden absolute right-0 top-12 w-56 bg-canvas border border-hairline rounded-lg shadow-lift py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
           onMouseLeave={() => {
             const dropdown = document.getElementById('user-dropdown');
@@ -644,7 +645,7 @@ export const ForgotPasswordPage = () => {
       });
 
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.message || 'Erro ao solicitar recuperação de senha');
       }

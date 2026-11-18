@@ -19,7 +19,7 @@ interface AuthContextType {
   isLoaded: boolean;
   isSignedIn: boolean;
   signIn: (email: string, password: string) => Promise<{ status: 'success' | '2fa_required', tempToken?: string }>;
-  signUp: (email: string, password: string, name?: string, role?: string, lastName?: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string | undefined, consents: { acceptTerms: boolean; ageConfirmed: boolean; marketingOptIn: boolean }) => Promise<void>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
   setSession: (token: string, user: User) => void;
@@ -134,13 +134,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string, name?: string, role?: string, lastName?: string) => {
+  const signUp = useCallback(async (email: string, password: string, name: string | undefined, consents: { acceptTerms: boolean; ageConfirmed: boolean; marketingOptIn: boolean }) => {
     setLoading(true);
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, role, lastName })
+        body: JSON.stringify({ email, password, name, ...consents })
       });
 
       if (!res.ok) {

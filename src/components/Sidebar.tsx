@@ -2,7 +2,7 @@ import React from 'react';
 import { LayoutDashboard, MessageSquareText, ScanEye, BrainCircuit, GraduationCap, Settings, ChevronLeft, ChevronRight, X, LogOut } from 'lucide-react';
 import { ViewState } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 
 interface SidebarProps {
@@ -138,6 +138,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isCol
             >
               {compact ? <LogOut className="w-4 h-4" aria-hidden="true" /> : 'Log Out'}
             </button>
+            <div className={`flex flex-wrap gap-x-3 gap-y-1 px-1 pt-1 text-xs text-muted ${hideWhenCompact}`}>
+              <Link to="/termos" target="_blank" className="hover:text-ink hover:underline underline-offset-2">Termos</Link>
+              <Link to="/privacidade" target="_blank" className="hover:text-ink hover:underline underline-offset-2">Privacidade</Link>
+            </div>
           </div>
         </aside>
     </>
