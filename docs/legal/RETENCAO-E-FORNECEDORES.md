@@ -14,6 +14,7 @@ Documento interno. Versão de 18/11/2026. Os prazos aplicados automaticamente es
 | Registo de consentimentos | Enquanto a conta existir | Apagado em cascata com a conta |
 | Imagens para análise de IA | Apagadas logo após a resposta | Já existia no código (`finally` em `server/controllers/ai.ts`) |
 | Conversas do AI Tutor | Não são guardadas no servidor | — |
+| Contador diário de pedidos de IA (data e número) | 90 dias | Limpeza diária automática; apagado com a conta |
 | Registos técnicos do alojamento | Prazo do Render | Configuração do fornecedor |
 
 **Por decidir:** apagar contas inativas (por exemplo, sem início de sessão há 24 meses), com aviso prévio por email. Não está implementado.
@@ -28,6 +29,8 @@ Na UE, o contrato com cada subcontratante é **obrigatório** (RGPD, art. 28.º,
 | Neon (Databricks) | Base de dados | Frankfurt (aws-eu-central-1) | Confirmar/aceitar o DPA da Neon |
 | Resend | Email e nome nos emails transacionais | UE (eu-west-1) | Confirmar/aceitar o DPA da Resend |
 | Google (Gemini API) | Conteúdo enviado à IA | EUA e outros | Ver nota abaixo; aceitar os termos de tratamento de dados do Google Cloud |
+| Anthropic (Claude API) | Conteúdo do AI Tutor quando a pessoa escolhe Claude | EUA | Só se definires `ANTHROPIC_API_KEY`; aceitar os Commercial Terms e o DPA da Anthropic |
+| OpenAI (OpenAI API) | Conteúdo do AI Tutor quando a pessoa escolhe GPT | EUA | Só se definires `OPENAI_API_KEY`; aceitar o DPA da OpenAI |
 | Cloudflare (via Render) | Tráfego de rede | Global | Coberto pelo contrato da Render (confirmar) |
 
 **Nota sobre o Gemini:** o app usa o plano gratuito da API. Os termos adicionais da API Gemini, na versão que conheço, só permitem os **serviços pagos** quando a aplicação é disponibilizada a utilizadores no Espaço Económico Europeu, na Suíça ou no Reino Unido. Como o app serve Portugal, **ativar a faturação** no projeto do Google AI Studio resolve isto e também faz com que a Google deixe de usar o conteúdo para melhorar os seus produtos. Depois de ativar, atualizar a Política de Privacidade (secção 4), o aviso de IA (`src/contexts/ConsentContext.tsx`) e subir `PRIVACY_VERSION`.

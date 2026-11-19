@@ -113,8 +113,9 @@ export const AiConsentGate: React.FC<{ children: React.ReactNode }> = ({ childre
         <Sparkles className="w-8 h-8 text-primary mb-3" aria-hidden="true" />
         <h2 id="ai-notice-title" className="font-display text-3xl text-ink mb-3">Antes de usar a IA</h2>
         <ul className="space-y-2 text-sm text-body list-disc pl-5 mb-5">
-          <li>O que escreves e os ficheiros que envias nas funcionalidades de IA são enviados à <strong>Google (Gemini)</strong> para gerar a resposta.</li>
+          <li>O que escreves e os ficheiros que envias nas funcionalidades de IA são enviados ao fornecedor do modelo que escolheres: <strong>Google (Gemini)</strong>, <strong>Anthropic (Claude)</strong> ou <strong>OpenAI (GPT)</strong>. A análise de imagem e o Assistente Académico usam o Gemini.</li>
           <li>Usamos o plano gratuito da API Gemini: nesse plano, a <strong>Google pode usar esse conteúdo para melhorar os seus produtos</strong>, e revisores humanos podem lê-lo.</li>
+          <li>O AI Tutor pode ler a tua biblioteca (títulos, etiquetas, notas, pastas) para te ajudar a organizá-la. Só altera um recurso se aprovares a proposta, e nunca apaga.</li>
           <li>Não envies dados pessoais sensíveis (saúde, dados de terceiros, palavras-passe).</li>
           <li>O NeuralVault não usa os teus dados para treinar modelos próprios.</li>
           <li>As respostas são geradas por IA e podem conter erros.</li>

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Brain, Loader2, Lock, Copy, Check, ChevronDown, Sparkles, Square } from 'lucide-react';
+import { Send, Bot, User, Loader2, Copy, Check, ChevronDown, Sparkles, Square } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { ChatMessage, UserProfile, Resource } from '../types';
+import { ChatMessage, UserProfile, Resource, ResourceUpdateProposal } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { SearchBar } from './SearchBar';
 
@@ -12,10 +12,20 @@ import { SearchBar } from './SearchBar';
 interface ChatInterfaceProps {
   userProfile?: UserProfile;
   resources?: Resource[];
-  onOpenUpgrade?: () => void;
+  setResources?: React.Dispatch<React.SetStateAction<Resource[]>>;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resources = [], onOpenUpgrade }) => {
+interface AiModel { id: string; label: string; provider: string }
+
+/** Plain-language list of what an approved proposal will change. */
+const describeChanges = (p: ResourceUpdateProposal) => [
+  p.changes.folderId !== undefined && `Mover para: ${p.folderName ?? 'Sem pasta'}`,
+  p.changes.tags && `Etiquetas: ${p.changes.tags.join(', ') || '(nenhuma)'}`,
+  p.changes.notes !== undefined && `Notas passam a: “${p.changes.notes.slice(0, 160)}${p.changes.notes.length > 160 ? '…' : ''}”`,
+  p.changes.completed !== undefined && (p.changes.completed ? 'Marcar como concluído' : 'Marcar como por concluir'),
+].filter(Boolean) as string[];
+
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], setResources }) => {
   const { getToken } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -24,12 +34,29 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
   // True once the first words of a streamed answer are on screen
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const [thinkingMode, setThinkingMode] = useState(false);
+  const [models, setModels] = useState<AiModel[]>([]);
+  const [model, setModel] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const isPremium = userProfile?.plan !== 'free';
+  const modelLabel = models.find(m => m.id === model)?.label;
+
+  // Only the models whose provider key is configured on the server are offered
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch('/api/ai/models', { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        setModels(data.models || []);
+        setModel(data.default || '');
+      } catch { /* the chat still works with the server default */ }
+    })();
+    return () => { cancelled = true; };
+  }, [getToken]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,6 +85,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
     abortRef.current = controller;
     const botId = crypto.randomUUID();
     let received = '';
+    let serverMessage = '';
+    const proposals: ResourceUpdateProposal[] = [];
+    const upsertBot = (patch: Partial<ChatMessage>) => {
+      setIsStreaming(true);
+      setMessages(prev => prev.some(m => m.id === botId)
+        ? prev.map(m => (m.id === botId ? { ...m, ...patch } : m))
+        : [...prev, { id: botId, role: 'model', content: '', timestamp: Date.now(), modelLabel, ...patch }]);
+    };
 
     try {
       const token = await getToken();
@@ -70,54 +105,69 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
         body: JSON.stringify({
           message: userMsg.content,
           history,
-          thinkingMode,
+          model: model || undefined,
           stream: true
         }),
         signal: controller.signal
       });
 
-      if (!res.ok) throw new Error('Chat failed');
+      if (!res.ok) {
+        // Daily limit, rate limit, unavailable model: show the server's own explanation
+        serverMessage = (await res.json().catch(() => null))?.message || '';
+        throw new Error('Chat failed');
+      }
 
-      const isTextStream = (res.headers.get('content-type') || '').includes('text/plain');
-      if (isTextStream && res.body) {
-        // Show the answer as it is generated instead of waiting for the whole text
+      const isStream = (res.headers.get('content-type') || '').includes('application/x-ndjson');
+      if (isStream && res.body) {
+        // One JSON event per line: answer text as it is generated, and change proposals
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
+        const handleLine = (line: string) => {
+          if (!line.trim()) return;
+          const event = JSON.parse(line);
+          if (event.type === 'text') {
+            received += event.text;
+            upsertBot({ content: received });
+          } else if (event.type === 'proposal') {
+            proposals.push({ ...event.proposal, status: 'pending' });
+            upsertBot({ proposals: [...proposals] });
+          }
+        };
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
-          received += decoder.decode(value, { stream: true });
-          if (!received) continue;
-          const content = received;
-          setIsStreaming(true);
-          setMessages(prev => prev.some(m => m.id === botId)
-            ? prev.map(m => (m.id === botId ? { ...m, content } : m))
-            : [...prev, { id: botId, role: 'model', content, timestamp: Date.now(), isThinking: thinkingMode }]);
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+          lines.forEach(handleLine);
         }
-        if (!received) throw new Error('Empty response');
+        handleLine(buffer);
+        if (!received && !proposals.length) throw new Error('Empty response');
       } else {
         const data = await res.json();
-        const botMsg: ChatMessage = {
+        setMessages(prev => [...prev, {
           id: botId,
           role: 'model',
           content: data.text,
           timestamp: Date.now(),
-          isThinking: thinkingMode
-        };
-        setMessages(prev => [...prev, botMsg]);
+          modelLabel,
+          proposals: (data.proposals || []).map((p: ResourceUpdateProposal) => ({ ...p, status: 'pending' })),
+        }]);
       }
     } catch (error) {
       // Stopped by the user: keep what was already written, no error bubble
       const stoppedByUser = controller.signal.aborted;
-      if (!(stoppedByUser && received)) {
+      const gotSomething = received || proposals.length;
+      if (!(stoppedByUser && gotSomething)) {
         const errorMsg: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'model',
           content: stoppedByUser
             ? "Stopped before the answer started."
-            : received
+            : gotSomething
               ? "The answer was interrupted before it finished. Please try again."
-              : "Sorry, I encountered an error while processing your request. Please check your connection or try again later.",
+              : serverMessage || "Sorry, I encountered an error while processing your request. Please check your connection or try again later.",
           timestamp: Date.now()
         };
         setMessages(prev => [...prev, errorMsg]);
@@ -130,6 +180,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
   };
 
   const handleStop = () => abortRef.current?.abort();
+
+  const setProposalStatus = (msgId: string, index: number, status: ResourceUpdateProposal['status']) =>
+    setMessages(prev => prev.map(m => m.id !== msgId ? m : {
+      ...m, proposals: m.proposals?.map((p, i) => (i === index ? { ...p, status } : p)),
+    }));
+
+  // The person approved: apply through the normal resources API (ownership is checked there)
+  const applyProposal = async (msgId: string, index: number, p: ResourceUpdateProposal) => {
+    setProposalStatus(msgId, index, 'applying');
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/resources/${encodeURIComponent(p.resourceId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(p.changes),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      const { resource } = await res.json();
+      setResources?.(prev => prev.map(r => (r.id === resource.id ? { ...r, ...resource } : r)));
+      setProposalStatus(msgId, index, 'applied');
+    } catch {
+      setProposalStatus(msgId, index, 'error');
+    }
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -158,7 +232,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
           </div>
           <div className="hidden sm:block">
             <h2 className="font-semibold text-ink tracking-tight flex items-center gap-2 text-sm leading-tight">
-              Gemini 2.5 Flash
+              AI Tutor
               <span className="text-xs uppercase font-bold tracking-widest bg-surface-soft border border-hairline px-2 py-0.5 rounded-full text-primary">Researcher</span>
             </h2>
             <div className="flex items-center gap-2 text-xs text-muted">
@@ -175,18 +249,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
         />
 
         <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-                onClick={() => isPremium ? setThinkingMode(!thinkingMode) : onOpenUpgrade?.()}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border text-xs font-medium transition duration-300 ${
-                thinkingMode
-                    ? 'bg-primary-soft border-primary/30 text-primary'
-                    : 'bg-surface-soft border-hairline text-muted hover:bg-surface-card hover:text-body-strong'
-                }`}
-            >
-                <Brain className={`w-3 h-3 ${thinkingMode ? 'animate-pulse' : ''}`} />
-                <span>Deep Reasoning</span>
-                {!isPremium && <Lock className="w-2.5 h-2.5" />}
-            </button>
+            {models.length > 1 ? (
+              <select
+                aria-label="Modelo de IA"
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                disabled={isLoading}
+                className="px-3 py-1 rounded-xl border border-hairline bg-surface-soft text-xs font-medium text-body-strong focus:outline-none focus:border-primary/40"
+              >
+                {models.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            ) : modelLabel ? (
+              <span className="px-3 py-1 rounded-xl border border-hairline bg-surface-soft text-xs font-medium text-muted">{modelLabel}</span>
+            ) : null}
         </div>
       </div>
 
@@ -238,7 +313,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">
-                      {msg.role === 'user' ? 'You' : 'Gerado por IA · Gemini'}
+                      {msg.role === 'user' ? 'You' : `Gerado por IA · ${msg.modelLabel || 'AI Tutor'}`}
                     </span>
                     <span className="text-xs text-muted">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -246,13 +321,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                   </div>
 
                   <div className={`text-body-strong leading-relaxed ${msg.role === 'user' ? 'bg-primary-soft border border-primary/30 p-4 rounded-xl rounded-tr-sm' : ''}`}>
-                    {msg.role === 'model' && msg.isThinking && (
-                      <div className="flex items-center gap-2 text-xs text-primary mb-4 font-bold border-b border-primary/30 pb-2">
-                        <Brain className="w-3 h-3 animate-pulse" />
-                        THINKING PROCESS ACTIVATED
-                      </div>
-                    )}
-
                     <div className="markdown-content prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-transparent prose-pre:p-0">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -295,6 +363,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
                         {msg.content}
                       </ReactMarkdown>
                     </div>
+
+                    {msg.proposals?.map((p, i) => (
+                      <div key={i} className="mt-4 rounded-xl border border-hairline bg-surface-soft p-4 text-sm">
+                        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1 flex items-center gap-1.5">
+                          <Sparkles className="w-3 h-3" aria-hidden="true" /> Proposta de alteração
+                        </p>
+                        <p className="font-medium text-ink">{p.resourceTitle}</p>
+                        <ul className="list-disc pl-5 my-2 text-body space-y-0.5">
+                          {describeChanges(p).map(c => <li key={c}>{c}</li>)}
+                        </ul>
+                        {p.reason && <p className="text-muted text-xs mb-3">{p.reason}</p>}
+                        {p.status === 'applied' ? (
+                          <p role="status" className="text-success-ink text-xs font-medium flex items-center gap-1"><Check className="w-3 h-3" aria-hidden="true" /> Aplicado</p>
+                        ) : p.status === 'dismissed' ? (
+                          <p role="status" className="text-muted text-xs">Ignorado</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 items-center">
+                            <button
+                              onClick={() => applyProposal(msg.id, i, p)}
+                              disabled={p.status === 'applying'}
+                              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium hover:bg-primary-active disabled:opacity-60"
+                            >
+                              {p.status === 'applying' ? 'A aplicar…' : 'Aplicar'}
+                            </button>
+                            <button
+                              onClick={() => setProposalStatus(msg.id, i, 'dismissed')}
+                              disabled={p.status === 'applying'}
+                              className="px-3 py-1.5 rounded-lg border border-hairline text-xs text-muted hover:text-ink"
+                            >
+                              Ignorar
+                            </button>
+                            {p.status === 'error' && <span role="alert" className="text-xs text-error">Não foi possível aplicar. Tenta de novo.</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -308,7 +412,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">Gemini</span>
+                  <span className="text-xs font-bold text-body-strong uppercase tracking-tighter">{modelLabel || 'AI Tutor'}</span>
                 </div>
                 <div className="flex gap-1.5 p-4 items-center">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
@@ -325,17 +429,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
       {/* Input Area - Clean & Modern */}
       <div className="px-4 md:px-6 py-6 bg-canvas border-t border-hairline">
         <div className="max-w-3xl mx-auto">
-          <div className={`relative rounded-xl border transition duration-300 group shadow-lift glass-panel ${
-            thinkingMode
-              ? 'border-primary/30 bg-primary-soft ring-1 ring-primary/20'
-              : 'border-hairline bg-surface-soft focus-within:border-hairline-strong'
-          }`}>
+          <div className="relative rounded-xl border transition duration-300 group shadow-lift glass-panel border-hairline bg-surface-soft focus-within:border-hairline-strong">
             <textarea
               value={input}
               aria-label="Message the AI tutor"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={thinkingMode ? "Ask a complex question for deep analysis…" : "How can I help with your studies today?"}
+              placeholder="How can I help with your studies today?"
               rows={1}
               className="w-full bg-transparent text-body-strong pl-5 pr-12 py-3.5 focus:outline-none resize-none min-h-[48px] max-h-48 text-sm scrollbar-hide"
               style={{ height: 'auto' }}
@@ -363,7 +463,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ userProfile, resou
             )}
           </div>
           <p className="text-center text-xs text-muted mt-4 font-medium tracking-wide">
-            {thinkingMode ? "DEEP REASONING MODE ACTIVE • MORE DETAILED RESPONSES" : "RESPOSTAS GERADAS POR IA (GOOGLE GEMINI) · PODEM CONTER ERROS"}
+            RESPOSTAS GERADAS POR IA{modelLabel ? ` (${modelLabel.toUpperCase()})` : ''} · PODEM CONTER ERROS
           </p>
         </div>
       </div>

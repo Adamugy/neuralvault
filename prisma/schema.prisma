@@ -33,6 +33,17 @@ model User {
   academicSessions AcademicSession[]
   generatedDocs    GeneratedDocument[]
   consents         ConsentRecord[]
+  aiUsage          AiUsage[]
+}
+
+/// AI requests per person per day (daily quota, see server/middleware/aiQuota.ts)
+model AiUsage {
+  userId String
+  day    DateTime @db.Date
+  count  Int      @default(0)
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
 }
 
 model Authenticator {

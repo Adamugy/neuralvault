@@ -1,20 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 
-// Gemini is mocked: these tests cover how the chat controller streams, not the model.
-const { sendMessage, sendMessageStream, getGenerativeModel } = vi.hoisted(() => {
-    const sendMessage = vi.fn();
-    const sendMessageStream = vi.fn();
-    const getGenerativeModel = vi.fn((..._args: any[]) => ({
-        startChat: () => ({ sendMessage, sendMessageStream }),
-    }));
-    return { sendMessage, sendMessageStream, getGenerativeModel };
-});
+// The model is mocked: these tests cover how the chat controller streams, not the model.
+const { streamText, getChatModel } = vi.hoisted(() => ({
+    streamText: vi.fn(),
+    getChatModel: vi.fn((id?: string) => ({ id: id ?? 'gemini-2.5-flash', label: 'Gemini', model: {} })),
+}));
 
+vi.mock('ai', async (importOriginal) => ({ ...(await importOriginal<typeof import('ai')>()), streamText }));
+vi.mock('../services/llm.js', () => ({ getChatModel, availableModels: () => [] }));
+// The tools hand their proposal callback back so a test can fire it like the model would
+vi.mock('../services/libraryTools.js', () => ({
+    libraryTools: (userId: string, onProposal: (p: unknown) => void) => ({ userId, onProposal }),
+}));
+vi.mock('../utils/env.js', () => ({ env: { AI_DAILY_LIMIT: 100 } }));
 vi.mock('../services/gemini.js', () => ({
-    ai: { getGenerativeModel },
-    fileToGenerativePart: vi.fn(),
-    AI_REQUEST_OPTIONS: { timeout: 120_000 },
+    ai: {}, fileToGenerativePart: vi.fn(), AI_REQUEST_OPTIONS: { timeout: 120_000 },
 }));
 
 import { chat } from './ai.js';
@@ -34,12 +35,13 @@ function fakeRes() {
     return res;
 }
 
-async function* chunks(parts: string[], failAfter?: number) {
+const deltas = (parts: string[], failAfter?: number) => async function* () {
     for (let i = 0; i < parts.length; i++) {
         if (failAfter !== undefined && i === failAfter) throw new Error('upstream dropped');
-        yield { text: () => parts[i] };
+        yield { type: 'text-delta', id: 't', text: parts[i] };
     }
-}
+};
+const events = (res: any) => res.chunks.map((c: string) => JSON.parse(c));
 
 // asyncHandler does not return the promise, so give the handler a tick to finish
 const run = async (body: any, res: any) => {
@@ -51,70 +53,99 @@ const run = async (body: any, res: any) => {
 
 describe('chat controller', () => {
     beforeEach(() => {
-        sendMessage.mockReset();
-        sendMessageStream.mockReset();
-        getGenerativeModel.mockClear();
+        streamText.mockReset();
+        getChatModel.mockClear();
     });
 
     it('answers with JSON when streaming is not requested (older clients)', async () => {
-        sendMessage.mockResolvedValue({ response: { text: () => 'hello' } });
+        streamText.mockReturnValue({ fullStream: deltas(['hel', 'lo'])() });
         const res = fakeRes();
         await run({ message: 'hi' }, res);
 
-        expect(res.json).toHaveBeenCalledWith({ text: 'hello' });
-        expect(sendMessageStream).not.toHaveBeenCalled();
+        expect(res.json).toHaveBeenCalledWith({ text: 'hello', proposals: [], model: 'gemini-2.5-flash' });
+        expect(res.chunks).toEqual([]);
     });
 
-    it('applies a request timeout to the model', async () => {
-        sendMessage.mockResolvedValue({ response: { text: () => 'ok' } });
-        await run({ message: 'hi' }, fakeRes());
+    it('uses the requested model, a timeout, a step limit and the session user for tools', async () => {
+        streamText.mockReturnValue({ fullStream: deltas(['ok'])() });
+        await run({ message: 'hi', model: 'claude-sonnet-5-5', history: [{ role: 'assistant', content: 'a' }, { role: 'x', content: '' }] }, fakeRes());
 
-        expect(getGenerativeModel.mock.calls[0][1]).toEqual({ timeout: 120_000 });
+        expect(getChatModel).toHaveBeenCalledWith('claude-sonnet-5-5');
+        const opts = streamText.mock.calls[0][0];
+        expect(opts.timeout).toBe(120_000);
+        expect(opts.stopWhen).toBeDefined();
+        expect(opts.tools.userId).toBe('u1');
+        expect(opts.messages).toEqual([{ role: 'assistant', content: 'a' }, { role: 'user', content: 'hi' }]);
     });
 
-    it('streams the answer chunk by chunk as plain text', async () => {
-        sendMessageStream.mockResolvedValue({ stream: chunks(['Olá', ', ', 'mundo']) });
+    it('streams the answer as NDJSON text events', async () => {
+        streamText.mockReturnValue({ fullStream: deltas(['Olá', ', ', 'mundo'])() });
         const res = fakeRes();
         await run({ message: 'hi', stream: true }, res);
 
-        expect(res.headers['content-type']).toContain('text/plain');
+        expect(res.headers['content-type']).toContain('application/x-ndjson');
         expect(res.headers['cache-control']).toContain('no-transform');
-        expect(res.chunks).toEqual(['Olá', ', ', 'mundo']);
+        expect(events(res)).toEqual([
+            { type: 'text', text: 'Olá' }, { type: 'text', text: ', ' }, { type: 'text', text: 'mundo' },
+        ]);
         expect(res.writableEnded).toBe(true);
         expect(res.json).not.toHaveBeenCalled();
     });
 
+    it('sends tool proposals to the client as their own events', async () => {
+        const proposal = { resourceId: 'r1', resourceTitle: 'Paper', changes: { tags: ['nlp'] }, reason: 'tema' };
+        streamText.mockImplementation((opts: any) => ({
+            fullStream: (async function* () {
+                opts.tools.onProposal(proposal);
+                yield { type: 'text-delta', id: 't', text: 'Proposta pronta.' };
+            })(),
+        }));
+        const res = fakeRes();
+        await run({ message: 'organiza', stream: true }, res);
+
+        expect(events(res)).toEqual([{ type: 'proposal', proposal }, { type: 'text', text: 'Proposta pronta.' }]);
+    });
+
     it('drops the connection if the model fails mid-answer', async () => {
-        sendMessageStream.mockResolvedValue({ stream: chunks(['partial', 'never'], 1) });
+        streamText.mockReturnValue({ fullStream: deltas(['partial', 'never'], 1)() });
         const res = fakeRes();
         vi.spyOn(console, 'error').mockImplementation(() => {});
         await run({ message: 'hi', stream: true }, res);
 
-        expect(res.chunks).toEqual(['partial']);
+        expect(events(res)).toEqual([{ type: 'text', text: 'partial' }]);
         expect(res.destroyed).toBe(true);
         expect(res.writableEnded).toBe(false);
     });
 
     it('stops reading from the model when the client disconnects', async () => {
         const res = fakeRes();
-        async function* slow() {
-            yield { text: () => 'one' };
-            res.emit('close'); // user pressed Stop / closed the tab
-            yield { text: () => 'two' };
-        }
-        sendMessageStream.mockResolvedValue({ stream: slow() });
+        streamText.mockImplementation(() => ({
+            fullStream: (async function* () {
+                yield { type: 'text-delta', id: 't', text: 'one' };
+                res.emit('close'); // user pressed Stop / closed the tab
+                yield { type: 'text-delta', id: 't', text: 'two' };
+            })(),
+        }));
         await run({ message: 'hi', stream: true }, res);
 
-        expect(res.chunks).toEqual(['one']);
-        expect(sendMessageStream.mock.calls[0][1].signal.aborted).toBe(true);
+        expect(events(res)).toEqual([{ type: 'text', text: 'one' }]);
+        expect(streamText.mock.calls[0][0].abortSignal.aborted).toBe(true);
     });
 
     it('reports failures before the first byte through the error handler', async () => {
-        sendMessageStream.mockRejectedValue(new Error('quota'));
+        streamText.mockReturnValue({
+            fullStream: (async function* () { yield { type: 'error', error: new Error('quota') }; })(),
+        });
         const res = fakeRes();
         const next = await run({ message: 'hi', stream: true }, res);
 
         expect(next).toHaveBeenCalled();
         expect(res.chunks).toEqual([]);
+    });
+
+    it('rejects an empty message', async () => {
+        const next = await run({ message: '   ' }, fakeRes());
+        expect(next.mock.calls[0][0].message).toBe('Missing message');
+        expect(streamText).not.toHaveBeenCalled();
     });
 });

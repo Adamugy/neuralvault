@@ -1,5 +1,5 @@
 import { prisma } from './prisma.js';
-import { ConsentType, PRIVACY_VERSION, TERMS_VERSION } from '../utils/legal.js';
+import { AI_NOTICE_VERSION, ConsentType, PRIVACY_VERSION, TERMS_VERSION } from '../utils/legal.js';
 
 export interface ConsentStatus {
     termsVersion: string | null;
@@ -53,7 +53,7 @@ export class ConsentService {
             privacyAcceptedAt: privacy?.granted ? privacy.createdAt.toISOString() : null,
             ageConfirmed: !!l.get('age_13')?.granted,
             marketing: !!l.get('marketing')?.granted,
-            aiProcessing: !!l.get('ai_processing')?.granted,
+            aiProcessing: !!l.get('ai_processing')?.granted && l.get('ai_processing')?.version === AI_NOTICE_VERSION,
             upToDate: termsOk && privacyOk,
             currentTermsVersion: TERMS_VERSION,
             currentPrivacyVersion: PRIVACY_VERSION,
@@ -64,8 +64,9 @@ export class ConsentService {
         const row = await prisma.consentRecord.findFirst({
             where: { userId, type: 'ai_processing' },
             orderBy: { createdAt: 'desc' },
-            select: { granted: true },
+            select: { granted: true, version: true },
         });
-        return !!row?.granted;
+        // An acceptance of an older notice (fewer AI providers) no longer counts
+        return !!row?.granted && row.version === AI_NOTICE_VERSION;
     }
 }

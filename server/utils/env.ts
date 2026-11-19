@@ -19,6 +19,10 @@ const envSchema = z.object({
     JWT_EXPIRES_IN: z.string().default('7d'),
     // AI Configuration
     GEMINI_API_KEY: z.string().min(1).optional(),
+    ANTHROPIC_API_KEY: z.string().min(1).optional(),
+    OPENAI_API_KEY: z.string().min(1).optional(),
+    // AI requests per person per day (chat, image analysis, academic generation)
+    AI_DAILY_LIMIT: z.string().default('100').transform(Number),
     // Other
     CORS_ORIGIN: z.string().optional(),
     APP_URL: z.string().url().optional(),

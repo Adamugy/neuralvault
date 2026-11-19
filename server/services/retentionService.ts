@@ -10,7 +10,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export class RetentionService {
     static async runOnce() {
         const now = new Date();
-        const [sessions, challenges, resets, unverified] = await Promise.all([
+        const [sessions, challenges, resets, unverified, aiUsage] = await Promise.all([
             prisma.session.deleteMany({ where: { expiresAt: { lt: now } } }),
             prisma.passkeyChallenge.deleteMany({ where: { expiresAt: { lt: now } } }),
             prisma.user.updateMany({
@@ -23,8 +23,9 @@ export class RetentionService {
                     createdAt: { lt: new Date(now.getTime() - RETENTION.UNVERIFIED_ACCOUNT_DAYS * DAY_MS) },
                 },
             }),
+            prisma.aiUsage.deleteMany({ where: { day: { lt: new Date(now.getTime() - RETENTION.AI_USAGE_DAYS * DAY_MS) } } }),
         ]);
-        console.log(`[Retention] expired sessions=${sessions.count} challenges=${challenges.count} resetTokens=${resets.count} unverifiedAccounts=${unverified.count}`);
+        console.log(`[Retention] expired sessions=${sessions.count} challenges=${challenges.count} resetTokens=${resets.count} unverifiedAccounts=${unverified.count} aiUsage=${aiUsage.count}`);
     }
 
     static start() {

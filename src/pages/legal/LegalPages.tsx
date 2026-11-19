@@ -28,7 +28,7 @@ const LegalLayout: React.FC<{ title: string; version: string; children: React.Re
         </div>
       )}
       <h1 className="font-display text-4xl md:text-5xl text-ink mb-2">{title}</h1>
-      <p className="text-sm text-muted mb-10">Versão {version} · em vigor desde {LEGAL.effectiveDate}</p>
+      <p className="text-sm text-muted mb-10">Versão {version} · em vigor desde {new Date(version).toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</p>
       <div className="legal-prose space-y-8 text-[15px] leading-relaxed">{children}</div>
     </main>
     <LegalFooter />
@@ -104,9 +104,9 @@ export const PrivacyPolicyPage: React.FC = () => (
         <thead><tr><th>Finalidade</th><th>Fundamento (RGPD, art. 6.º, n.º 1)</th></tr></thead>
         <tbody>
           <tr><td>Criar e gerir a conta, guardar os teus recursos, enviar emails de confirmação e recuperação</td><td>Execução do contrato (alínea b)</td></tr>
-          <tr><td>Funcionalidades de IA (enviar o teu conteúdo à Google Gemini)</td><td>Consentimento (alínea a), pedido antes da primeira utilização</td></tr>
+          <tr><td>Funcionalidades de IA (enviar o teu conteúdo ao fornecedor do modelo escolhido: Google, Anthropic ou OpenAI)</td><td>Consentimento (alínea a), pedido antes da primeira utilização</td></tr>
           <tr><td>Comunicações de marketing, se as aceitares</td><td>Consentimento (alínea a); a caixa vem desmarcada</td></tr>
-          <tr><td>Segurança, prevenção de abuso e registo de consentimentos</td><td>Interesse legítimo (alínea f) e dever de demonstrar o consentimento (art. 7.º, n.º 1)</td></tr>
+          <tr><td>Segurança, prevenção de abuso (incluindo o limite diário de pedidos de IA) e registo de consentimentos</td><td>Interesse legítimo (alínea f) e dever de demonstrar o consentimento (art. 7.º, n.º 1)</td></tr>
         </tbody>
       </table>
     </section>
@@ -114,10 +114,22 @@ export const PrivacyPolicyPage: React.FC = () => (
     <section>
       <h2>4. Inteligência artificial</h2>
       <p>
-        Quando usas o AI Tutor, a análise de imagem ou o Assistente Académico, o conteúdo que envias é processado pela API Gemini da Google.
-        Usamos o <strong>plano gratuito</strong> dessa API: segundo os termos da Google, nesse plano o conteúdo pode ser usado pela Google para
-        melhorar os seus produtos e pode ser lido por revisores humanos. Por isso, só ativamos estas funcionalidades depois de aceitares um aviso
-        próprio, e podes retirar esse consentimento a qualquer momento em Definições → Privacidade, sem afetar o resto do serviço.
+        No AI Tutor escolhes o modelo, e o conteúdo que envias é processado pelo fornecedor desse modelo: <strong>Google</strong> (Gemini),
+        <strong>Anthropic</strong> (Claude) ou <strong>OpenAI</strong> (GPT). A análise de imagem e o Assistente Académico usam sempre o Gemini.
+        Na API Gemini usamos o <strong>plano gratuito</strong>: segundo os termos da Google, nesse plano o conteúdo pode ser usado pela Google para
+        melhorar os seus produtos e pode ser lido por revisores humanos. Nas APIs da Anthropic e da OpenAI, segundo os termos comerciais desses
+        fornecedores, o conteúdo não é usado para treinar os seus modelos por omissão, mas pode ser guardado durante um período limitado para
+        deteção de abusos. Só ativamos estas funcionalidades depois de aceitares um aviso próprio, e podes retirar esse consentimento a qualquer
+        momento em Definições → Privacidade, sem afetar o resto do serviço.
+      </p>
+      <p>
+        O AI Tutor pode consultar a tua biblioteca (títulos, tipos, etiquetas, notas e pastas) para responder a pedidos como “organiza os meus
+        recursos”; essa informação é então enviada ao fornecedor do modelo escolhido. O assistente não altera nada sozinho: uma alteração aparece
+        como proposta e só é aplicada se carregares em “Aplicar”. Não consegue apagar recursos.
+      </p>
+      <p>
+        Para controlar custos e abusos, contamos quantos pedidos de IA fazes por dia e aplicamos um limite diário. Esse contador guarda apenas a
+        data e o número de pedidos, é apagado ao fim de 90 dias e é apagado com a conta.
       </p>
       <p>O NeuralVault não usa os teus dados para treinar modelos de IA próprios. As respostas geradas por IA estão assinaladas como tal e podem conter erros.</p>
     </section>

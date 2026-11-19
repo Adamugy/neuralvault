@@ -6,7 +6,7 @@ import { AuthService } from '../services/authService.js';
 import { ConsentService } from '../services/consentService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { BadRequestError, UnauthorizedError } from '../utils/errors.js';
-import { ConsentType, PRIVACY_VERSION, TERMS_VERSION, USER_TOGGLEABLE_CONSENTS } from '../utils/legal.js';
+import { AI_NOTICE_VERSION, ConsentType, PRIVACY_VERSION, TERMS_VERSION, USER_TOGGLEABLE_CONSENTS } from '../utils/legal.js';
 import { uploadsDir } from '../utils/upload.js';
 
 /**
@@ -36,7 +36,7 @@ export const updateConsent = asyncHandler(async (req: Request, res: Response) =>
             throw new BadRequestError('Invalid consent change');
         }
         const allowedSources = ['settings', 'ai_notice'];
-        await ConsentService.record(userId, [{ type: type as ConsentType, granted }],
+        await ConsentService.record(userId, [{ type: type as ConsentType, granted, version: type === 'ai_processing' ? AI_NOTICE_VERSION : null }],
             allowedSources.includes(source) ? source : 'settings');
     }
 
@@ -45,7 +45,7 @@ export const updateConsent = asyncHandler(async (req: Request, res: Response) =>
 
 /**
  * Blocks AI endpoints until the person accepted the AI processing notice
- * (content is sent to Google Gemini; on the free tier Google may use it to improve its products).
+ * (content goes to the AI provider of the chosen model). Only an acceptance of the current AI_NOTICE_VERSION counts.
  */
 export const requireAiConsent = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -88,6 +88,7 @@ export const exportMyData = asyncHandler(async (req: Request, res: Response) => 
             sessions: { select: { createdAt: true, updatedAt: true, expiresAt: true } },
             authenticators: { select: { id: true, credentialDeviceType: true, credentialBackedUp: true, transports: true } },
             consents: { select: { type: true, version: true, granted: true, source: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
+            aiUsage: { select: { day: true, count: true }, orderBy: { day: 'asc' } },
         },
     });
     if (!user) throw new UnauthorizedError();

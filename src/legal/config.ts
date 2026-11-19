@@ -17,9 +17,7 @@ export const LEGAL = {
     email: 'desiagira@gmail.com',
   },
   termsVersion: '2026-11-18',
-  privacyVersion: '2026-11-18',
-  /** Data em que os documentos entram em vigor (dia da publicação). */
-  effectiveDate: '18 de novembro de 2026',
+  privacyVersion: '2026-11-19',
 };
 
 /** Companies that process users' data on our behalf (RGPD art. 28). */
@@ -27,7 +25,9 @@ export const PROCESSORS = [
   { name: 'Render Services, Inc.', role: 'Alojamento do servidor e dos ficheiros enviados', location: 'Servidores em Frankfurt (Alemanha); empresa sediada nos EUA' },
   { name: 'Neon (Databricks, Inc.)', role: 'Base de dados', location: 'Servidores em Frankfurt (Alemanha); empresa sediada nos EUA' },
   { name: 'Resend, Inc.', role: 'Envio de emails de confirmação e de recuperação de palavra-passe', location: 'Região UE (Irlanda); empresa sediada nos EUA' },
-  { name: 'Google (Gemini API)', role: 'Processamento das funcionalidades de IA (AI Tutor, análise de imagem, assistente académico)', location: 'EUA e outros países onde a Google opera' },
+  { name: 'Google (Gemini API)', role: 'Funcionalidades de IA: AI Tutor (modelos Gemini), análise de imagem e assistente académico', location: 'EUA e outros países onde a Google opera' },
+  { name: 'Anthropic, PBC (Claude API)', role: 'AI Tutor, quando escolhes um modelo Claude', location: 'EUA' },
+  { name: 'OpenAI, L.L.C. (OpenAI API)', role: 'AI Tutor, quando escolhes um modelo GPT', location: 'EUA' },
   { name: 'Cloudflare, Inc.', role: 'Rede de entrega e proteção usada pelo alojamento', location: 'Rede global; empresa sediada nos EUA' },
 ];
 

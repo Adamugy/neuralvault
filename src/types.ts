@@ -23,7 +23,19 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: number;
-  isThinking?: boolean;
+  /** Model that wrote the answer (AI Tutor). */
+  modelLabel?: string;
+  /** Library changes the AI Tutor proposed; applied only when the person approves. */
+  proposals?: ResourceUpdateProposal[];
+}
+
+export interface ResourceUpdateProposal {
+  resourceId: string;
+  resourceTitle: string;
+  changes: { folderId?: string | null; tags?: string[]; notes?: string; completed?: boolean };
+  folderName?: string | null;
+  reason: string;
+  status?: 'pending' | 'applying' | 'applied' | 'dismissed' | 'error';
 }
 
 export enum ViewState {

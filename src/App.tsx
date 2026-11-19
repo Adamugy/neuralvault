@@ -222,7 +222,7 @@ const AppContent: React.FC = () => {
                       />
                     );
                   case ViewState.CHAT:
-                    return <AiConsentGate><ChatInterface userProfile={userProfile} resources={resources} /></AiConsentGate>;
+                    return <AiConsentGate><ChatInterface userProfile={userProfile} resources={resources} setResources={setResources} /></AiConsentGate>;
                   case ViewState.IMAGE_ANALYSIS:
                     return <AiConsentGate><ImageAnalysis userProfile={userProfile} resources={resources} /></AiConsentGate>;
                   case ViewState.ACADEMIC_HELPER:

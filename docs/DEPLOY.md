@@ -31,6 +31,9 @@ As migrações da base de dados correm automaticamente sempre que a aplicação 
 |---|---|
 | `DATABASE_URL` | connection string do Neon |
 | `GEMINI_API_KEY` | chave do AI Studio |
+| `ANTHROPIC_API_KEY` | opcional: ativa o Claude no AI Tutor (console.anthropic.com) |
+| `OPENAI_API_KEY` | opcional: ativa o GPT no AI Tutor (platform.openai.com) |
+| `AI_DAILY_LIMIT` | pedidos de IA por pessoa por dia (omissão: 100) |
 | `APP_URL` | `https://neuralvault.onrender.com` (ou o domínio próprio) |
 | `CORS_ORIGIN` | igual a `APP_URL` |
 | `DOMAIN` | `neuralvault.onrender.com` (ou o domínio próprio) |
