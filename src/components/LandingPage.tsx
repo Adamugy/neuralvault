@@ -317,7 +317,7 @@ const LandingPage: React.FC = () => {
                 </div>
                 <div className="bg-surface-soft p-4 rounded-md">
                   <div className="text-xs font-medium uppercase tracking-[0.08em] text-muted mb-1">Model Version</div>
-                  <div className="text-ink font-mono text-sm">Gemini 3.8 Flash</div>
+                  <div className="text-ink font-mono text-sm">Gemini 4 Hydrogen</div>
                 </div>
               </div>
               <button

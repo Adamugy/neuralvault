@@ -11,7 +11,7 @@ import { GEMINI_MODEL } from './gemini.js';
  * is set on the server (Render env), so adding a key is all it takes to enable one.
  */
 const MODELS: { id: string; label: string; provider: string; key?: string; create: (apiKey: string) => LanguageModel }[] = [
-    { id: GEMINI_MODEL, label: 'Gemini 3.8 Flash', provider: 'Google', key: env.GEMINI_API_KEY,
+    { id: GEMINI_MODEL, label: 'Gemini 4 Hydrogen', provider: 'Google', key: env.GEMINI_API_KEY,
         create: apiKey => createGoogleGenerativeAI({ apiKey })(GEMINI_MODEL) },
     { id: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5', provider: 'Anthropic', key: env.ANTHROPIC_API_KEY,
         create: apiKey => createAnthropic({ apiKey })('claude-sonnet-5-5') },

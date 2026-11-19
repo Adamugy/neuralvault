@@ -10,7 +10,7 @@ export const ai = genAI;
 // Long generations (documents, image analysis) legitimately take a while.
 export const AI_REQUEST_OPTIONS = { timeout: 120_000 };
 /** Gemini model for chat, image analysis and academic generation (gemini-2.5-flash shuts down 2026-12-01). */
-export const GEMINI_MODEL = 'gemini-3.8-flash';
+export const GEMINI_MODEL = 'gemini-4-hydrogen';
 
 export const fileToGenerativePart = (path: string, mimeType: string) => {
     return {
