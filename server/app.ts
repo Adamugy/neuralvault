@@ -13,7 +13,6 @@ import resourcesRoutes from './routes/resources.js';
 import academicRoutes from './routes/academic.js';
 import aiRoutes from './routes/ai.js';
 import configRoutes from './routes/config.js';
-import passkeyRoutes from './routes/passkey.js';
 
 import { uploadsDir } from './utils/upload.js';
 import { env } from './utils/env.js';

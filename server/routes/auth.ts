@@ -34,8 +34,8 @@ router.post('/2fa/disable', requireApiAuth, AuthController.disable2FA);
 router.post('/2fa/verify', AuthController.verify2FA);
 
 // Passkey routes
-router.post('/passkey/registration-options', PasskeyController.registrationOptions);
-router.post('/passkey/registration-verify', PasskeyController.registrationVerify);
+router.post('/passkey/registration-options', requireApiAuth, PasskeyController.registrationOptions);
+router.post('/passkey/registration-verify', requireApiAuth, PasskeyController.registrationVerify);
 router.post('/passkey/login-options', PasskeyController.loginOptions);
 router.post('/passkey/login-verify', PasskeyController.loginVerify);
 

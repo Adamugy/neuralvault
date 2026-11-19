@@ -263,7 +263,8 @@ export const updateMe = asyncHandler(async (req: Request, res: Response) => {
 export const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     const { token } = req.body;
 
-    if (!token) {
+    // Must be a string: an object like {"not":"x"} would become a Prisma filter and match any user
+    if (typeof token !== 'string' || !token) {
         throw new BadRequestError('Verification token is required');
     }
 
@@ -536,7 +537,8 @@ export const forgotPassword = asyncHandler(async (req: Request, res: Response) =
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
     const { token, newPassword } = req.body;
 
-    if (!token || !newPassword) {
+    // Must be strings: an object token like {"not":"x"} would become a Prisma filter and match any user
+    if (typeof token !== 'string' || typeof newPassword !== 'string' || !token || !newPassword) {
         throw new BadRequestError('Token e nova senha são obrigatórios');
     }
 

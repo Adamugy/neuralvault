@@ -61,7 +61,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleRegisterPasskey = async () => {
     setPasskeyLoading(true);
     try {
-      await registerPasskey(userProfile.email);
+      await registerPasskey(await getToken());
       setUserProfile(prev => ({ ...prev, hasPasskey: true }));
       showToast('Passkey registered successfully!', 'success');
     } catch (error: any) {
