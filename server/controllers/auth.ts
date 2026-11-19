@@ -570,5 +570,8 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
         } as any
     });
 
+    // Log out every existing session: whoever had access with the old password loses it
+    await prisma.session.deleteMany({ where: { userId: user.id } });
+
     res.json({ message: 'Senha redefinida com sucesso. Você já pode fazer login com sua nova senha.' });
 });

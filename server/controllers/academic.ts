@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import { ai, fileToGenerativePart, AI_REQUEST_OPTIONS, GEMINI_MODEL } from '../services/gemini.js';
-import { BadRequestError } from '../utils/errors.js';
+import { BadRequestError, NotFoundError } from '../utils/errors.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../services/prisma.js';
 import { validateFileContent, sanitizeSvg, reprocessImage, validateImageDimensions } from '../utils/security.js';
@@ -33,6 +33,11 @@ export const generate = asyncHandler(async (req: Request, res: Response) => {
         });
         currentSessionId = newSession.id;
     } else {
+        // The session must belong to this user, or anyone could write into another person's session
+        const owned = await prisma.academicSession.findFirst({ where: { id: String(currentSessionId), userId: userId! }, select: { id: true } });
+        if (!owned) throw new NotFoundError('Session not found');
+        currentSessionId = owned.id;
+
         // Limit messages per session
         const messageCount = await prisma.academicMessage.count({ where: { sessionId: currentSessionId } });
         if (messageCount >= SECURITY_CONFIG.MAX_MESSAGES_PER_SESSION) {
@@ -242,8 +247,9 @@ export const getHistory = asyncHandler(async (req: Request, res: Response) => {
 export const getSessionMessages = asyncHandler(async (req: Request, res: Response) => {
     const { id } = req.params;
 
+    // Only messages from the caller's own sessions
     const messages = await prisma.academicMessage.findMany({
-        where: { sessionId: id },
+        where: { sessionId: String(id), session: { userId: req.userId! } },
         orderBy: { createdAt: 'asc' }
     });
 

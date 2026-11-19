@@ -5,7 +5,7 @@ import request from 'supertest';
 
 // Regression tests for two account-takeover bugs found in the 2026-11-19 audit.
 const { prisma, getRegistrationOptions } = vi.hoisted(() => ({
-    prisma: { user: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), create: vi.fn() } },
+    prisma: { user: { findFirst: vi.fn(), findUnique: vi.fn(), update: vi.fn(), create: vi.fn() }, session: { deleteMany: vi.fn() } },
     getRegistrationOptions: vi.fn(async () => ({ challenge: 'c' })),
 }));
 
@@ -38,6 +38,13 @@ describe('auth security', () => {
         const res = await request(app).post('/api/auth/reset-password').send({ token: { not: 'x' }, newPassword: 'newpassword123' });
         expect(res.status).toBe(400);
         expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('reset-password logs out every existing session', async () => {
+        prisma.user.findFirst.mockResolvedValueOnce({ id: 'u1' });
+        const res = await request(app).post('/api/auth/reset-password').send({ token: 'abc', newPassword: 'newpassword123' });
+        expect(res.status).toBe(200);
+        expect(prisma.session.deleteMany).toHaveBeenCalledWith({ where: { userId: 'u1' } });
     });
 
     it('verify-email rejects an object token', async () => {
