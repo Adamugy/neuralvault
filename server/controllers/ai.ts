@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs/promises';
 import { streamText, isStepCount, type ModelMessage } from 'ai';
-import { ai, fileToGenerativePart, AI_REQUEST_OPTIONS } from '../services/gemini.js';
+import { ai, fileToGenerativePart, AI_REQUEST_OPTIONS, GEMINI_MODEL } from '../services/gemini.js';
 import { availableModels, getChatModel } from '../services/llm.js';
 import { libraryTools, type ResourceUpdateProposal } from '../services/libraryTools.js';
 import { env } from '../utils/env.js';
@@ -136,7 +136,7 @@ export const analyzeImage = asyncHandler(async (req: Request, res: Response) => 
         }
         file.mimetype = mime;
 
-        const model = ai.getGenerativeModel({ model: 'gemini-2.5-flash' }, AI_REQUEST_OPTIONS);
+        const model = ai.getGenerativeModel({ model: GEMINI_MODEL }, AI_REQUEST_OPTIONS);
         const imagePart = fileToGenerativePart(file.path, file.mimetype);
 
         const result = await model.generateContent([

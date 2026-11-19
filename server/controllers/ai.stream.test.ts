@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 // The model is mocked: these tests cover how the chat controller streams, not the model.
 const { streamText, getChatModel } = vi.hoisted(() => ({
     streamText: vi.fn(),
-    getChatModel: vi.fn((id?: string) => ({ id: id ?? 'gemini-2.5-flash', label: 'Gemini', model: {} })),
+    getChatModel: vi.fn((id?: string) => ({ id: id ?? 'gemini-3.8-flash', label: 'Gemini', model: {} })),
 }));
 
 vi.mock('ai', async (importOriginal) => ({ ...(await importOriginal<typeof import('ai')>()), streamText }));
@@ -62,7 +62,7 @@ describe('chat controller', () => {
         const res = fakeRes();
         await run({ message: 'hi' }, res);
 
-        expect(res.json).toHaveBeenCalledWith({ text: 'hello', proposals: [], model: 'gemini-2.5-flash' });
+        expect(res.json).toHaveBeenCalledWith({ text: 'hello', proposals: [], model: 'gemini-3.8-flash' });
         expect(res.chunks).toEqual([]);
     });
 
