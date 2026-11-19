@@ -92,8 +92,8 @@ export const PrivacySettings: React.FC = () => {
         <h4 id="consents-title" className="font-medium text-ink mb-1">Consentimentos</h4>
         <Toggle
           id="consent-ai"
-          label="Funcionalidades de IA (Google, Anthropic, OpenAI)"
-          description="O conteúdo que envias ao AI Tutor é processado pelo fornecedor do modelo escolhido; a análise de imagem e o Assistente Académico usam a Google. No plano gratuito do Gemini, a Google pode usar o conteúdo para melhorar os seus produtos."
+          label="Funcionalidades de IA (Google, Anthropic, OpenAI, Moonshot)"
+          description="O conteúdo que envias ao AI Tutor é processado pelo fornecedor do modelo escolhido; os modelos Kimi enviam-no à Moonshot AI, na China; a análise de imagem e o Assistente Académico usam a Google. No plano gratuito do Gemini, a Google pode usar o conteúdo para melhorar os seus produtos."
           checked={!!consents?.aiProcessing}
           disabled={!consents || busy === 'ai_processing'}
           onChange={v => toggle('ai_processing', v)}

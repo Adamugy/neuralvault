@@ -104,7 +104,7 @@ export const PrivacyPolicyPage: React.FC = () => (
         <thead><tr><th>Finalidade</th><th>Fundamento (RGPD, art. 6.º, n.º 1)</th></tr></thead>
         <tbody>
           <tr><td>Criar e gerir a conta, guardar os teus recursos, enviar emails de confirmação e recuperação</td><td>Execução do contrato (alínea b)</td></tr>
-          <tr><td>Funcionalidades de IA (enviar o teu conteúdo ao fornecedor do modelo escolhido: Google, Anthropic ou OpenAI)</td><td>Consentimento (alínea a), pedido antes da primeira utilização</td></tr>
+          <tr><td>Funcionalidades de IA (enviar o teu conteúdo ao fornecedor do modelo escolhido: Google, Anthropic, OpenAI ou Moonshot)</td><td>Consentimento (alínea a), pedido antes da primeira utilização</td></tr>
           <tr><td>Comunicações de marketing, se as aceitares</td><td>Consentimento (alínea a); a caixa vem desmarcada</td></tr>
           <tr><td>Segurança, prevenção de abuso (incluindo o limite diário de pedidos de IA) e registo de consentimentos</td><td>Interesse legítimo (alínea f) e dever de demonstrar o consentimento (art. 7.º, n.º 1)</td></tr>
         </tbody>
@@ -115,7 +115,7 @@ export const PrivacyPolicyPage: React.FC = () => (
       <h2>4. Inteligência artificial</h2>
       <p>
         No AI Tutor escolhes o modelo, e o conteúdo que envias é processado pelo fornecedor desse modelo: <strong>Google</strong> (Gemini),
-        <strong>Anthropic</strong> (Claude) ou <strong>OpenAI</strong> (GPT). A análise de imagem e o Assistente Académico usam sempre o Gemini.
+        <strong>Anthropic</strong> (Claude), <strong>OpenAI</strong> (GPT) ou <strong>Moonshot AI</strong> (Kimi). A análise de imagem e o Assistente Académico usam sempre o Gemini.
         Na API Gemini usamos o <strong>plano gratuito</strong>: segundo os termos da Google, nesse plano o conteúdo pode ser usado pela Google para
         melhorar os seus produtos e pode ser lido por revisores humanos. Nas APIs da Anthropic e da OpenAI, segundo os termos comerciais desses
         fornecedores, o conteúdo não é usado para treinar os seus modelos por omissão, mas pode ser guardado durante um período limitado para
@@ -147,6 +147,11 @@ export const PrivacyPolicyPage: React.FC = () => (
         Alguns destes fornecedores estão sediados nos EUA ou tratam dados fora do Espaço Económico Europeu. Essas transferências baseiam-se na
         decisão de adequação do Quadro de Privacidade de Dados UE-EUA, quando o fornecedor está certificado, ou nas cláusulas contratuais-tipo
         aprovadas pela Comissão Europeia (RGPD, arts. 45.º e 46.º).
+      </p>
+      <p>
+        A Moonshot AI (modelos Kimi) está sediada na China, país sem decisão de adequação da Comissão Europeia, e não temos com ela cláusulas
+        contratuais-tipo. Por isso, o conteúdo só lhe é enviado quando escolhes um modelo Kimi, com base no teu consentimento explícito, dado no
+        aviso de IA depois de seres informado deste risco (RGPD, art. 49.º, n.º 1, alínea a)). Se não quiseres esta transferência, escolhe outro modelo.
       </p>
       <p>Se usares a opção “Search the Web” na pesquisa, o termo pesquisado é enviado à Google apenas quando clicas nessa opção.</p>
     </section>

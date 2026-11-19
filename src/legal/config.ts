@@ -28,6 +28,7 @@ export const PROCESSORS = [
   { name: 'Google (Gemini API)', role: 'Funcionalidades de IA: AI Tutor (modelos Gemini), análise de imagem e assistente académico', location: 'EUA e outros países onde a Google opera' },
   { name: 'Anthropic, PBC (Claude API)', role: 'AI Tutor, quando escolhes um modelo Claude', location: 'EUA' },
   { name: 'OpenAI, L.L.C. (OpenAI API)', role: 'AI Tutor, quando escolhes um modelo GPT', location: 'EUA' },
+  { name: 'Moonshot AI (Kimi API)', role: 'AI Tutor, quando escolhes um modelo Kimi', location: 'Fora do Espaço Económico Europeu; empresa sediada na China' },
   { name: 'Cloudflare, Inc.', role: 'Rede de entrega e proteção usada pelo alojamento', location: 'Rede global; empresa sediada nos EUA' },
 ];
 

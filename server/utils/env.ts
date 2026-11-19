@@ -21,6 +21,7 @@ const envSchema = z.object({
     GEMINI_API_KEY: z.string().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     OPENAI_API_KEY: z.string().min(1).optional(),
+    KIMI_API_KEY: z.string().min(1).optional(),
     // AI requests per person per day (chat, image analysis, academic generation)
     AI_DAILY_LIMIT: z.string().default('100').transform(Number),
     // Other

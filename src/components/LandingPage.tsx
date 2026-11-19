@@ -210,9 +210,9 @@ const LandingPage: React.FC = () => {
     {
       icon: MessageSquareText,
       title: "AI Tutor",
-      description: "Ask questions about deep learning, math and code, and get explanations from the model you pick: Gemini, Claude or GPT.",
+      description: "Ask questions about deep learning, math and code, and get explanations from the model you pick: Gemini, Claude, GPT or Kimi.",
       color: "indigo-500",
-      details: "The tutor sends your question to the model you pick (Google Gemini, Anthropic Claude or OpenAI GPT) and streams the answer back. It can also read your library and propose changes, which apply only when you approve them. Answers are AI-generated and can contain mistakes, so check them before relying on them."
+      details: "The tutor sends your question to the model you pick (Google Gemini, Anthropic Claude, OpenAI GPT or Moonshot Kimi) and streams the answer back. It can also read your library and propose changes, which apply only when you approve them. Answers are AI-generated and can contain mistakes, so check them before relying on them."
     },
     {
       icon: ScanEye,
@@ -469,7 +469,7 @@ const LandingPage: React.FC = () => {
                 <span className="text-accent italic">Digital Brain</span>
               </h2>
               <p className="text-body text-lg leading-relaxed max-w-lg mx-auto lg:mx-0">
-                Try the tutor below. This demo uses pre-written answers; the real AI Tutor, inside the app, lets you pick Gemini, Claude or GPT.
+                Try the tutor below. This demo uses pre-written answers; the real AI Tutor, inside the app, lets you pick Gemini, Claude, GPT or Kimi.
               </p>
             </div>
             <div data-demo className="w-full min-w-0">

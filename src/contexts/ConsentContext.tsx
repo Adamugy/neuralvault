@@ -113,7 +113,8 @@ export const AiConsentGate: React.FC<{ children: React.ReactNode }> = ({ childre
         <Sparkles className="w-8 h-8 text-primary mb-3" aria-hidden="true" />
         <h2 id="ai-notice-title" className="font-display text-3xl text-ink mb-3">Antes de usar a IA</h2>
         <ul className="space-y-2 text-sm text-body list-disc pl-5 mb-5">
-          <li>O que escreves e os ficheiros que envias nas funcionalidades de IA são enviados ao fornecedor do modelo que escolheres: <strong>Google (Gemini)</strong>, <strong>Anthropic (Claude)</strong> ou <strong>OpenAI (GPT)</strong>. A análise de imagem e o Assistente Académico usam o Gemini.</li>
+          <li>O que escreves e os ficheiros que envias nas funcionalidades de IA são enviados ao fornecedor do modelo que escolheres: <strong>Google (Gemini)</strong>, <strong>Anthropic (Claude)</strong> ou <strong>OpenAI (GPT)</strong> ou <strong>Moonshot AI (Kimi)</strong>. A análise de imagem e o Assistente Académico usam o Gemini.</li>
+          <li>Se escolheres um modelo <strong>Kimi</strong>, o conteúdo vai para a Moonshot AI, sediada na China: um país sem nível de proteção de dados reconhecido pela UE e sem garantias contratuais da nossa parte. Ao aceitar, consentes nessa transferência; para a evitar, usa outro modelo.</li>
           <li>Usamos o plano gratuito da API Gemini: nesse plano, a <strong>Google pode usar esse conteúdo para melhorar os seus produtos</strong>, e revisores humanos podem lê-lo.</li>
           <li>O AI Tutor pode ler a tua biblioteca (títulos, etiquetas, notas, pastas) para te ajudar a organizá-la. Só altera um recurso se aprovares a proposta, e nunca apaga.</li>
           <li>Não envies dados pessoais sensíveis (saúde, dados de terceiros, palavras-passe).</li>

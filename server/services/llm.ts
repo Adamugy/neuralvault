@@ -16,6 +16,9 @@ const MODELS: { id: string; label: string; provider: string; key?: string; creat
         create: apiKey => createAnthropic({ apiKey })('claude-sonnet-5-5') },
     { id: 'gpt-5.4-mini', label: 'GPT-5.4 mini', provider: 'OpenAI', key: env.OPENAI_API_KEY,
         create: apiKey => createOpenAI({ apiKey })('gpt-5.4-mini') },
+    // Moonshot exposes an OpenAI-compatible Chat Completions API
+    { id: 'kimi-k3', label: 'Kimi K3', provider: 'Moonshot', key: env.KIMI_API_KEY,
+        create: apiKey => createOpenAI({ apiKey, baseURL: 'https://api.moonshot.ai/v1', name: 'moonshot' }).chat('kimi-k3') },
 ];
 
 export const availableModels = () =>
