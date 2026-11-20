@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/authService.js';
 import { UnauthorizedError } from '../utils/errors.js';
 import { getContextFingerprint } from './zeroTrust.js';
+import { readSessionToken } from '../utils/sessionCookie.js';
 
 // Extend Express Request to include userId
 declare global {
@@ -19,14 +20,12 @@ declare global {
  */
 export const requireApiAuth = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const authHeader = req.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            console.log('[Auth] Missing or invalid Authorization header');
+        // httpOnly session cookie first; an Authorization: Bearer header still works for API clients
+        const token = readSessionToken(req);
+        if (!token) {
+            console.log('[Auth] Missing session cookie or Authorization header');
             return next(new UnauthorizedError());
         }
-
-        const token = authHeader.substring(7);
 
         // Verify and decode token
         const decoded = AuthService.verifyToken(token);

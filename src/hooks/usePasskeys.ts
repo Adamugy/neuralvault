@@ -1,9 +1,9 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
 export const usePasskeys = () => {
-    // Adds a passkey to the signed-in account; the server takes the user from the token.
-    const registerPasskey = async (token: string | null) => {
-        const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+    // Adds a passkey to the signed-in account; the server takes the user from the session cookie.
+    const registerPasskey = async () => {
+        const headers = { 'Content-Type': 'application/json' };
         try {
             // 1. Get options from server
             const optionsRes = await fetch('/api/auth/passkey/registration-options', {

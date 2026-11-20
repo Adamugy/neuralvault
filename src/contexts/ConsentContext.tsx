@@ -31,19 +31,17 @@ export const useConsents = () => {
 };
 
 export const ConsentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { getToken } = useAuth();
   const [consents, setConsents] = useState<ConsentStatus | null>(null);
 
   const call = useCallback(async (init?: RequestInit) => {
-    const token = await getToken();
     const res = await fetch('/api/auth/consents', {
       ...init,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(init?.headers || {}) },
+      headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
     });
     if (!res.ok) throw new Error('Consent request failed');
     const data = await res.json();
     setConsents(data.consents);
-  }, [getToken]);
+  }, []);
 
   useEffect(() => { call().catch(() => {}); }, [call]);
 

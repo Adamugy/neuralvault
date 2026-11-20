@@ -105,7 +105,7 @@ export const SignInPage = () => {
         return;
       }
 
-      setSession(result.token, result.user);
+      setSession(result.user);
       navigate('/dashboard');
     } catch (err: any) {
       console.error('[Passkey Content Error]', err);

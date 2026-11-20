@@ -35,7 +35,7 @@ interface AcademicHelperProps {
 }
 
 export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userProfile, onOpenUpgrade }) => {
-  const { getToken, isLoaded: authLoaded } = useAuth();
+  const { isLoaded: authLoaded } = useAuth();
   const { showToast } = useNotification();
   const [activeTask, setActiveTask] = useState<TaskType>('outline');
   const [topic, setTopic] = useState('');
@@ -89,10 +89,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
     (async () => {
         try {
-            const token = await getToken();
-            const res = await fetch('/api/bootstrap', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const res = await fetch('/api/bootstrap');
             const data = await res.json();
             if (data?.folders) {
                 const apiFolders: FolderType[] = Array.isArray(data.folders) ? data.folders : [];
@@ -106,7 +103,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
             console.error("Failed to fetch folders for library modal", error);
         }
     })();
-  }, [authLoaded, isLibraryOpen, getToken]);
+  }, [authLoaded, isLibraryOpen]);
 
   const handleGenerate = async () => {
     if (activeTask === 'refine' && !contentInput) return;
@@ -121,7 +118,6 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     setResult('');
 
     try {
-        const token = await getToken();
         const formData = new FormData();
         formData.append('taskType', activeTask);
         formData.append('topic', topic);
@@ -161,9 +157,6 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
 
         const res = await fetch('/api/academic/generate', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             body: formData
         });
 
@@ -206,12 +199,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
             simplify: "Simplify the language of this text to make it more accessible without losing technical accuracy for a ${level} student:"
         };
 
-        const token = await getToken();
         const res = await fetch('/api/academic/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 taskType: 'refine',
@@ -248,12 +239,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     setIsGenerating(true);
 
     try {
-        const token = await getToken();
         const res = await fetch('/api/academic/generate', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 taskType: 'refine',
@@ -298,12 +287,10 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
     }
 
     try {
-        const token = await getToken();
         const res = await fetch('/api/academic/export-pdf', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
                 title: topic.split('\n')[0] || "Academic Document",
@@ -522,8 +509,7 @@ export const AcademicHelper: React.FC<AcademicHelperProps> = ({ resources, userP
                         onClick={async () => {
                             if (!showHistory) {
                                 // Load History
-                                const token = await getToken();
-                                const res = await fetch('/api/academic/history', { headers: { Authorization: `Bearer ${token}` } });
+                                const res = await fetch('/api/academic/history');
                                 if (res.ok) setHistorySessions(await res.json());
                             }
                             setShowHistory(!showHistory);

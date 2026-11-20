@@ -49,13 +49,15 @@ export class AuthService {
         }
     }
 
-    static async createSession(userId: string, token: string, contextFingerprint?: string): Promise<void> {
+    /** Stores the session and returns when it expires (used for the cookie's lifetime). */
+    static async createSession(userId: string, token: string, contextFingerprint?: string): Promise<Date> {
         this.verifyToken(token);
         const expiresAt = new Date(Date.now() + this.parseExpiration(JWT_EXPIRES_IN));
 
         await prisma.session.create({
             data: { userId, token, expiresAt, contextFingerprint }
         });
+        return expiresAt;
     }
 
     static async deleteSession(token: string): Promise<void> {

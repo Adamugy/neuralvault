@@ -31,7 +31,8 @@ router.post('/forgot-password', authLimiter, AuthController.forgotPassword);
 router.post('/reset-password', authLimiter, AuthController.resetPassword);
 
 // Protected routes
-router.post('/signout', requireApiAuth, AuthController.signout);
+// No requireApiAuth: signing out must also clear a cookie whose session is already gone
+router.post('/signout', AuthController.signout);
 router.get('/me', requireApiAuth, AuthController.getMe);
 router.patch('/me', requireApiAuth, AuthController.updateMe);
 // Privacy: consents, data export and account deletion (RGPD arts. 7, 15, 17, 20)

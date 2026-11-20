@@ -72,7 +72,7 @@ const VIEW_LABELS: Record<ViewState, string> = {
 
 const AppContent: React.FC = () => {
   const { user, isLoaded } = useUser();
-  const { isLoaded: authLoaded, getToken } = useAuth();
+  const { isLoaded: authLoaded } = useAuth();
   const lastSyncedUserIdRef = useRef<string | null>(null);
 
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
@@ -102,9 +102,7 @@ const AppContent: React.FC = () => {
 
     // Fetch full profile from our DB to get role and avatar
     const fetchFullProfile = async () => {
-        const token = await getToken();
-        if (!token) return;
-        const res = await fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch('/api/auth/me');
         if (res.ok) {
             const data = await res.json();
             setUserProfile(prev => ({
@@ -149,7 +147,7 @@ const AppContent: React.FC = () => {
             emailVerified: user.emailVerified
         }));
     }
-  }, [isLoaded, user, getToken]);
+  }, [isLoaded, user]);
 
   const [appSettings, setAppSettings] = useState<AppSettings>({
     theme: 'dark',
@@ -164,14 +162,11 @@ const AppContent: React.FC = () => {
 
   const handleSaveProfile = async (profile: UserProfile) => {
     if (!authLoaded) return;
-    const token = await getToken();
-    if (!token) return;
 
     const res = await fetch('/api/auth/me', {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         name: profile.name,

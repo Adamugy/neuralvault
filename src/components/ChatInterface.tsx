@@ -26,7 +26,6 @@ const describeChanges = (p: ResourceUpdateProposal) => [
 ].filter(Boolean) as string[];
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], setResources }) => {
-  const { getToken } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -47,8 +46,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], se
     let cancelled = false;
     (async () => {
       try {
-        const token = await getToken();
-        const res = await fetch('/api/ai/models', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch('/api/ai/models');
         if (!res.ok || cancelled) return;
         const data = await res.json();
         setModels(data.models || []);
@@ -56,7 +54,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], se
       } catch { /* the chat still works with the server default */ }
     })();
     return () => { cancelled = true; };
-  }, [getToken]);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,12 +93,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], se
     };
 
     try {
-      const token = await getToken();
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           message: userMsg.content,
@@ -190,10 +186,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ resources = [], se
   const applyProposal = async (msgId: string, index: number, p: ResourceUpdateProposal) => {
     setProposalStatus(msgId, index, 'applying');
     try {
-      const token = await getToken();
       const res = await fetch(`/api/resources/${encodeURIComponent(p.resourceId)}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p.changes),
       });
       if (!res.ok) throw new Error('Update failed');

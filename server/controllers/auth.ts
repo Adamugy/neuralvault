@@ -9,6 +9,7 @@ import { reprocessImageFromBuffer } from '../utils/security.js';
 import path from 'path';
 import crypto from 'crypto';
 import { getContextFingerprint } from '../middleware/zeroTrust.js';
+import { setSessionCookie, clearSessionCookie, readSessionToken } from '../utils/sessionCookie.js';
 import { ConsentService } from '../services/consentService.js';
 import { PRIVACY_VERSION, TERMS_VERSION } from '../utils/legal.js';
 
@@ -137,7 +138,7 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
     // Create session in database with fingerprint
     console.log(`[Auth Debug] Creating session for user ID: ${user.id}`);
     try {
-        await AuthService.createSession(user.id, token, fingerprint);
+        setSessionCookie(res, token, await AuthService.createSession(user.id, token, fingerprint));
         console.log(`[Auth Debug] Session created successfully.`);
     } catch (err: any) {
         console.error(`[Auth Debug] ERROR creating session:`, err.message);
@@ -159,22 +160,19 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
             plan: user.plan,
             hasPasskey: (userWithPasskeys as any)?.authenticators?.length > 0,
             twoFactorEnabled: (user as any).twoFactorEnabled
-        },
-        token
+        }
     });
 });
 
 /**
  * POST /api/auth/signout
- * Sign out the current user
+ * Ends the current session and clears the cookie. Works without a valid session,
+ * so a stale cookie (expired, or account deleted) still gets cleared.
  */
 export const signout = asyncHandler(async (req: Request, res: Response) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        await AuthService.deleteSession(token);
-    }
-
+    const token = readSessionToken(req);
+    if (token) await AuthService.deleteSession(token);
+    clearSessionCookie(res);
     res.json({ message: 'Signed out successfully' });
 });
 
@@ -477,9 +475,8 @@ export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
 
     // Success! Generate real token
     const finalToken = AuthService.generateToken(user.id, user.email);
-    const { getContextFingerprint } = await import('../middleware/zeroTrust.js');
     const fingerprint = getContextFingerprint(req);
-    await AuthService.createSession(user.id, finalToken, fingerprint);
+    setSessionCookie(res, finalToken, await AuthService.createSession(user.id, finalToken, fingerprint));
 
     res.json({
         user: {
@@ -489,8 +486,7 @@ export const verify2FA = asyncHandler(async (req: Request, res: Response) => {
             avatarUrl: user.avatarUrl,
             plan: user.plan,
             twoFactorEnabled: true
-        },
-        token: finalToken
+        }
     });
 });
 

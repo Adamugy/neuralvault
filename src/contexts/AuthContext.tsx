@@ -21,8 +21,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ status: 'success' | '2fa_required', tempToken?: string }>;
   signUp: (email: string, password: string, name: string | undefined, consents: { acceptTerms: boolean; ageConfirmed: boolean; marketingOptIn: boolean }) => Promise<void>;
   signOut: () => Promise<void>;
-  getToken: () => Promise<string | null>;
-  setSession: (token: string, user: User) => void;
+  setSession: (user: User) => void;
   verify2FA: (tempToken: string, token: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -49,34 +48,22 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('auth_token'));
 
-  // Check session on mount
+  // The session token lives in an httpOnly cookie the browser sends by itself; scripts never see it.
+  // On mount, ask the server who we are.
   useEffect(() => {
     const checkSession = async () => {
-      const savedToken = localStorage.getItem('auth_token');
-      if (!savedToken) {
-        setLoading(false);
-        return;
-      }
+      // Tokens used to be kept here; drop any left over from before the cookie
+      try { localStorage.removeItem('auth_token'); } catch { /* storage blocked */ }
 
       try {
-        const res = await fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${savedToken}` }
-        });
-
+        const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
-          setToken(savedToken);
-        } else {
-          localStorage.removeItem('auth_token');
-          setToken(null);
         }
       } catch (error) {
         console.error('Session check failed:', error);
-        localStorage.removeItem('auth_token');
-        setToken(null);
       } finally {
         setLoading(false);
       }
@@ -103,8 +90,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { status: '2fa_required', tempToken: data.tempToken };
       }
 
-      localStorage.setItem('auth_token', data.token);
-      setToken(data.token);
       setUser(data.user);
       return { status: 'success' };
     } finally {
@@ -126,8 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error(data.message || '2FA verification failed');
       }
 
-      localStorage.setItem('auth_token', data.token);
-      setToken(data.token);
       setUser(data.user);
     } finally {
       setLoading(false);
@@ -157,37 +140,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signOut = useCallback(async () => {
     try {
-      if (token) {
-        await fetch('/api/auth/signout', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+      // The server deletes the session and clears the cookie
+      await fetch('/api/auth/signout', { method: 'POST' });
     } finally {
-      localStorage.removeItem('auth_token');
-      setToken(null);
       setUser(null);
     }
-  }, [token]);
+  }, []);
 
-  const setSession = useCallback((token: string, user: User) => {
-    localStorage.setItem('auth_token', token);
-    setToken(token);
+  // After a login the server already set the cookie (passkey flow); just remember the user
+  const setSession = useCallback((user: User) => {
     setUser(user);
   }, []);
 
-  const getToken = useCallback(async (): Promise<string | null> => {
-    return token;
-  }, [token]);
-
   const refreshUser = useCallback(async () => {
-    const savedToken = localStorage.getItem('auth_token');
-    if (!savedToken) return;
-
     try {
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${savedToken}` }
-      });
+      const res = await fetch('/api/auth/me');
 
       if (res.ok) {
         const data = await res.json();
@@ -206,11 +173,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signUp,
     signOut,
-    getToken,
     setSession,
     refreshUser,
     verify2FA,
-  }), [user, loading, signIn, signUp, signOut, getToken, setSession, refreshUser, verify2FA]);
+  }), [user, loading, signIn, signUp, signOut, setSession, refreshUser, verify2FA]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -14,7 +14,7 @@ interface ResourceBoardProps {
 }
 
 export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setResources, appSettings, userProfile, onOpenUpgrade }) => {
-  const { isLoaded: authLoaded, getToken } = useAuth();
+  const { isLoaded: authLoaded } = useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -46,9 +46,7 @@ export const ResourceBoard: React.FC<ResourceBoardProps> = ({ resources, setReso
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const apiFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const token = await getToken();
     const headers = new Headers(init?.headers || undefined);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
     const res = await fetch(input, { ...init, headers });
     if (!res.ok) {
       let message = `${res.status} ${res.statusText}`;

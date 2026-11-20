@@ -3,6 +3,8 @@ import * as passkeyService from '../services/passkeyService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../services/prisma.js';
 import { AuthService } from '../services/authService.js';
+import { setSessionCookie } from '../utils/sessionCookie.js';
+import { getContextFingerprint } from '../middleware/zeroTrust.js';
 
 // Registration only adds a passkey to the signed-in account (requireApiAuth): the user
 // comes from the session, never from the body, or anyone could add a passkey to any email.
@@ -56,15 +58,13 @@ export const loginVerify = asyncHandler(async (req: Request, res: Response) => {
                 });
             }
 
-            // Normal login
+            // Normal login: session in DB, token only in the httpOnly cookie
             const token = AuthService.generateToken(user.id, user.email);
-            // Create session in DB
-            await AuthService.createSession(user.id, token);
+            setSessionCookie(res, token, await AuthService.createSession(user.id, token, getContextFingerprint(req)));
 
             res.json({
                 verified: true,
                 status: 'success',
-                token,
                 user: {
                     id: user.id,
                     email: user.email,

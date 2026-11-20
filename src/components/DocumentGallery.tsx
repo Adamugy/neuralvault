@@ -12,7 +12,6 @@ interface GeneratedDocument {
 }
 
 export const DocumentGallery: React.FC = () => {
-    const { getToken } = useAuth();
     const { showToast } = useNotification();
     const [docs, setDocs] = useState<GeneratedDocument[]>([]);
     const [loading, setLoading] = useState(true);
@@ -23,10 +22,7 @@ export const DocumentGallery: React.FC = () => {
 
     const loadDocs = async () => {
         try {
-            const token = await getToken();
-            const res = await fetch('/api/academic/gallery', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetch('/api/academic/gallery');
             if (res.ok) {
                 const data = await res.json();
                 setDocs(data);
@@ -62,12 +58,10 @@ export const DocumentGallery: React.FC = () => {
         }
 
         try {
-            const token = await getToken();
             const res = await fetch(`/api/academic/export-${format}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     title: doc.title,

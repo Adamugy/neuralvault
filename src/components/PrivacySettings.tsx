@@ -28,7 +28,7 @@ const Toggle: React.FC<{ id: string; label: string; description: string; checked
   );
 
 export const PrivacySettings: React.FC = () => {
-  const { getToken, signOut, user } = useAuth();
+  const { signOut, user } = useAuth();
   const { consents, setConsent } = useConsents();
   const navigate = useNavigate();
   const [busy, setBusy] = useState<string | null>(null);
@@ -48,8 +48,7 @@ export const PrivacySettings: React.FC = () => {
   const exportData = async () => {
     setBusy('export'); setMessage('');
     try {
-      const token = await getToken();
-      const res = await fetch('/api/auth/me/export', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch('/api/auth/me/export');
       if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -65,10 +64,9 @@ export const PrivacySettings: React.FC = () => {
   const deleteAccount = async () => {
     setBusy('delete'); setDeleteError('');
     try {
-      const token = await getToken();
       const res = await fetch('/api/auth/me', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: confirmText, password }),
       });
       const data = await res.json().catch(() => ({}));

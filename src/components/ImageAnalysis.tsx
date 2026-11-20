@@ -14,7 +14,6 @@ interface ImageAnalysisProps {
 }
 
 export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resources = [], onOpenUpgrade }) => {
-  const { getToken } = useAuth();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
@@ -70,16 +69,12 @@ export const ImageAnalysis: React.FC<ImageAnalysisProps> = ({ userProfile, resou
     setIsAnalyzing(true);
     try {
       const finalPrompt = prompt.trim() || "Analyze this image in detail. Identify any diagrams, mathematical formulas, or code related to deep learning. Explain the concepts shown.";
-      const token = await getToken();
       const formData = new FormData();
       formData.append('image', selectedImage);
       formData.append('prompt', finalPrompt);
 
       const res = await fetch('/api/ai/analyze-image', {
           method: 'POST',
-          headers: {
-              'Authorization': `Bearer ${token}`
-          },
           body: formData
       });
 

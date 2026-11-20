@@ -196,8 +196,9 @@ export const PrivacyPolicyPage: React.FC = () => (
     <section>
       <h2>9. Cookies e armazenamento no navegador</h2>
       <p>
-        Não usamos cookies de análise nem de publicidade, nem rastreadores de terceiros. Guardamos apenas o token de sessão no armazenamento local
-        do navegador (<code>auth_token</code>), necessário para manter a sessão iniciada. As fontes são servidas pelo nosso próprio domínio.
+        Não usamos cookies de análise nem de publicidade, nem rastreadores de terceiros. Usamos apenas um cookie de sessão
+        (<code>nv_session</code>, inacessível a scripts e válido até terminar a sessão ou no máximo 7 dias), necessário para manter a sessão iniciada.
+        As fontes são servidas pelo nosso próprio domínio.
         Por isso não pedimos consentimento para cookies: só usamos o estritamente necessário (Lei n.º 41/2004, art. 5.º).
       </p>
     </section>

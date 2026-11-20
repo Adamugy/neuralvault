@@ -39,7 +39,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { registerPasskey } = usePasskeys();
-  const { refreshUser, getToken } = useAuth();
+  const { refreshUser } = useAuth();
   const { showToast, confirm, prompt } = useNotification();
 
   const handleSave = async () => {
@@ -61,7 +61,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleRegisterPasskey = async () => {
     setPasskeyLoading(true);
     try {
-      await registerPasskey(await getToken());
+      await registerPasskey();
       setUserProfile(prev => ({ ...prev, hasPasskey: true }));
       showToast('Passkey registered successfully!', 'success');
     } catch (error: any) {
@@ -87,15 +87,11 @@ export const Settings: React.FC<SettingsProps> = ({
 
     setAvatarLoading(true);
     try {
-      const token = await getToken();
       const formData = new FormData();
       formData.append('avatar', file);
 
       const res = await fetch('/api/auth/avatar', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
       });
 
@@ -120,10 +116,8 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleGenerate2FA = async () => {
     setIsVerifying2FA(true);
     try {
-      const token = await getToken();
       const res = await fetch('/api/auth/2fa/generate', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -140,11 +134,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleEnable2FA = async () => {
     setIsVerifying2FA(true);
     try {
-      const token = await getToken();
       const res = await fetch('/api/auth/2fa/enable', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ token: twoFactorVerifyCode })
@@ -173,11 +165,9 @@ export const Settings: React.FC<SettingsProps> = ({
 
     setIsVerifying2FA(true);
     try {
-      const token = await getToken();
       const res = await fetch('/api/auth/2fa/disable', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ token: code })
