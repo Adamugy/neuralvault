@@ -104,6 +104,12 @@ export class ResourceService {
             throw new NotFoundError('Resource not found');
         }
 
+        // The target folder must be the user's own, not just any folder id
+        if (data.folderId) {
+            const folder = await prisma.folder.findFirst({ where: { id: data.folderId, userId }, select: { id: true } });
+            if (!folder) throw new NotFoundError('Folder not found');
+        }
+
         return prisma.resource.update({
             where: { id: resourceId },
             data

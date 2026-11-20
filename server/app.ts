@@ -43,8 +43,9 @@ function setupSecurity(app: express.Express) {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
                 "img-src": ["'self'", "data:", "blob:", "https://*.nvaulty.online"],
-                "script-src": ["'self'", "'unsafe-inline'", "https://*.nvaulty.online"],
-                "script-src-elem": ["'self'", "'unsafe-inline'", "https://*.nvaulty.online"],
+                // No inline scripts: the built index.html only loads bundled modules
+                "script-src": ["'self'", "https://*.nvaulty.online"],
+                "script-src-elem": ["'self'", "https://*.nvaulty.online"],
                 "connect-src": ["'self'", "https://*.nvaulty.online"],
                 "worker-src": ["'self'", "blob:"],
                 "frame-src": ["'self'", "https://*.nvaulty.online"],

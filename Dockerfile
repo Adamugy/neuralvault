@@ -40,5 +40,10 @@ COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/eng
 ENV PORT=3000
 EXPOSE 3000
 
+# Run as the unprivileged node user. Upload folders (the compiled default and Render's UPLOADS_DIR)
+# must exist and be writable before dropping root, or the server cannot create them at startup.
+RUN mkdir -p /app/dist-server/uploads /var/data/uploads && chown -R node:node /app/dist-server/uploads /var/data/uploads
+USER node
+
 # Apply pending migrations, then start the compiled server
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node dist-server/server/index.js"]
