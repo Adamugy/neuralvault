@@ -1,13 +1,14 @@
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
 export const usePasskeys = () => {
-    const registerPasskey = async (email: string) => {
+    // Adds a passkey to the signed-in account; the server takes the user from the token.
+    const registerPasskey = async (token: string | null) => {
+        const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
         try {
             // 1. Get options from server
             const optionsRes = await fetch('/api/auth/passkey/registration-options', {
                 method: 'POST',
-                body: JSON.stringify({ email }),
-                headers: { 'Content-Type': 'application/json' },
+                headers,
             });
 
             if (!optionsRes.ok) {
@@ -23,8 +24,8 @@ export const usePasskeys = () => {
             // 3. Send response back to server
             const verifyRes = await fetch('/api/auth/passkey/registration-verify', {
                 method: 'POST',
-                body: JSON.stringify({ email, body: attestationResponse }),
-                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ body: attestationResponse }),
+                headers,
             });
 
             const verificationResult = await verifyRes.json();

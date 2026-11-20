@@ -93,11 +93,16 @@ export const DocumentGallery: React.FC = () => {
                  // Simple fallback for PDF
                  const printWindow = window.open('', '_blank');
                  if (printWindow) {
-                     printWindow.document.write(`<html><head><title>${doc.title}</title></head><body style="font-family: sans-serif; padding: 20px; white-space: pre-wrap;"><h1>${doc.title}</h1>\n\n${doc.content}</body></html>`);
-                     printWindow.document.close();
-                     printWindow.onload = () => {
-                         printWindow.print();
-                     };
+                     // textContent, never HTML: the content comes from the AI and this window shares our origin
+                     const d = printWindow.document;
+                     d.title = doc.title;
+                     d.body.style.cssText = 'font-family: sans-serif; padding: 20px; white-space: pre-wrap;';
+                     const h1 = d.createElement('h1');
+                     h1.textContent = doc.title;
+                     const body = d.createElement('div');
+                     body.textContent = doc.content;
+                     d.body.append(h1, body);
+                     printWindow.print();
                  }
             }
         }

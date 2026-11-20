@@ -4,30 +4,18 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { prisma } from '../services/prisma.js';
 import { AuthService } from '../services/authService.js';
 
+// Registration only adds a passkey to the signed-in account (requireApiAuth): the user
+// comes from the session, never from the body, or anyone could add a passkey to any email.
 export const registrationOptions = asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email is required' });
-
-    let user = await prisma.user.findUnique({ where: { email } as any });
-
-    if (!user) {
-        user = await prisma.user.create({
-            data: { email, name: email.split('@')[0] } as any,
-        });
-    }
-
-    const options = await passkeyService.getRegistrationOptions((user as any).id, email);
+    const options = await passkeyService.getRegistrationOptions(req.userId!, req.userEmail!);
     res.json(options);
 });
 
 export const registrationVerify = asyncHandler(async (req: Request, res: Response) => {
-    const { email, body } = req.body;
-    if (!email || !body) return res.status(400).json({ error: 'Email and body are required' });
+    const { body } = req.body || {};
+    if (!body) return res.status(400).json({ error: 'Credential body is required' });
 
-    const user = await prisma.user.findUnique({ where: { email } as any });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const verification = await passkeyService.verifyPasskeyRegistration((user as any).id, body);
+    const verification = await passkeyService.verifyPasskeyRegistration(req.userId!, body);
 
     if (verification.verified) {
         res.json({ verified: true });
