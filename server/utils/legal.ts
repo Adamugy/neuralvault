@@ -4,9 +4,9 @@
  * is then asked to accept again, and the new acceptance is recorded with this version.
  */
 export const TERMS_VERSION = '2026-11-18';
-export const PRIVACY_VERSION = '2026-11-19';
+export const PRIVACY_VERSION = '2026-11-20';
 /** Version of the AI notice (which AI providers receive content). Bump it to ask everyone again. */
-export const AI_NOTICE_VERSION = '2026-11-19';
+export const AI_NOTICE_VERSION = '2026-11-20';
 
 export const CONSENT_TYPES = ['terms', 'privacy', 'age_13', 'marketing', 'ai_processing'] as const;
 export type ConsentType = typeof CONSENT_TYPES[number];

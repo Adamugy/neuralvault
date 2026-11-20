@@ -149,9 +149,12 @@ export const PrivacyPolicyPage: React.FC = () => (
         aprovadas pela Comissão Europeia (RGPD, arts. 45.º e 46.º).
       </p>
       <p>
-        A Moonshot AI (modelos Kimi) está sediada na China, país sem decisão de adequação da Comissão Europeia, e não temos com ela cláusulas
-        contratuais-tipo. Por isso, o conteúdo só lhe é enviado quando escolhes um modelo Kimi, com base no teu consentimento explícito, dado no
-        aviso de IA depois de seres informado deste risco (RGPD, art. 49.º, n.º 1, alínea a)). Se não quiseres esta transferência, escolhe outro modelo.
+        Os modelos Kimi são fornecidos pela Moonshot AI Pte. Ltd., com sede e servidores em Singapura, país sem decisão de adequação da Comissão
+        Europeia. A Moonshot não disponibiliza acordo de tratamento de dados nem cláusulas contratuais-tipo, e os seus termos permitem-lhe usar o
+        conteúdo recebido para desenvolver e melhorar os seus serviços, incluindo treinar modelos. Os teus direitos podem não ter, em Singapura, a
+        mesma proteção ou os mesmos meios de reclamação que na UE. Por isso, o conteúdo só lhe é enviado quando escolhes um modelo Kimi, com base no
+        teu consentimento explícito, dado no aviso de IA depois de seres informado destes riscos (RGPD, art. 49.º, n.º 1, alínea a)). Se não
+        quiseres esta transferência, escolhe outro modelo.
       </p>
       <p>Se usares a opção “Search the Web” na pesquisa, o termo pesquisado é enviado à Google apenas quando clicas nessa opção.</p>
     </section>
