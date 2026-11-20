@@ -19,6 +19,12 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
         });
     }
 
+    // Upload limits (file too large, too many files) are the client's fault, not a 500
+    if (err.name === 'MulterError') {
+        const tooLarge = (err as any).code === 'LIMIT_FILE_SIZE';
+        return res.status(tooLarge ? 413 : 400).json({ error: 'UploadError', message: tooLarge ? 'Ficheiro demasiado grande.' : err.message });
+    }
+
     if ((err as any).code?.startsWith('P')) {
         return res.status(400).json({
             error: 'DatabaseError',

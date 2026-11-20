@@ -45,7 +45,7 @@ export class MailService {
                     </div>
                 `,
             });
-            console.log(`[MailService] Verification email sent to ${email}`);
+            console.log(`[MailService] Verification email sent`);
         } catch (error) {
             console.error('[MailService] Failed to send email:', error);
             // Don't throw here to avoid blocking signup, 
@@ -82,7 +82,7 @@ export class MailService {
                     </div>
                 `,
             });
-            console.log(`[MailService] Password reset email sent to ${email}`);
+            console.log(`[MailService] Password reset email sent`);
         } catch (error) {
             console.error('[MailService] Failed to send email:', error);
             throw new Error('Não foi possível enviar o email de redefinição de senha.');

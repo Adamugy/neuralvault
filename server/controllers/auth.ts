@@ -115,11 +115,11 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
         throw new UnauthorizedError('Por favor, verifique seu e-mail antes de fazer login.');
     }
 
-    console.log(`[Auth Debug] Sign-in level 1 successful for: ${email}`);
+    console.log(`[Auth Debug] Sign-in level 1 successful for: ${user.id}`);
 
     // Check if 2FA is enabled
     if ((user as any).twoFactorEnabled) {
-        console.log(`[Auth] 2FA required for user: ${email}`);
+        console.log(`[Auth] 2FA required for user: ${user.id}`);
         const tempToken = AuthService.generateTemp2FAToken(user.id, user.email);
         return res.json({
             status: '2fa_required',
@@ -135,7 +135,7 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
     const fingerprint = getContextFingerprint(req);
 
     // Create session in database with fingerprint
-    console.log(`[Auth Debug] Creating session for user ID: ${user.id} with token starting: ${token.substring(0, 10)}...`);
+    console.log(`[Auth Debug] Creating session for user ID: ${user.id}`);
     try {
         await AuthService.createSession(user.id, token, fingerprint);
         console.log(`[Auth Debug] Session created successfully.`);
@@ -144,7 +144,7 @@ export const signin = asyncHandler(async (req: Request, res: Response) => {
         throw err; // Will be caught by errorHandler
     }
 
-    console.log(`[Auth Debug] Sign-in complete for: ${email}`);
+    console.log(`[Auth Debug] Sign-in complete for: ${user.id}`);
     const userWithPasskeys = await prisma.user.findUnique({
         where: { id: user.id },
         include: { authenticators: { select: { id: true } } }
@@ -197,7 +197,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
             throw new UnauthorizedError('Usuário não encontrado');
         }
 
-        console.log(`[Auth Debug] Profile fetched successfully for: ${user.email}`);
+        console.log(`[Auth Debug] Profile fetched successfully for: ${user.id}`);
         res.json({
             user: {
                 id: (user as any).id,

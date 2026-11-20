@@ -56,7 +56,7 @@ console.log(`[Passkey Config Initialized] FINAL -> rpID: ${rpID}, origin: ${orig
  * Registration: Step 1 - Generate Options
  */
 export const getRegistrationOptions = async (userId: string, email: string) => {
-    console.log(`[Passkey Debug] Generating registration options for ${email} (rpID: ${rpID})`);
+    console.log(`[Passkey Debug] Generating registration options for ${userId} (rpID: ${rpID})`);
 
     const userAuthenticators = await prisma.authenticator.findMany({
         where: { userId },
@@ -165,7 +165,7 @@ export const getAuthOptions = async (email?: string) => {
         });
 
         if (!user || !(user as any).authenticators || (user as any).authenticators.length === 0) {
-            console.error(`[Passkey Debug] No passkeys found for: ${email}`);
+            console.error(`[Passkey Debug] No passkeys found for the requested account`);
             throw new Error('User has no passkeys registered');
         }
 
@@ -234,9 +234,7 @@ export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
     }
 
     if (!dbAuthenticator) {
-        // Log all stored IDs for diagnosis
-        const allIds = await prisma.authenticator.findMany({ select: { credentialID: true } });
-        console.error(`[Passkey Debug] Authenticator "${credentialIdFromBrowser}" not found. DB has ${allIds.length} record(s): ${allIds.map(a => `"${a.credentialID}"`).join(', ')}`);
+        console.error(`[Passkey] Authenticator not found`);
         throw new Error('Authenticator not recognized. If you have an account, please sign in with password first to link this device.');
     }
 
@@ -265,7 +263,7 @@ export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
     }
 
     if (!expectedChallenge) {
-        console.error(`[Passkey Debug] Auth challenge not found for user: ${user.email}`);
+        console.error(`[Passkey Debug] Auth challenge not found for user: ${user.id}`);
         throw new Error('Authentication challenge not found');
     }
 
@@ -284,7 +282,7 @@ export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
         });
 
         if (verification.verified) {
-            console.log(`[Passkey Debug] Login verified successfully for: ${user.email}`);
+            console.log(`[Passkey Debug] Login verified successfully for: ${user.id}`);
 
             // Update counter
             await prisma.authenticator.update({
@@ -300,7 +298,7 @@ export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
 
             // CHECK 2FA: Ensure persistent state
             const twoFactorRequired = user.twoFactorEnabled === true;
-            console.log(`[Passkey Debug] 2FA required for ${user.email}: ${twoFactorRequired}`);
+            console.log(`[Passkey Debug] 2FA required for ${user.id}: ${twoFactorRequired}`);
 
             return {
                 verified: true,
@@ -308,7 +306,7 @@ export const verifyPasskeyLogin = async (body: any, challengeId?: string) => {
                 twoFactorRequired
             };
         } else {
-            console.warn(`[Passkey Debug] Login verification FAILED for: ${user.email}`);
+            console.warn(`[Passkey Debug] Login verification FAILED for: ${user.id}`);
             return { verified: false };
         }
     } catch (err: any) {
